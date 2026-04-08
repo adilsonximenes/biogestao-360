@@ -3,7 +3,7 @@
 **Sistema universal de análise de bioimpedância e planejamento alimentar baseado na metodologia TACO e protocolos científicos Harris-Benedict**
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://biogestao-360.streamlit.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ---
@@ -12,14 +12,14 @@
 
 > **SISTEMA EM DESENVOLVIMENTO BASEADO NA TABELA TACO - DADOS PODEM CONTER ERRO**
 > 
-> Este é um projeto educacional e de estudo. Os cálculos e informações são baseados em fontes científicas, mas podem conter imprecisões. 
+> Este é um projeto **EXCLUSIVAMENTE EDUCACIONAL E ACADÊMICO**. Os cálculos e informações são baseados em fontes científicas, mas podem conter imprecisões. 
 > **Sempre consulte um profissional de saúde antes de fazer mudanças significativas na sua alimentação.**
 
 ---
 
 ## 📋 **Sobre o Projeto**
 
-O **BioGestão 360** é uma ferramenta web gratuita e open-source que permite:
+O **BioGestão 360** é uma ferramenta web **gratuita e de código aberto para fins acadêmicos** que permite:
 
 - ✅ **Análise de composição corporal** (percentual de gordura, massa magra, peso ideal)
 - ✅ **Cálculo do gasto energético** (TMB e GET baseado em Harris-Benedict)
@@ -31,9 +31,30 @@ O **BioGestão 360** é uma ferramenta web gratuita e open-source que permite:
 ### 🎯 **Público-alvo**
 
 - Estudantes de nutrição e educação física
-- Profissionais da saúde que buscam uma ferramenta de apoio
+- Profissionais da saúde que buscam uma ferramenta de apoio educacional
 - Desenvolvedores interessados em projetos de saúde tech
-- Pessoas que desejam entender melhor sua composição corporal
+- Pesquisadores da área de nutrição e metabolismo
+
+---
+
+## 🔒 **Licenciamento e Uso**
+
+### **Este NÃO é um software comercial!**
+
+Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**.
+
+### **O que isso significa?**
+
+| Permissão | Status |
+|-----------|--------|
+| ✅ Uso acadêmico e educacional | Permitido |
+| ✅ Estudo e pesquisa | Permitido |
+| ✅ Compartilhamento com atribuição | Permitido |
+| ❌ **USO COMERCIAL** | **PROIBIDO** |
+| ❌ Venda ou redistribuição paga | **PROIBIDO** |
+| ❌ Modificação e distribuição modificada | **PROIBIDO** |
+
+### **Para uso comercial, entre em contato com o desenvolvedor.**
 
 ---
 
@@ -76,26 +97,26 @@ O **BioGestão 360** é uma ferramenta web gratuita e open-source que permite:
 git clone https://github.com/SEU_USUARIO/biogestao-360.git
 cd biogestao-360
 ```
-2. **Crie um ambiente virtual**
+2. Crie um ambiente virtual
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
 ```
-3. **Instale as dependências**
+3. Instale as dependências
 ```bash
 pip install -r requirements.txt
 ```
-4. **Execute o aplicativo**
- ```bash
+4. Execute o aplicativo
+```bash
 streamlit run app.py
 ```
-5. **Acesse no navegador**
+5. Acesse no navegador
 ```bash
 http://localhost:8501
 ```
 ## 📁 Estrutura do Projeto
-````bash
+```bash
 biogestao-360/
 ├── app.py                 # Aplicação principal Streamlit
 ├── requirements.txt       # Dependências do projeto
@@ -104,8 +125,7 @@ biogestao-360/
 ├── aminoacidos.csv        # Base de dados (aminoácidos)
 ├── README.md              # Este arquivo
 └── .gitignore             # Arquivos ignorados pelo Git
-````
-
+```
 ## 🖨️ Funcionalidade de Impressão
 O sistema possui um modo especial de impressão que:
 
@@ -129,30 +149,26 @@ Selecione "Imprimir"
 
 Configure "Margens: Mínimas"
 
-## 🤝 Como Contribuir
-Este é um projeto open-source e toda contribuição é bem-vinda!
+## 🤝 Como Contribuir (Academicamente)
+Este é um projeto acadêmico e toda contribuição educacional é bem-vinda!
 
 Você pode ajudar de várias formas:
-Reportar bugs → Abra uma Issue
+🐛 Reportar bugs → Abra uma Issue
 
-Sugerir melhorias → Abra uma Issue
+💡 Sugerir melhorias → Abra uma Issue
 
-Enviar código → Faça um Fork e abra um Pull Request
+📚 Melhorar documentação → Corrija erros ou adicione exemplos
 
-Melhorar documentação → Corrija erros ou adicione exemplos
+🔬 Validar dados científicos → Compare com outras fontes
 
-Compartilhar → Divulgue o projeto para quem possa se beneficiar
+🧪 Testar em diferentes cenários → Compartilhe os resultados
 
-Diretrizes para Pull Requests:
-Fork o projeto
+⚠️ Importante sobre contribuições:
+Todas as contribuições devem ser para fins acadêmicos
 
-Crie uma branch para sua feature (git checkout -b feature/nova-feature)
+Não serão aceitas contribuições para uso comercial
 
-Commit suas mudanças (git commit -m 'Adiciona nova feature')
-
-Push para a branch (git push origin feature/nova-feature)
-
-Abra um Pull Request
+Ao contribuir, você concorda com a licença CC BY-NC-ND 4.0
 
 ## 📊 Base de Dados - Tabela TACO
 Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
@@ -179,24 +195,24 @@ Zero-Footprint Total! 🔒
 ✅ Você pode usar sem preocupações com privacidade
 
 ## 📄 Licença
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 
-Resumo da licença MIT:
-
-✅ Uso comercial permitido
-
-✅ Modificação permitida
-
-✅ Distribuição permitida
-
-✅ Uso privado permitido
-
-❌ Sem garantias
-
-❌ Requer atribuição
+Resumo da licença:
+Permissão	Status
+✅ Compartilhar (copiar e redistribuir)	Permitido com atribuição
+✅ Uso acadêmico e educacional	Permitido
+❌ Uso comercial	PROIBIDO
+❌ Modificar ou criar derivados	PROIBIDO
+Texto completo da licença: https://creativecommons.org/licenses/by-nc-nd/4.0/
 
 ## 👨‍💻 Desenvolvedor
 Desenvolvido como ferramenta educacional para estudo de atividade física e consumo energético de alimentos.
+
+Autor: ADILSON GONCALVES XIMENES
+
+Finalidade: Exclusivamente acadêmica e educacional
+
+Contato para uso comercial: Abrir uma Issue no GitHub
 
 ## ⭐ Reconhecimentos
 UNICAMP - Tabela TACO
@@ -210,44 +226,44 @@ Comunidade Streamlit - Framework incrível
 ## 📞 Contato
 Issues: GitHub Issues
 
-Discord: [Link para servidor (se tiver)]
+Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
 
 ## 🙏 Agradecimentos
-Agradeço a todos que contribuírem para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais pessoas a entenderem sua saúde metabólica.
+Agradeço a todos que contribuírem academicamente para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais pessoas a entenderem sua saúde metabólica.
 
-Feito com ❤️ para a comunidade de saúde e desenvolvimento open-source
+Feito com ❤️ para a comunidade acadêmica e desenvolvimento open-source educacional
+```bash
 
+---
 
-## 📄 **Também crie o arquivo `.gitignore`**
+## 📜 **Arquivo LICENSE (crie um arquivo `LICENSE` no repositório)**
 
-Para não subir arquivos desnecessários, crie um arquivo `.gitignore`:
+```markdown
+# Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
 
-```gitignore
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+Creative Commons Corporation ("Creative Commons") não é uma sociedade de advogados e não presta serviços jurídicos ou aconselhamento. A distribuição desta licença não cria uma relação advogado-cliente ou qualquer outra relação. A Creative Commons disponibiliza as suas licenças e informações relacionadas "no estado em que se encontram". A Creative Commons não oferece garantias em relação às suas licenças, aos materiais licenciados nos seus termos, ou a qualquer informação relacionada. A Creative Commons exime-se de toda a responsabilidade por danos resultantes da sua utilização na máxima medida possível.
 
-# Streamlit
-.streamlit/secrets.toml
+### Uso da Licença Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+Este trabalho está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International. Para visualizar uma cópia desta licença, visite http://creativecommons.org/licenses/by-nc-nd/4.0/ ou envie uma carta para Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
-# OS
-.DS_Store
-Thumbs.db
+### Você tem permissão para:
 
-# Logs
-*.log
+- **Compartilhar** — copiar e redistribuir o material em qualquer suporte ou formato
+
+### Sob as seguintes condições:
+
+- **Atribuição** — Você deve dar o crédito apropriado, prover um link para a licença e indicar se mudanças foram feitas. Você deve fazê-lo em qualquer circunstância razoável, mas de nenhuma maneira que sugira que o licenciante apoia você ou o seu uso.
+
+- **NãoComercial** — Você não pode usar o material para fins comerciais.
+
+- **SemDerivações** — Se você remixar, transformar ou criar a partir do material, você não pode distribuir o material modificado.
+
+- **Sem restrições adicionais** — Você não pode aplicar termos jurídicos ou medidas de caráter tecnológico que restrinjam legalmente outros de fazerem algo que a licença permita.
+
+### Avisos:
+
+Não é necessário cumprir com os termos da licença em relação aos elementos do material que estejam no domínio público ou cuja utilização seja permitida por uma exceção ou limite aplicável.
+
+Não são dadas quaisquer garantias. A licença pode não lhe dar todas as autorizações necessárias para o uso pretendido. Por exemplo, outros direitos, tais como direitos de imagem, de privacidade ou direitos morais, podem limitar o uso do material.
 ```
