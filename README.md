@@ -75,3 +75,179 @@ O **BioGestão 360** é uma ferramenta web gratuita e open-source que permite:
 ```bash
 git clone https://github.com/SEU_USUARIO/biogestao-360.git
 cd biogestao-360
+```
+2. **Crie um ambiente virtual**
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
+3. **Instale as dependências**
+```bash
+pip install -r requirements.txt
+```
+4. **Execute o aplicativo**
+ ```bash
+streamlit run app.py
+```
+5. **Acesse no navegador**
+```bash
+http://localhost:8501
+```
+## 📁 Estrutura do Projeto
+text
+biogestao-360/
+├── app.py                 # Aplicação principal Streamlit
+├── requirements.txt       # Dependências do projeto
+├── alimentos.csv          # Base de dados TACO (alimentos)
+├── acidos-graxos.csv      # Base de dados (ácidos graxos)
+├── aminoacidos.csv        # Base de dados (aminoácidos)
+├── README.md              # Este arquivo
+└── .gitignore             # Arquivos ignorados pelo Git
+
+## 🖨️ Funcionalidade de Impressão
+O sistema possui um modo especial de impressão que:
+
+✅ Economiza tinta (fundo branco, texto preto)
+
+✅ Remove elementos desnecessários (sidebar, botões)
+
+✅ Otimiza margens para papel
+
+✅ Mantém todas as informações importantes
+
+Como usar:
+
+Clique em "Gerar Versão para Impressão" no menu lateral
+
+Aguarde o recarregamento
+
+Clique nos 3 pontinhos (⋮) do navegador
+
+Selecione "Imprimir"
+
+Configure "Margens: Mínimas"
+
+## 🤝 Como Contribuir
+Este é um projeto open-source e toda contribuição é bem-vinda!
+
+Você pode ajudar de várias formas:
+Reportar bugs → Abra uma Issue
+
+Sugerir melhorias → Abra uma Issue
+
+Enviar código → Faça um Fork e abra um Pull Request
+
+Melhorar documentação → Corrija erros ou adicione exemplos
+
+Compartilhar → Divulgue o projeto para quem possa se beneficiar
+
+Diretrizes para Pull Requests:
+Fork o projeto
+
+Crie uma branch para sua feature (git checkout -b feature/nova-feature)
+
+Commit suas mudanças (git commit -m 'Adiciona nova feature')
+
+Push para a branch (git push origin feature/nova-feature)
+
+Abra um Pull Request
+
+## 📊 Base de Dados - Tabela TACO
+Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
+
+Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
+
+Instituição: UNICAMP
+
+Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
+
+⚠️ Nota sobre os dados: A tabela TACO tem limitações e pode não refletir variações sazonais, regionais ou de preparo dos alimentos. Este projeto usa os dados "como estão" para fins educacionais.
+
+## 🛡️ Privacidade e Segurança
+Zero-Footprint Total! 🔒
+
+✅ Nenhum dado é enviado para servidores externos
+
+✅ Todo processamento é 100% local no seu navegador
+
+✅ Não há banco de dados, login ou coleta de informações
+
+✅ Ao fechar a aba, todos os dados são permanentemente deletados
+
+✅ Você pode usar sem preocupações com privacidade
+
+## 📄 Licença
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+
+Resumo da licença MIT:
+
+✅ Uso comercial permitido
+
+✅ Modificação permitida
+
+✅ Distribuição permitida
+
+✅ Uso privado permitido
+
+❌ Sem garantias
+
+❌ Requer atribuição
+
+## 👨‍💻 Desenvolvedor
+Desenvolvido como ferramenta educacional para estudo de atividade física e consumo energético de alimentos.
+
+## ⭐ Reconhecimentos
+UNICAMP - Tabela TACO
+
+Harris & Benedict - Equação de metabolismo basal
+
+Deurenberg et al. - Fórmula de composição corporal
+
+Comunidade Streamlit - Framework incrível
+
+## 📞 Contato
+Issues: GitHub Issues
+
+Discord: [Link para servidor (se tiver)]
+
+## 🙏 Agradecimentos
+Agradeço a todos que contribuírem para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais pessoas a entenderem sua saúde metabólica.
+
+Feito com ❤️ para a comunidade de saúde e desenvolvimento open-source
+
+text
+
+## 📄 **Também crie o arquivo `.gitignore`**
+
+Para não subir arquivos desnecessários, crie um arquivo `.gitignore`:
+
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+```
