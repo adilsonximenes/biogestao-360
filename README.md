@@ -95,7 +95,7 @@ streamlit run app.py
 http://localhost:8501
 ```
 ## 📁 Estrutura do Projeto
-text
+````bash
 biogestao-360/
 ├── app.py                 # Aplicação principal Streamlit
 ├── requirements.txt       # Dependências do projeto
@@ -104,6 +104,7 @@ biogestao-360/
 ├── aminoacidos.csv        # Base de dados (aminoácidos)
 ├── README.md              # Este arquivo
 └── .gitignore             # Arquivos ignorados pelo Git
+````
 
 ## 🖨️ Funcionalidade de Impressão
 O sistema possui um modo especial de impressão que:
@@ -216,7 +217,6 @@ Agradeço a todos que contribuírem para este projeto! Juntos podemos melhorar a
 
 Feito com ❤️ para a comunidade de saúde e desenvolvimento open-source
 
-text
 
 ## 📄 **Também crie o arquivo `.gitignore`**
 
