@@ -181,597 +181,188 @@ def limpar_semana_completa():
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
-    * {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-    }
+    * { font-family: 'Inter', sans-serif; }
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     
     .banner-profissional {
         background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 20px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        padding: 25px; border-radius: 20px; margin-bottom: 20px; text-align: center;
+        position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
-    
     .banner-profissional::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
+        content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
         animation: shimmer 3s infinite;
     }
+    @keyframes shimmer { 100% { left: 100%; } }
     
-    @keyframes shimmer {
-        100% { left: 100%; }
-    }
-    
-    .icones-esportes {
-        font-size: 40px;
-        margin-bottom: 10px;
-        letter-spacing: 15px;
-    }
-    
-    .banner-profissional h1 {
-        font-size: 45px;
-        font-weight: 800;
-        margin: 0;
+    .icones-esportes { font-size: 40px; margin-bottom: 10px; letter-spacing: 15px; }
+    .banner-profissional h1 { font-size: 45px; font-weight: 800; margin: 0;
         background: linear-gradient(135deg, #ffd700, #ff8c00, #ff4500);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .slogan {
-        font-size: 16px;
-        color: #94a3b8;
-        margin-top: 8px;
-        letter-spacing: 1px;
-    }
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .slogan { font-size: 16px; color: #94a3b8; margin-top: 8px; letter-spacing: 1px; }
     
     .perfil-gigante {
         background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-        border-radius: 20px;
-        padding: 20px;
-        margin: 15px 0;
-        text-align: center;
-        border: 2px solid #ffd700;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        border-radius: 20px; padding: 20px; margin: 15px 0; text-align: center;
+        border: 2px solid #ffd700; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
-    
-    .perfil-gigante .titulo {
-        font-size: 22px;
-        font-weight: 800;
-        color: #ffd700;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 15px;
-    }
-    
-    .perfil-gigante .dados-container {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
-    
-    .perfil-gigante .dado-item {
-        background: rgba(255,255,255,0.15);
-        padding: 10px 20px;
-        border-radius: 15px;
-        min-width: 120px;
-    }
-    
-    .perfil-gigante .dado-icon {
-        font-size: 30px;
-        margin-bottom: 5px;
-    }
-    
-    .perfil-gigante .dado-valor {
-        font-size: 28px;
-        font-weight: 800;
-        color: white;
-        line-height: 1;
-    }
-    
-    .perfil-gigante .dado-label {
-        font-size: 12px;
-        color: #94a3b8;
-        margin-top: 5px;
-    }
+    .perfil-gigante .titulo { font-size: 22px; font-weight: 800; color: #ffd700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+    .perfil-gigante .dados-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+    .perfil-gigante .dado-item { background: rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 15px; min-width: 120px; }
+    .perfil-gigante .dado-icon { font-size: 30px; margin-bottom: 5px; }
+    .perfil-gigante .dado-valor { font-size: 28px; font-weight: 800; color: white; line-height: 1; }
+    .perfil-gigante .dado-label { font-size: 12px; color: #94a3b8; margin-top: 5px; }
     
     .meta-gigante {
         background: linear-gradient(135deg, #f59e0b, #ef4444);
-        border-radius: 20px;
-        padding: 15px;
-        margin-top: 10px;
-        text-align: center;
+        border-radius: 20px; padding: 15px; margin-top: 10px; text-align: center;
         border: 2px solid #ffd700;
     }
-    
-    .meta-gigante .meta-titulo {
-        font-size: 18px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.9);
-        margin-bottom: 10px;
-    }
-    
-    .meta-gigante .meta-valor {
-        font-size: 50px;
-        font-weight: 900;
-        color: white;
-        line-height: 1;
-        margin: 5px 0;
-    }
-    
-    .meta-gigante .meta-mensagem {
-        font-size: 16px;
-        font-weight: 700;
-        color: #ffd700;
-        margin-top: 10px;
-        background: rgba(0,0,0,0.3);
-        display: inline-block;
-        padding: 5px 20px;
-        border-radius: 50px;
-    }
+    .meta-gigante .meta-titulo { font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 10px; }
+    .meta-gigante .meta-valor { font-size: 50px; font-weight: 900; color: white; line-height: 1; margin: 5px 0; }
+    .meta-gigante .meta-mensagem { font-size: 16px; font-weight: 700; color: #ffd700; margin-top: 10px;
+        background: rgba(0,0,0,0.3); display: inline-block; padding: 5px 20px; border-radius: 50px; }
     
     .card-com-explicacao {
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        padding: 12px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-        height: 100%;
+        background: var(--bg-secondary); border-radius: 12px; padding: 12px; text-align: center;
+        border: 1px solid var(--border-color); height: 100%;
     }
+    .card-icon { font-size: 28px; margin-bottom: 5px; }
+    .card-valor { font-size: 24px; font-weight: bold; }
+    .card-titulo { font-size: 14px; font-weight: 600; margin: 5px 0; }
+    .card-explicacao { font-size: 11px; color: var(--text-light); margin-top: 8px;
+        padding-top: 8px; border-top: 1px solid var(--border-color); }
     
-    .card-icon {
-        font-size: 28px;
-        margin-bottom: 5px;
-    }
+    .header-cafe { background: linear-gradient(90deg, #f59e0b, #fbbf24); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-almoco { background: linear-gradient(90deg, #ef4444, #f87171); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-lanches { background: linear-gradient(90deg, #10b981, #34d399); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-jantar { background: linear-gradient(90deg, #8b5cf6, #a78bfa); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
     
-    .card-valor {
-        font-size: 24px;
-        font-weight: bold;
-    }
+    .macro-tag-kcal { display: inline-block; background: #ef4444; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-proteina { display: inline-block; background: #3b82f6; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-carb { display: inline-block; background: #f59e0b; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-gordura { display: inline-block; background: #10b981; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
     
-    .card-titulo {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 5px 0;
-    }
+    .dia-btn-selected { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
+        border: 2px solid #ffd700; text-align: center; padding: 10px; border-radius: 10px; font-weight: bold; }
     
-    .card-explicacao {
-        font-size: 11px;
-        color: var(--text-light);
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid var(--border-color);
-    }
+    .alerta-oms-grupo1 { background-color: #dc2626; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #ffd700; }
+    .alerta-oms-grupo2a { background-color: #f59e0b; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #dc2626; }
+    .alerta-oms-grupo2b { background-color: #8b5cf6; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #f59e0b; }
     
-    .header-cafe {
-        background: linear-gradient(90deg, #f59e0b, #fbbf24);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 20px;
-        margin-bottom: 15px;
-        font-size: 20px;
-        font-weight: bold;
-    }
+    .aviso-cientifico { background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-left: 4px solid #f59e0b; padding: 10px 15px; border-radius: 8px;
+        margin-bottom: 15px; font-size: 12px; color: #cbd5e1; }
+    .privacidade-box { background-color: var(--bg-secondary); padding: 15px; border-radius: 10px;
+        border-left: 5px solid #10b981; margin: 15px 0; font-size: 12px; }
     
-    .header-almoco {
-        background: linear-gradient(90deg, #ef4444, #f87171);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 20px;
-        margin-bottom: 15px;
-        font-size: 20px;
-        font-weight: bold;
-    }
-    
-    .header-lanches {
-        background: linear-gradient(90deg, #10b981, #34d399);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 20px;
-        margin-bottom: 15px;
-        font-size: 20px;
-        font-weight: bold;
-    }
-    
-    .header-jantar {
-        background: linear-gradient(90deg, #8b5cf6, #a78bfa);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 20px;
-        margin-bottom: 15px;
-        font-size: 20px;
-        font-weight: bold;
-    }
-    
-    .macro-tag-kcal {
-        display: inline-block;
-        background: #ef4444;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        margin-right: 8px;
-    }
-    
-    .macro-tag-proteina {
-        display: inline-block;
-        background: #3b82f6;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        margin-right: 8px;
-    }
-    
-    .macro-tag-carb {
-        display: inline-block;
-        background: #f59e0b;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        margin-right: 8px;
-    }
-    
-    .macro-tag-gordura {
-        display: inline-block;
-        background: #10b981;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        margin-right: 8px;
-    }
-    
-    .dia-btn-selected {
-        background: linear-gradient(135deg, #f59e0b, #ef4444);
-        color: white;
-        border: 2px solid #ffd700;
-        text-align: center;
-        padding: 10px;
-        border-radius: 10px;
-        font-weight: bold;
-    }
-    
-    .alerta-oms-grupo1 {
-        background-color: #dc2626;
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 10px 0;
-        font-size: 13px;
-        border-left: 5px solid #ffd700;
-    }
-    
-    .alerta-oms-grupo2a {
-        background-color: #f59e0b;
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 10px 0;
-        font-size: 13px;
-        border-left: 5px solid #dc2626;
-    }
-    
-    .alerta-oms-grupo2b {
-        background-color: #8b5cf6;
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 10px 0;
-        font-size: 13px;
-        border-left: 5px solid #f59e0b;
-    }
-    
-    .aviso-cientifico {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
-        border-left: 4px solid #f59e0b;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        font-size: 12px;
-        color: #cbd5e1;
-    }
-    
-    .privacidade-box {
-        background-color: var(--bg-secondary);
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 5px solid #10b981;
-        margin: 15px 0;
-        font-size: 12px;
-    }
-    
-    /* RESUMO DO LAUDO - ALTO CONTRASTE */
-.resumo-laudo {
-    background: linear-gradient(135deg, #1e293b, #0f172a) !important;
-    border: 2px solid #ffd700 !important;
-    border-radius: 15px !important;
-    padding: 20px !important;
-    margin: 15px 0 !important;
-    color: #ffffff !important;
-}
-
-.resumo-laudo h4 {
-    color: #ffd700 !important;
-    margin-bottom: 15px !important;
-    font-size: 18px !important;
-}
-
-.resumo-laudo p {
-    color: #ffffff !important;
-    margin: 10px 0 !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-}
-
-.resumo-laudo strong {
-    color: #fbbf24 !important;
-}
-
-.resumo-laudo .destaque-perda {
-    color: #fbbf24 !important;
-    font-weight: bold;
-}
-
-.resumo-laudo .destaque-ganho {
-    color: #f87171 !important;
-    font-weight: bold;
-}
-    
-    /* IMPRESSÃO - TODOS OS ELEMENTOS VISÍVEIS */
-@media print {
-    /* REMOVER APENAS ELEMENTOS INTERATIVOS E DESNECESSÁRIOS */
-    .stSidebar, 
-    .stButton, 
-    .stExpander, 
-    .stAlert, 
-    .stDownloadButton, 
-    .stRadio, 
-    .stSelectbox, 
-    .stNumberInput,
-    .stCheckbox,
-    .stTextInput,
-    .stDateInput,
-    .stSlider,
-    button,
-    [data-testid="stSidebarContent"],
-    [data-testid="stToolbar"],
-    .stAppHeader,
-    .stAppFooter {
-        display: none !important;
-    }
-    
-    /* MANTER FUNDO BRANCO E TEXTO PRETO PARA ECONOMIA DE TINTA */
-    body, .stApp, .main, .block-container, div, section {
-        background: white !important;
-        color: black !important;
-    }
-    
-    /* FORÇAR CORES EM TEXTOS */
-    p, h1, h2, h3, h4, h5, h6, span, li, div, .stMarkdown, .stMetric {
-        color: black !important;
-    }
-    
-    /* BANNER PROFISSIONAL - TORNA VISÍVEL */
-    .banner-profissional {
-        background: white !important;
-        border: 2px solid #000 !important;
-        box-shadow: none !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    
-    .banner-profissional h1 {
-        color: black !important;
-        background: none !important;
-        -webkit-text-fill-color: black !important;
-    }
-    
-    .banner-profissional .slogan {
-        color: black !important;
-    }
-    
-    .icones-esportes {
-        color: black !important;
-    }
-    
-    /* PERFIL GIGANTE - VISÍVEL */
-    .perfil-gigante {
-        background: white !important;
-        border: 2px solid #000 !important;
-        box-shadow: none !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    
-    .perfil-gigante .titulo {
-        color: black !important;
-    }
-    
-    .perfil-gigante .dado-item {
-        background: #f0f0f0 !important;
-        border: 1px solid #000 !important;
-    }
-    
-    .perfil-gigante .dado-valor {
-        color: black !important;
-    }
-    
-    .perfil-gigante .dado-label {
-        color: black !important;
-    }
-    
-    /* META GIGANTE - VISÍVEL */
-    .meta-gigante {
-        background: white !important;
-        border: 2px solid #000 !important;
-        box-shadow: none !important;
-    }
-    
-    .meta-gigante .meta-titulo {
-        color: black !important;
-    }
-    
-    .meta-gigante .meta-valor {
-        color: black !important;
-    }
-    
-    .meta-gigante .meta-mensagem {
-        color: black !important;
-        background: #f0f0f0 !important;
-    }
-    
-    /* CARDS - VISÍVEIS */
-    .card-com-explicacao {
-        background: white !important;
-        border: 1px solid #000 !important;
-        box-shadow: none !important;
-    }
-    
-    .card-icon {
-        color: black !important;
-    }
-    
-    .card-valor {
-        color: black !important;
-    }
-    
-    .card-titulo {
-        color: black !important;
-    }
-    
-    .card-explicacao {
-        color: black !important;
-        border-top: 1px solid #ccc !important;
-    }
-    
-    /* CABEÇALHOS DAS REFEIÇÕES - VISÍVEIS EM PRETO E BRANCO */
-    .header-cafe, .header-almoco, .header-lanches, .header-jantar {
-        background: white !important;
-        border: 2px solid #000 !important;
-        color: black !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    
-    /* MACROS TAGS - VISÍVEIS */
-    .macro-tag-kcal, .macro-tag-proteina, .macro-tag-carb, .macro-tag-gordura {
-        background: white !important;
-        border: 1px solid #000 !important;
-        color: black !important;
-    }
-    
-    /* ALERTAS OMS - VISÍVEIS */
-    .alerta-oms-grupo1, .alerta-oms-grupo2a, .alerta-oms-grupo2b {
-        background: white !important;
-        border: 2px solid #000 !important;
-        color: black !important;
-    }
-    
-    /* GRÁFICOS - MANTÉM CORES PARA MELHOR VISUALIZAÇÃO */
-    .js-plotly-plot, .plotly, .svg-container {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    
-    /* TABELAS - VISÍVEIS */
-    table, .stDataFrame, .dataframe {
-        border: 1px solid #000 !important;
-        width: 100% !important;
-    }
-    
-    th, td {
-        border: 1px solid #000 !important;
-        padding: 5px !important;
-    }
-    
-    th {
-        background: #f0f0f0 !important;
-    }
-    
-    /* RESUMO LAUDO - VISÍVEL */
     .resumo-laudo {
-        background: white !important;
-        border: 2px solid #000 !important;
-        box-shadow: none !important;
+        background: linear-gradient(135deg, #1e293b, #0f172a) !important;
+        border: 2px solid #ffd700 !important; border-radius: 15px !important;
+        padding: 20px !important; margin: 15px 0 !important; color: #ffffff !important;
     }
+    .resumo-laudo h4 { color: #ffd700 !important; margin-bottom: 15px !important; font-size: 18px !important; }
+    .resumo-laudo p { color: #ffffff !important; margin: 10px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
+    .resumo-laudo strong { color: #fbbf24 !important; }
     
-    .resumo-laudo h4 {
-        color: black !important;
+    /* IMPRESSAO - CORRIGIDA */
+    @media print {
+        /* SIDEBAR - ESCONDER */
+        .stSidebar, [data-testid="stSidebarContent"] {
+            display: none !important;
+        }
+        
+        /* FORCAR TEXTO PRETO EM TODOS OS ELEMENTOS */
+        * {
+            color: black !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        /* FORCAR CORES BRANCAS NOS FUNDOS */
+        body, .stApp, .main, .block-container, div, section, 
+        p, h1, h2, h3, h4, h5, h6, span, li, .stMarkdown, .stMetric,
+        .card-com-explicacao, .perfil-gigante, .meta-gigante,
+        .header-cafe, .header-almoco, .header-lanches, .header-jantar,
+        .resumo-laudo, .aviso-cientifico, .privacidade-box {
+            color: black !important;
+            background: white !important;
+        }
+        
+        /* TITULO BioGestao 360 - CORRECAO DO GRADIENTE */
+        .banner-profissional h1 {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            -webkit-text-fill-color: black !important;
+            color: black !important;
+            text-shadow: none !important;
+        }
+        
+        /* TABELAS */
+        table, .stDataFrame, .dataframe {
+            border: 1px solid black !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        
+        th, td {
+            border: 1px solid black !important;
+            padding: 8px !important;
+            color: black !important;
+            background: white !important;
+        }
+        
+        /* GRAFICOS - LEGENDAS VISIVEIS */
+        .js-plotly-plot .legend text,
+        .plotly .legend text,
+        .legend text,
+        .g-legend text,
+        .annotation-text {
+            fill: black !important;
+            color: black !important;
+            font-weight: bold !important;
+        }
+        
+        .js-plotly-plot .xtick text,
+        .js-plotly-plot .ytick text,
+        .plotly .xtick text,
+        .plotly .ytick text {
+            fill: black !important;
+            color: black !important;
+        }
+        
+        /* BARRAS DOS GRAFICOS */
+        .js-plotly-plot .bar,
+        .plotly .bar {
+            opacity: 1 !important;
+        }
+        
+        /* TEXTOS TRANSPARENTES */
+        .stMarkdown, .stMarkdown p, .stMarkdown div, 
+        .card-com-explicacao, .card-com-explicacao *,
+        .resumo-laudo, .resumo-laudo *,
+        .aviso-cientifico, .aviso-cientifico *,
+        .privacidade-box, .privacidade-box * {
+            color: black !important;
+            background: white !important;
+        }
     }
-    
-    .resumo-laudo p {
-        color: black !important;
-    }
-    
-    .resumo-laudo strong {
-        color: black !important;
-    }
-    
-    /* AVISO CIENTÍFICO - VISÍVEL */
-    .aviso-cientifico {
-        background: white !important;
-        border: 1px solid #000 !important;
-        color: black !important;
-    }
-    
-    /* PRIVACIDADE - VISÍVEL */
-    .privacidade-box {
-        background: white !important;
-        border: 1px solid #000 !important;
-        color: black !important;
-    }
-    
-    /* RODAPÉ - VISÍVEL */
-    .rodape {
-        border-top: 1px solid #000 !important;
-        color: black !important;
-    }
-    
-    /* CONTAINER PRINCIPAL */
-    .main .block-container {
-        padding: 0.5cm !important;
-        margin: 0 !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-    
-    /* EVITAR QUEBRAS DE PÁGINA EM ELEMENTOS IMPORTANTES */
-    .perfil-gigante, .meta-gigante, .card-com-explicacao, 
-    .header-cafe, .header-almoco, .header-lanches, .header-jantar,
-    .resumo-laudo {
-        page-break-inside: avoid;
-        break-inside: avoid;
-    }
-}
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True) 
 
 # 10. SIDEBAR
 with st.sidebar:
@@ -786,10 +377,8 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 🎯 Objetivos")
     
-    # Objetivo principal: Perda ou Ganho de peso
     objetivo = st.radio("🎯 Seu objetivo principal:", ["Perda de peso", "Ganho de peso"], horizontal=True)
     
-    # Meta de peso (pode ser menor ou maior que o atual)
     if objetivo == "Perda de peso":
         p_alvo = st.number_input("🎯 Meta de Peso (kg)", 10.0, peso_at - 0.1, peso_at - 10)
         st.caption(f"Para perda de peso, a meta deve ser menor que {peso_at} kg")
@@ -815,11 +404,18 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.info("🖨️ **IMPRESSÃO:** Botão abaixo → 3 pontinhos (⋮) → Imprimir → Margens: Mínimas")
     
-    if st.button("📄 Versão para Impressão", use_container_width=True):
-        st.session_state.modo_impressao = True
-        st.rerun()
+    st.info("""
+    🖨️ **IMPRESSÃO**
+    
+    1️⃣ Clique nos **3 pontinhos (⋮)** ao lado do botão Deploy
+    2️⃣ Selecione **Imprimir**
+    3️⃣ Mantenha as **margens padrão** do navegador
+    4️⃣ Escolha **Salvar como PDF** 🌳
+    """)
+    
+    # AVISO COMPLEMENTAR (pequeno, não intrusivo)
+    st.caption("💡 **Dica:** Para capturar a página inteira sem cortes, use a extensão GoFullPage no Chrome/Edge")
 
 # 11. CARGA DE DADOS
 @st.cache_data
@@ -838,7 +434,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 13. DOAÇÕES
+# 13. DOAÇÕES E DICAS DE IMPRESSÃO
 with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded=False):
     col_pix, col_paypal = st.columns(2)
     with col_pix:
@@ -853,6 +449,17 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
         st.components.v1.html(get_paypal_html(), height=100)
         st.caption("Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG")
     st.caption("Sua contribuição ajuda a manter o projeto gratuito!")
+    
+    st.markdown("---")
+    st.markdown("### 🖨️ Dica de Impressão")
+    st.info("""
+    ⚠️ A impressão nativa (Ctrl+P) pode cortar gráficos e tabelas.
+    
+    ✅ **Para melhor resultado:**
+    - Use a extensão **GoFullPage** (Chrome/Edge)
+    - Ou ajuste margens para **5mm** cada lado no Ctrl+P
+    """)
+    st.caption("🌳 A natureza agradece o uso consciente do papel!")
 
 # 14. POLÍTICA DE PRIVACIDADE
 st.markdown("""
@@ -1000,9 +607,440 @@ with col_g3:
 
 st.markdown("---")
 
+# ============================================
+# 19.5. AVALIAÇÃO FÍSICA (Protocolo Jackson & Pollock)
+# ============================================
+st.markdown("---")
+st.markdown("## 📏 Avaliação Física Profissional")
+st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
+
+with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
+    st.markdown("""
+    ### ⚠️ **Importante:**
+    
+    Esta seção é **recomendada para profissionais de Educação Física, Nutrição e Saúde**.
+    
+    - ✅ Os resultados são **mais precisos** que a estimativa por IMC
+    - ✅ Utiliza o **Protocolo de Jackson & Pollock** (referência científica)
+    - ✅ Medidas separadas para **lado direito (D) e esquerdo (E)** - o sistema calcula automaticamente a média
+    - ⚠️ **Para resultado válido, as medidas devem ser feitas por um profissional qualificado** utilizando:
+      - Adipômetro científico
+      - Fita métrica (para circunferências, se aplicável)
+      - Balança calibrada
+    
+    ---
+    
+    ### 🧬 Classificação do Percentual de Gordura e Riscos à Saúde
+    
+    | Classificação | Homens | Mulheres | Riscos à Saúde |
+    |--------------|--------|----------|----------------|
+    | **Gordura Essencial** | 2-5% | 10-13% | Mínimo necessário para sobrevivência |
+    | **Atleta** | 6-13% | 14-20% | Baixo risco, alta performance |
+    | **Saudável** | 14-17% | 21-24% | Risco muito baixo |
+    | **Aceitável** | 18-21% | 25-31% | Risco moderado |
+    | **Obesidade** | >22% | >32% | Alto risco cardiovascular, diabetes, hipertensão |
+    
+    ---
+    
+    ### 🏃 Biotipos Corporais (Heath-Carter)
+    
+    | Biotipo | Características | % Gordura típico | Recomendação |
+    |---------|-----------------|------------------|--------------|
+    | **Endomorfo** | Tendência a acumular gordura, corpo mais arredondado, dificuldade para definir | Acima de 22% (H) / 28% (M) | Foco em déficit calórico + treino de força |
+    | **Mesomorfo** | Estrutura atlética natural, facilidade para ganhar músculos e manter baixo % gordura | 10-18% (H) / 18-25% (M) | Treino equilibrado, fácil manutenção |
+    | **Ectomorfo** | Metabolismo acelerado, dificuldade para ganhar peso e massa muscular | Abaixo de 10% (H) / 18% (M) | Foco em superávit calórico + treino de força |
+    
+    ---
+    
+    ### 📊 Graus de Obesidade por IMC
+    
+    | Classificação | IMC | Riscos |
+    |--------------|-----|--------|
+    | **Peso normal** | 18,5 - 24,9 | Risco mínimo |
+    | **Sobrepeso** | 25,0 - 29,9 | Risco moderado |
+    | **Obesidade Grau I** | 30,0 - 34,9 | Risco alto |
+    | **Obesidade Grau II** | 35,0 - 39,9 | Risco muito alto |
+    | **Obesidade Grau III** | ≥ 40 | Risco extremo (mórbida) |
+    
+    > **Fonte:** Organização Mundial da Saúde (OMS) e American College of Sports Medicine (ACSM)
+    """)
+
+usar_avaliacao = st.checkbox("📊 Deseja realizar avaliação por dobras cutâneas?", value=False)
+
+if usar_avaliacao:
+    st.markdown("### 📏 Insira as medidas das dobras cutâneas (em mm)")
+    st.caption("💡 **Instruções:** Meça cada dobra separadamente nos lados DIREITO (D) e ESQUERDO (E). O sistema calculará automaticamente a média para a fórmula científica.")
+    
+    sexo_avaliacao = st.radio("Sexo para avaliação:", ["Masculino", "Feminino"], horizontal=True)
+    
+    usar_7_dobras = False
+    soma_dobras = 0
+    
+    st.markdown("---")
+    st.markdown("#### 📏 Braços (média entre D e E)")
+    
+    col_braco1, col_braco2 = st.columns(2)
+    
+    with col_braco1:
+        st.markdown("**TRÍCEPS**")
+        triceps_d = st.number_input("Tríceps Direito (mm)", 5.0, 50.0, 12.0, step=0.5)
+        triceps_e = st.number_input("Tríceps Esquerdo (mm)", 5.0, 50.0, 11.5, step=0.5)
+    
+    with col_braco2:
+        st.markdown("**BÍCEPS**")
+        biceps_d = st.number_input("Bíceps Direito (mm)", 5.0, 50.0, 10.0, step=0.5)
+        biceps_e = st.number_input("Bíceps Esquerdo (mm)", 5.0, 50.0, 9.5, step=0.5)
+    
+    st.markdown("---")
+    st.markdown("#### 🏋️ Tronco")
+    
+    col_tronco1, col_tronco2, col_tronco3 = st.columns(3)
+    
+    with col_tronco1:
+        st.markdown("**PEITORAL**")
+        peitoral = st.number_input("Peitoral (mm)", 5.0, 50.0, 15.0, step=0.5)
+    
+    with col_tronco2:
+        st.markdown("**SUBESCAPULAR**")
+        subescapular = st.number_input("Subescapular (mm)", 5.0, 50.0, 15.0, step=0.5)
+    
+    with col_tronco3:
+        st.markdown("**ABDOME**")
+        abdominal = st.number_input("Abdome (mm)", 5.0, 60.0, 20.0, step=0.5)
+    
+    st.markdown("---")
+    st.markdown("#### 📐 Quadril / Axila")
+    
+    col_quadril1, col_quadril2 = st.columns(2)
+    
+    with col_quadril1:
+        st.markdown("**AXILAR MÉDIA**")
+        axilar = st.number_input("Axilar Média (mm)", 5.0, 50.0, 12.0, step=0.5)
+    
+    with col_quadril2:
+        st.markdown("**SUPRA-ILÍACA**")
+        suprailiaca = st.number_input("Supra-ilíaca (mm)", 5.0, 60.0, 18.0, step=0.5)
+    
+    st.markdown("---")
+    st.markdown("#### 🦵 Pernas (média entre D e E)")
+    
+    col_perna1, col_perna2 = st.columns(2)
+    
+    with col_perna1:
+        st.markdown("**COXA**")
+        coxa_d = st.number_input("Coxa Direita (mm)", 10.0, 70.0, 25.0, step=0.5)
+        coxa_e = st.number_input("Coxa Esquerda (mm)", 10.0, 70.0, 24.5, step=0.5)
+    
+    with col_perna2:
+        st.markdown("**PANTURRILHA**")
+        panturrilha_d = st.number_input("Panturrilha Direita (mm)", 5.0, 50.0, 15.0, step=0.5)
+        panturrilha_e = st.number_input("Panturrilha Esquerda (mm)", 5.0, 50.0, 14.5, step=0.5)
+    
+    triceps_media = (triceps_d + triceps_e) / 2
+    biceps_media = (biceps_d + biceps_e) / 2
+    coxa_media = (coxa_d + coxa_e) / 2
+    panturrilha_media = (panturrilha_d + panturrilha_e) / 2
+    
+    with st.expander("📊 Ver médias calculadas (D+E)/2"):
+        st.markdown(f"""
+        - **Tríceps:** D: {triceps_d:.1f}mm | E: {triceps_e:.1f}mm | **Média: {triceps_media:.1f}mm**
+        - **Bíceps:** D: {biceps_d:.1f}mm | E: {biceps_e:.1f}mm | **Média: {biceps_media:.1f}mm**
+        - **Coxa:** D: {coxa_d:.1f}mm | E: {coxa_e:.1f}mm | **Média: {coxa_media:.1f}mm**
+        - **Panturrilha:** D: {panturrilha_d:.1f}mm | E: {panturrilha_e:.1f}mm | **Média: {panturrilha_media:.1f}mm**
+        """)
+    
+    st.markdown("---")
+    st.markdown("#### 🔬 Protocolo de Dobras")
+    
+    if sexo_avaliacao == "Masculino":
+        usar_7_dobras = st.radio(
+            "Escolha o protocolo:",
+            ["3 dobras (Tríceps, Peitoral, Abdome)", "7 dobras (Completo - mais preciso)"],
+            horizontal=True
+        ) == "7 dobras (Completo - mais preciso)"
+        
+        if usar_7_dobras:
+            soma_dobras = triceps_media + peitoral + abdominal + subescapular + axilar + suprailiaca + coxa_media
+            st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
+            densidade = 1.112 - (0.00043499 * soma_dobras) + (0.00000055 * (soma_dobras ** 2)) - (0.00028826 * idade)
+        else:
+            soma_dobras = triceps_media + peitoral + abdominal
+            st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
+            densidade = 1.10938 - (0.0008267 * soma_dobras) + (0.0000016 * (soma_dobras ** 2)) - (0.0002574 * idade)
+    
+    else:
+        usar_7_dobras = st.radio(
+            "Escolha o protocolo:",
+            ["3 dobras (Tríceps, Supra-ilíaca, Coxa)", "7 dobras (Completo - mais preciso)"],
+            horizontal=True
+        ) == "7 dobras (Completo - mais preciso)"
+        
+        if usar_7_dobras:
+            soma_dobras = triceps_media + suprailiaca + coxa_media + subescapular + peitoral + axilar + abdominal
+            st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
+            densidade = 1.097 - (0.00046971 * soma_dobras) + (0.00000056 * (soma_dobras ** 2)) - (0.00012828 * idade)
+        else:
+            soma_dobras = triceps_media + suprailiaca + coxa_media
+            st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
+            densidade = 1.0994921 - (0.0009929 * soma_dobras) + (0.0000023 * (soma_dobras ** 2)) - (0.0001392 * idade)
+    
+    if densidade > 0:
+        percentual_gordura_jp = ((4.95 / densidade) - 4.5) * 100
+        percentual_gordura_jp = max(5, min(50, percentual_gordura_jp))
+    else:
+        percentual_gordura_jp = 0
+    
+    massa_gordura_jp = peso_at * (percentual_gordura_jp / 100)
+    massa_magra_jp = peso_at - massa_gordura_jp
+    
+    # Classificações
+    if sexo_avaliacao == "Masculino":
+        if percentual_gordura_jp < 6:
+            classif_gordura = "Gordura Essencial"
+            grau_obesidade = "Muito abaixo do ideal"
+            risco_saude = "Baixo (atletas de elite)"
+        elif percentual_gordura_jp < 14:
+            classif_gordura = "Atleta"
+            grau_obesidade = "Abaixo do ideal (atleta)"
+            risco_saude = "Muito baixo"
+        elif percentual_gordura_jp < 18:
+            classif_gordura = "Saudável"
+            grau_obesidade = "Normal"
+            risco_saude = "Baixo"
+        elif percentual_gordura_jp < 25:
+            classif_gordura = "Aceitável"
+            grau_obesidade = "Sobrepeso"
+            risco_saude = "Moderado"
+        else:
+            classif_gordura = "Elevado"
+            grau_obesidade = "Obesidade"
+            risco_saude = "Alto"
+    else:
+        if percentual_gordura_jp < 12:
+            classif_gordura = "Gordura Essencial"
+            grau_obesidade = "Muito abaixo do ideal"
+            risco_saude = "Baixo (atletas de elite)"
+        elif percentual_gordura_jp < 21:
+            classif_gordura = "Atleta"
+            grau_obesidade = "Abaixo do ideal (atleta)"
+            risco_saude = "Muito baixo"
+        elif percentual_gordura_jp < 25:
+            classif_gordura = "Saudável"
+            grau_obesidade = "Normal"
+            risco_saude = "Baixo"
+        elif percentual_gordura_jp < 32:
+            classif_gordura = "Aceitável"
+            grau_obesidade = "Sobrepeso"
+            risco_saude = "Moderado"
+        else:
+            classif_gordura = "Elevado"
+            grau_obesidade = "Obesidade"
+            risco_saude = "Alto"
+    
+    # Biotipo
+    if percentual_gordura_jp > 25:
+        biotipo = "Endomorfo"
+        cor_biotipo = "#ef4444"
+        desc_biotipo = "Tendência a acumular gordura, corpo mais arredondado, dificuldade para definir os músculos."
+        recomendacao_biotipo = "Foco em déficit calórico moderado, treino de força de alta intensidade e cardio regular."
+    elif percentual_gordura_jp < 12 and massa_magra_jp > (peso_at * 0.4):
+        biotipo = "Ectomorfo"
+        cor_biotipo = "#3b82f6"
+        desc_biotipo = "Metabolismo acelerado, dificuldade para ganhar peso e massa muscular, estrutura mais fina."
+        recomendacao_biotipo = "Foco em superávit calórico, treino de força com pouca frequência cardio."
+    else:
+        biotipo = "Mesomorfo"
+        cor_biotipo = "#10b981"
+        desc_biotipo = "Estrutura atlética natural, facilidade para ganhar massa muscular e manter baixo percentual de gordura."
+        recomendacao_biotipo = "Treino equilibrado de força e cardio, facilidade para manutenção."
+    
+    # Exibir resultados
+    st.markdown("---")
+    st.markdown("### 📊 Resultado da Avaliação Física (Jackson & Pollock)")
+    
+    col_jp1, col_jp2, col_jp3 = st.columns(3)
+    
+    with col_jp1:
+        st.markdown(f"""
+        <div class='card-com-explicacao'>
+            <div class='card-icon'>🎯</div>
+            <div class='card-valor'>{percentual_gordura_jp:.1f}%</div>
+            <div class='card-titulo'>% Gordura</div>
+            <div class='card-explicacao'>Classificação: {classif_gordura}<br>Risco: {risco_saude}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_jp2:
+        st.markdown(f"""
+        <div class='card-com-explicacao'>
+            <div class='card-icon'>⚖️</div>
+            <div class='card-valor'>{massa_gordura_jp:.1f} kg</div>
+            <div class='card-titulo'>Massa de Gordura</div>
+            <div class='card-explicacao'>{((massa_gordura_jp/peso_at)*100):.1f}% do peso total</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_jp3:
+        st.markdown(f"""
+        <div class='card-com-explicacao'>
+            <div class='card-icon'>💪</div>
+            <div class='card-valor'>{massa_magra_jp:.1f} kg</div>
+            <div class='card-titulo'>Massa Magra</div>
+            <div class='card-explicacao'>{((massa_magra_jp/peso_at)*100):.1f}% do peso total</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Gráfico de pizza
+    st.markdown("---")
+    st.markdown("#### 🥧 Composição Corporal")
+    
+    col_pizza, col_biotipo = st.columns(2)
+    
+    with col_pizza:
+        composicao_corpo = pd.DataFrame({
+            'Componente': ['Massa Gorda', 'Massa Magra'],
+            'Valor': [percentual_gordura_jp, 100 - percentual_gordura_jp]
+        })
+        fig_pizza = px.pie(composicao_corpo, values='Valor', names='Componente',
+                           title='Proporção do seu corpo',
+                           color='Componente',
+                           color_discrete_map={'Massa Gorda': '#ef4444', 'Massa Magra': '#3b82f6'})
+        fig_pizza.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
+        st.plotly_chart(fig_pizza, use_container_width=True)
+    
+    with col_biotipo:
+        st.markdown(f"""
+        <div class='card-com-explicacao' style='border-left: 5px solid {cor_biotipo};'>
+            <div class='card-icon'>🧬</div>
+            <div class='card-valor' style='color: {cor_biotipo};'>{biotipo}</div>
+            <div class='card-titulo'>Biotipo Corporal</div>
+            <div class='card-explicacao'>{desc_biotipo}<br><br>
+            <strong>Recomendação:</strong> {recomendacao_biotipo}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Gráfico de barras comparativo
+    st.markdown("---")
+    st.markdown("#### 📊 Comparativo com Referências de Saúde")
+    
+    if sexo_avaliacao == "Masculino":
+        referencia_saudavel = 17
+        referencia_atleta = 12
+        referencia_obesidade = 25
+        referencia_essencial = 5
+    else:
+        referencia_saudavel = 24
+        referencia_atleta = 20
+        referencia_obesidade = 32
+        referencia_essencial = 12
+    
+    df_comparacao = pd.DataFrame({
+        'Categoria': ['Seu % Gordura', 'Gordura Essencial', 'Atleta', 'Saudável', 'Obesidade'],
+        'Percentual': [percentual_gordura_jp, referencia_essencial, referencia_atleta, referencia_saudavel, referencia_obesidade]
+    })
+    
+    fig_comparacao = px.bar(df_comparacao, x='Categoria', y='Percentual', 
+                             title='Comparação do seu percentual de gordura com referências',
+                             color='Categoria',
+                             color_discrete_map={
+                                 'Seu % Gordura': '#3b82f6', 'Gordura Essencial': '#8b5cf6',
+                                 'Atleta': '#10b981', 'Saudável': '#f59e0b', 'Obesidade': '#ef4444'
+                             })
+    fig_comparacao.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=400,
+                                  yaxis_title='Percentual de Gordura (%)')
+    st.plotly_chart(fig_comparacao, use_container_width=True)
+    
+    # Gráfico por idade
+    st.markdown("---")
+    st.markdown("#### 📈 Percentual de Gordura por Idade (Referência)")
+    
+    idades = list(range(20, 71, 5))
+    if sexo_avaliacao == "Masculino":
+        percentuais_referencia = [18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29]
+    else:
+        percentuais_referencia = [25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36]
+    
+    df_idade = pd.DataFrame({'Idade': idades, 'Referência': percentuais_referencia,
+                              'Seu Valor': [percentual_gordura_jp] * len(idades)})
+    
+    fig_idade = px.line(df_idade, x='Idade', y='Referência', 
+                         title='Percentual de Gordura por Idade (Referência ACSM)',
+                         labels={'value': '% Gordura', 'Idade': 'Idade (anos)'})
+    fig_idade.add_hline(y=percentual_gordura_jp, line_dash="dash", line_color="#3b82f6", 
+                        annotation_text=f"Seu valor: {percentual_gordura_jp:.1f}%")
+    fig_idade.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=400)
+    st.plotly_chart(fig_idade, use_container_width=True)
+    
+    # LAUDO DA AVALIAÇÃO FÍSICA
+    st.markdown("---")
+    st.markdown("## 🖨️ LAUDO DA AVALIAÇÃO FÍSICA")
+    st.markdown("*Este laudo pode ser impresso para arquivo pessoal ou para compartilhar com profissionais*")
+    
+    if imc < 18.5:
+        classificacao_imc_laudo = "Abaixo do peso"
+    elif imc < 25:
+        classificacao_imc_laudo = "Peso normal"
+    elif imc < 30:
+        classificacao_imc_laudo = "Sobrepeso"
+    elif imc < 35:
+        classificacao_imc_laudo = "Obesidade Grau I"
+    elif imc < 40:
+        classificacao_imc_laudo = "Obesidade Grau II"
+    else:
+        classificacao_imc_laudo = "Obesidade Grau III"
+    
+    st.markdown("### 📊 Dados do Avaliado")
+    st.markdown(f"""
+    | Medida | Valor |
+    |--------|-------|
+    | **Peso** | {peso_at:.1f} kg |
+    | **Altura** | {alt_cm} cm |
+    | **Idade** | {idade} anos |
+    | **IMC** | {imc:.1f} ({classificacao_imc_laudo}) |
+    """)
+    
+    st.markdown("### 📏 Resultados da Avaliação por Dobras Cutâneas")
+    st.markdown(f"""
+    | Medida | Valor |
+    |--------|-------|
+    | **Percentual de Gordura** | {percentual_gordura_jp:.1f}% |
+    | **Classificação** | {classif_gordura} |
+    | **Grau** | {grau_obesidade} |
+    | **Risco à Saúde** | {risco_saude} |
+    | **Massa de Gordura** | {massa_gordura_jp:.1f} kg |
+    | **Massa Magra** | {massa_magra_jp:.1f} kg |
+    """)
+    
+    st.markdown("### 🧬 Biotipo Corporal")
+    st.markdown(f"""
+    | Medida | Valor |
+    |--------|-------|
+    | **Biotipo** | {biotipo} |
+    | **Descrição** | {desc_biotipo} |
+    | **Recomendação** | {recomendacao_biotipo} |
+    """)
+    
+    st.markdown("### 📋 Protocolo Utilizado")
+    st.markdown(f"""
+    | Item | Informação |
+    |------|-------------|
+    | **Protocolo** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
+    | **Fórmula de Densidade** | Siri (1961) |
+    | **Referência** | ACSM - American College of Sports Medicine |
+    """)
+    
+    st.markdown("---")
+    st.markdown(f"*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*")
+    st.markdown(f"*BioGestão 360 - {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M')}*")
+
+else:
+    st.info("💡 **Dica:** Para uma avaliação mais precisa, ative a opção acima e insira as medidas das dobras cutâneas. Recomendado para profissionais de Educação Física e Nutrição.")
+
+# ============================================
 # 20. MONTAGEM DO PLANO ALIMENTAR
+# ============================================
 st.markdown("## 🍏 Montagem do Plano Alimentar")
-st.info("💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão! Alimentos diferentes possuem densidades diferentes - uma 'unidade' de pão pode variar muito de tamanho!")
+st.info("💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão!")
 
 if st.session_state.planejamento_tipo == "Semanal":
     st.markdown("### 📅 Selecione o dia")
@@ -1067,15 +1105,12 @@ st.markdown("---")
 if st.session_state.planejamento_tipo == "Diário":
     st.markdown("### 📋 Seu Cardápio de Hoje")
     
-    # Café da Manhã
     if st.session_state.cardapio["Café da Manhã"]:
         st.markdown("<div class='header-cafe'>🌅 CAFÉ DA MANHÃ</div>", unsafe_allow_html=True)
         for idx, item in enumerate(st.session_state.cardapio["Café da Manhã"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA:
-                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB:
-                st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
             with colC:
                 if st.button("🗑️", key=f"del_cafe_{idx}"):
                     remover_item_diario("Café da Manhã", idx)
@@ -1083,15 +1118,12 @@ if st.session_state.planejamento_tipo == "Diário":
                 st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
             st.divider()
     
-    # Almoço
     if st.session_state.cardapio["Almoço"]:
         st.markdown("<div class='header-almoco'>🍜 ALMOÇO</div>", unsafe_allow_html=True)
         for idx, item in enumerate(st.session_state.cardapio["Almoço"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA:
-                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB:
-                st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
             with colC:
                 if st.button("🗑️", key=f"del_almoco_{idx}"):
                     remover_item_diario("Almoço", idx)
@@ -1099,15 +1131,12 @@ if st.session_state.planejamento_tipo == "Diário":
                 st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
             st.divider()
     
-    # Lanches
     if st.session_state.cardapio["Lanches"]:
         st.markdown("<div class='header-lanches'>🍎 LANCHES</div>", unsafe_allow_html=True)
         for idx, item in enumerate(st.session_state.cardapio["Lanches"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA:
-                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB:
-                st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
             with colC:
                 if st.button("🗑️", key=f"del_lanches_{idx}"):
                     remover_item_diario("Lanches", idx)
@@ -1115,15 +1144,12 @@ if st.session_state.planejamento_tipo == "Diário":
                 st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
             st.divider()
     
-    # Jantar
     if st.session_state.cardapio["Jantar"]:
         st.markdown("<div class='header-jantar'>🌙 JANTAR</div>", unsafe_allow_html=True)
         for idx, item in enumerate(st.session_state.cardapio["Jantar"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA:
-                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB:
-                st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
             with colC:
                 if st.button("🗑️", key=f"del_jantar_{idx}"):
                     remover_item_diario("Jantar", idx)
@@ -1132,7 +1158,6 @@ if st.session_state.planejamento_tipo == "Diário":
             st.divider()
 
 else:
-    # MODO SEMANAL
     st.markdown(f"### 📅 Planejamento Semanal - {st.session_state.dia_atual}")
     
     refeicoes = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
@@ -1145,10 +1170,8 @@ else:
             st.markdown(f"<div class='{headers[refeicao]}'>{icons[refeicao]} {refeicao.upper()}</div>", unsafe_allow_html=True)
             for idx, item in enumerate(itens):
                 colA, colB, colC = st.columns([3, 4, 1])
-                with colA:
-                    st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-                with colB:
-                    st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+                with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+                with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
                 with colC:
                     if st.button("🗑️", key=f"del_semanal_{refeicao}_{idx}"):
                         remover_item_semanal(st.session_state.dia_atual, refeicao, idx)
@@ -1166,7 +1189,7 @@ else:
 
 st.markdown("---")
 
-# 22. CÁLCULO DOS TOTAIS (DIÁRIO OU SEMANAL)
+# 22. CÁLCULO DOS TOTAIS
 totais = calcular_totais_cardapio(st.session_state.cardapio, st.session_state.planejamento_tipo, st.session_state.cardapio_semanal)
 
 total_kcal = totais['total_kcal']
@@ -1174,9 +1197,7 @@ total_prot = totais['total_prot']
 total_carb = totais['total_carb']
 total_gord = totais['total_gord']
 media_diaria = totais['media_diaria_kcal']
-dias = totais['dias']
 
-# Saldo energético baseado na MÉDIA DIÁRIA
 saldo_diario = get_total - media_diaria
 variacao_semanal = abs((saldo_diario * 7) / 7700)
 variacao_30dias = abs((saldo_diario * 30) / 7700)
@@ -1223,7 +1244,6 @@ if total_kcal > 0:
 # 24. LAUDO TÉCNICO COMPLETO
 st.markdown("## 📋 LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR")
 
-# Explicação do período
 if st.session_state.planejamento_tipo == "Diário":
     st.caption(f"📅 **Período analisado:** Hoje (1 dia) | Total de {total_kcal:.1f} kcal no dia")
 else:
@@ -1330,11 +1350,10 @@ if todos_alimentos:
 else:
     st.info("ℹ️ Nenhum alimento adicionado ainda. Adicione alimentos para gerar o resumo.")
 
-# 26. LAUDO FINAL RESUMIDO (para o resumo de impressão)
+# 26. RESUMO DO LAUDO TÉCNICO
 st.markdown("---")
 st.markdown("## 📋 RESUMO DO LAUDO TÉCNICO")
 
-# Calcular semanas para meta
 if saldo_diario != 0:
     if objetivo == "Perda de peso" and saldo_diario > 0:
         semanas_meta = abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
@@ -1360,11 +1379,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 26.5. BOTÃO PARA BAIXAR LAUDO COMPLETO EM CSV
+# 27. BOTÃO PARA BAIXAR LAUDO COMPLETO EM CSV
 st.markdown("---")
 st.markdown("### 📥 Exportar Dados Completos")
 
-# Classificação IMC
 if imc < 18.5:
     classificacao_imc = "Abaixo do peso"
 elif imc < 25:
@@ -1378,77 +1396,34 @@ elif imc < 40:
 else:
     classificacao_imc = "Obesidade Grau III"
 
-# Criar DataFrame com todas as informações do laudo
 dados_laudo = {
     "Informação": [
-        "📅 Data do relatório",
-        "📋 Tipo de Planejamento",
-        "📅 Período analisado",
-        "🎯 Objetivo",
-        "⚖️ Peso Atual (kg)",
-        "📏 Altura (cm)",
-        "🎂 Idade (anos)",
-        "⚥ Sexo",
-        "🎯 Meta de Peso (kg)",
-        "🏃 Frequência de Atividade Física",
-        "⚡ Gasto Total (GET) - kcal/dia",
-        "🔥 Metabolismo Basal (TMB) - kcal/dia",
-        "📊 IMC Atual",
-        "📊 Classificação IMC",
-        "🎯 Peso Ideal Estimado (kg)",
-        "🎯 Percentual de Gordura (%)",
-        "⚖️ Massa de Gordura (kg)",
-        "💪 Massa Magra (kg)",
-        "🥗 Consumo Total do Período (kcal)",
-        "📊 Média Diária de Consumo (kcal)",
-        "💪 Saldo Energético Diário (kcal)",
-        "📊 Status do Saldo",
-        "📉 Projeção de Variação em 30 dias (kg)",
-        "⏱️ Tempo Estimado para Meta",
-        "🥩 Macronutrientes - Proteínas (g)",
-        "🍞 Macronutrientes - Carboidratos (g)",
-        "🥑 Macronutrientes - Gorduras (g)",
-        "🥩 % Calórico de Proteínas",
-        "🍞 % Calórico de Carboidratos",
-        "🥑 % Calórico de Gorduras"
+        "Data do relatório", "Tipo de Planejamento", "Período analisado",
+        "Objetivo", "Peso Atual (kg)", "Altura (cm)", "Idade (anos)", "Sexo",
+        "Meta de Peso (kg)", "Frequência de Atividade Física",
+        "Gasto Total (GET) - kcal/dia", "Metabolismo Basal (TMB) - kcal/dia",
+        "IMC Atual", "Classificação IMC", "Peso Ideal Estimado (kg)",
+        "Percentual de Gordura (%)", "Massa de Gordura (kg)", "Massa Magra (kg)",
+        "Consumo Total do Período (kcal)", "Média Diária de Consumo (kcal)",
+        "Saldo Energético Diário (kcal)", "Status do Saldo",
+        "Projeção de Variação em 30 dias (kg)", "Tempo Estimado para Meta",
+        "Macronutrientes - Proteínas (g)", "Macronutrientes - Carboidratos (g)",
+        "Macronutrientes - Gorduras (g)"
     ],
     "Valor": [
         pd.Timestamp.now().strftime('%d/%m/%Y %H:%M'),
         st.session_state.planejamento_tipo,
         "Hoje (1 dia)" if st.session_state.planejamento_tipo == "Diário" else "Semana completa (7 dias)",
-        objetivo,
-        peso_at,
-        alt_cm,
-        idade,
-        sexo,
-        p_alvo,
-        naf_label,
-        get_total,
-        tmb,
-        composicao['imc'],
-        classificacao_imc,
-        composicao['peso_ideal'],
-        composicao['percentual_gordura'],
-        composicao['massa_gordura'],
-        composicao['massa_magra'],
-        total_kcal,
-        media_diaria,
-        abs(saldo_diario),
-        "Déficit" if saldo_diario > 0 else "Superávit",
-        variacao_30dias,
-        texto_tempo,
-        total_prot,
-        total_carb,
-        total_gord,
-        f"{((total_prot*4)/total_kcal*100 if total_kcal>0 else 0):.1f}%",
-        f"{((total_carb*4)/total_kcal*100 if total_kcal>0 else 0):.1f}%",
-        f"{((total_gord*9)/total_kcal*100 if total_kcal>0 else 0):.1f}%"
+        objetivo, peso_at, alt_cm, idade, sexo, p_alvo, naf_label,
+        get_total, tmb, composicao['imc'], classificacao_imc, composicao['peso_ideal'],
+        composicao['percentual_gordura'], composicao['massa_gordura'], composicao['massa_magra'],
+        total_kcal, media_diaria, abs(saldo_diario), "Déficit" if saldo_diario > 0 else "Superávit",
+        variacao_30dias, texto_tempo, total_prot, total_carb, total_gord
     ]
 }
 
 df_laudo = pd.DataFrame(dados_laudo)
 
-# Botões de download
 col_down1, col_down2 = st.columns(2)
 
 with col_down1:
@@ -1473,7 +1448,7 @@ with col_down2:
 
 st.caption("Os arquivos CSV podem ser abertos no Excel, Google Sheets ou qualquer editor de planilhas")
 
-# 27. INFORMAÇÃO OMS
+# 28. INFORMAÇÃO OMS
 with st.expander("📋 Informações OMS sobre Classificação de Alimentos"):
     st.markdown("""
     ### Classificação da OMS/IARC para alimentos:
@@ -1493,9 +1468,7 @@ with st.expander("📋 Informações OMS sobre Classificação de Alimentos"):
     **Fonte:** Agência Internacional de Pesquisa sobre o Câncer (IARC/OMS)
     """)
 
-# continua com o resto do código...
-
-# 28. BOTÃO DE LIMPAR (modo diário)
+# 29. BOTÃO DE LIMPAR
 if st.session_state.planejamento_tipo == "Diário":
     col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
     with col_btn2:
@@ -1504,7 +1477,7 @@ if st.session_state.planejamento_tipo == "Diário":
             if st.button("🗑️ LIMPAR CARDÁPIO COMPLETO", use_container_width=True):
                 limpar_cardapio()
 
-# 29. SAIR DO MODO IMPRESSÃO
+# 30. SAIR DO MODO IMPRESSÃO
 if st.session_state.modo_impressao:
     st.divider()
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -1513,7 +1486,20 @@ if st.session_state.modo_impressao:
             st.session_state.modo_impressao = False
             st.rerun()
 
-# 30. RODAPÉ
+# 31. DICAS DE IMPRESSÃO (antes do rodapé)
+with st.expander("🖨️ Dicas para melhor impressão", expanded=False):
+    st.markdown("""
+    ### ⚠️ Atenção
+    A impressão nativa do navegador (Ctrl+P) pode cortar gráficos, tabelas e legendas.
+    
+    ### ✅ Soluções recomendadas
+    
+    **1. Extensão GoFullPage (Chrome/Edge) - Gratuita**
+    - Capture a página inteira sem cortes
+    - Salve como PDF com um clique
+    """)
+    
+# 32. RODAPÉ
 st.markdown("""
 <div style='text-align: center; font-size: 11px; color: #666; padding: 15px;'>
     <b>BioGestão 360 v3.0</b> | Tabela TACO (UNICAMP) | Equações Harris-Benedict<br>
