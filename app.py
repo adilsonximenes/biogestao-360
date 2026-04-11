@@ -277,31 +277,50 @@ st.markdown("""
     .resumo-laudo p { color: #ffffff !important; margin: 10px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
     .resumo-laudo strong { color: #fbbf24 !important; }
     
+    .equipamento-adipometro {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #3b82f6;
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    .equipamento-fita {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #10b981;
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    .equipamento-complementar {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #f59e0b;
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    
     /* IMPRESSAO - CORRIGIDA */
     @media print {
-        /* SIDEBAR - ESCONDER */
         .stSidebar, [data-testid="stSidebarContent"] {
             display: none !important;
         }
         
-        /* FORCAR TEXTO PRETO EM TODOS OS ELEMENTOS */
         * {
             color: black !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
         
-        /* FORCAR CORES BRANCAS NOS FUNDOS */
         body, .stApp, .main, .block-container, div, section, 
         p, h1, h2, h3, h4, h5, h6, span, li, .stMarkdown, .stMetric,
         .card-com-explicacao, .perfil-gigante, .meta-gigante,
         .header-cafe, .header-almoco, .header-lanches, .header-jantar,
-        .resumo-laudo, .aviso-cientifico, .privacidade-box {
+        .resumo-laudo, .aviso-cientifico, .privacidade-box,
+        .equipamento-adipometro, .equipamento-fita, .equipamento-complementar {
             color: black !important;
             background: white !important;
         }
         
-        /* TITULO BioGestao 360 - CORRECAO DO GRADIENTE */
         .banner-profissional h1 {
             background: none !important;
             -webkit-background-clip: unset !important;
@@ -311,7 +330,6 @@ st.markdown("""
             text-shadow: none !important;
         }
         
-        /* TABELAS */
         table, .stDataFrame, .dataframe {
             border: 1px solid black !important;
             width: 100% !important;
@@ -326,7 +344,6 @@ st.markdown("""
             background: white !important;
         }
         
-        /* GRAFICOS - LEGENDAS VISIVEIS */
         .js-plotly-plot .legend text,
         .plotly .legend text,
         .legend text,
@@ -345,13 +362,11 @@ st.markdown("""
             color: black !important;
         }
         
-        /* BARRAS DOS GRAFICOS */
         .js-plotly-plot .bar,
         .plotly .bar {
             opacity: 1 !important;
         }
         
-        /* TEXTOS TRANSPARENTES */
         .stMarkdown, .stMarkdown p, .stMarkdown div, 
         .card-com-explicacao, .card-com-explicacao *,
         .resumo-laudo, .resumo-laudo *,
@@ -414,7 +429,6 @@ with st.sidebar:
     4️⃣ Escolha **Salvar como PDF** 🌳
     """)
     
-    # AVISO COMPLEMENTAR (pequeno, não intrusivo)
     st.caption("💡 **Dica:** Para capturar a página inteira sem cortes, use a extensão GoFullPage no Chrome/Edge")
 
 # 11. CARGA DE DADOS
@@ -608,7 +622,7 @@ with col_g3:
 st.markdown("---")
 
 # ============================================
-# 19.5. AVALIAÇÃO FÍSICA (Protocolo Jackson & Pollock)
+# 19.5. AVALIAÇÃO FÍSICA PROFISSIONAL (VERSÃO CORRIGIDA)
 # ============================================
 st.markdown("---")
 st.markdown("## 📏 Avaliação Física Profissional")
@@ -616,17 +630,26 @@ st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
 
 with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     st.markdown("""
+    ### 🧪 Métodos de Avaliação
+    
+    | Método | Equipamento | O que avalia | Unidade |
+    |--------|-------------|--------------|---------|
+    | **Dobras Cutâneas** | Adipômetro (plicômetro) | Gordura subcutânea → % de gordura corporal | mm (milímetros) |
+    | **Circunferências** | Fita métrica inelástica | Perímetros musculares e cintura | cm (centímetros) |
+    | **Força** | Handgrip (dinamômetro) | Força de preensão palmar | kg/f |
+    | **Flexibilidade** | Banco de Wells | Alongamento e flexibilidade | cm |
+    
+    ---
+    
     ### ⚠️ **Importante:**
     
     Esta seção é **recomendada para profissionais de Educação Física, Nutrição e Saúde**.
     
     - ✅ Os resultados são **mais precisos** que a estimativa por IMC
     - ✅ Utiliza o **Protocolo de Jackson & Pollock** (referência científica)
-    - ✅ Medidas separadas para **lado direito (D) e esquerdo (E)** - o sistema calcula automaticamente a média
-    - ⚠️ **Para resultado válido, as medidas devem ser feitas por um profissional qualificado** utilizando:
-      - Adipômetro científico
-      - Fita métrica (para circunferências, se aplicável)
-      - Balança calibrada
+    - ✅ Para cada dobra, realize **3 medições** e o sistema calcula automaticamente a média
+    - ✅ Medidas sempre no **lado direito** do corpo (hemicorpo direito)
+    - ⚠️ **Para resultado válido, as medidas devem ser feitas por um profissional qualificado**
     
     ---
     
@@ -646,111 +669,173 @@ with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     
     | Biotipo | Características | % Gordura típico | Recomendação |
     |---------|-----------------|------------------|--------------|
-    | **Endomorfo** | Tendência a acumular gordura, corpo mais arredondado, dificuldade para definir | Acima de 22% (H) / 28% (M) | Foco em déficit calórico + treino de força |
-    | **Mesomorfo** | Estrutura atlética natural, facilidade para ganhar músculos e manter baixo % gordura | 10-18% (H) / 18-25% (M) | Treino equilibrado, fácil manutenção |
-    | **Ectomorfo** | Metabolismo acelerado, dificuldade para ganhar peso e massa muscular | Abaixo de 10% (H) / 18% (M) | Foco em superávit calórico + treino de força |
-    
-    ---
-    
-    ### 📊 Graus de Obesidade por IMC
-    
-    | Classificação | IMC | Riscos |
-    |--------------|-----|--------|
-    | **Peso normal** | 18,5 - 24,9 | Risco mínimo |
-    | **Sobrepeso** | 25,0 - 29,9 | Risco moderado |
-    | **Obesidade Grau I** | 30,0 - 34,9 | Risco alto |
-    | **Obesidade Grau II** | 35,0 - 39,9 | Risco muito alto |
-    | **Obesidade Grau III** | ≥ 40 | Risco extremo (mórbida) |
+    | **Endomorfo** | Tendência a acumular gordura, corpo mais arredondado | Acima de 22% (H) / 28% (M) | Foco em déficit calórico + treino de força |
+    | **Mesomorfo** | Estrutura atlética natural, facilidade para ganhar músculos | 10-18% (H) / 18-25% (M) | Treino equilibrado, fácil manutenção |
+    | **Ectomorfo** | Metabolismo acelerado, dificuldade para ganhar peso | Abaixo de 10% (H) / 18% (M) | Foco em superávit calórico + treino de força |
     
     > **Fonte:** Organização Mundial da Saúde (OMS) e American College of Sports Medicine (ACSM)
     """)
 
-usar_avaliacao = st.checkbox("📊 Deseja realizar avaliação por dobras cutâneas?", value=False)
+usar_avaliacao = st.checkbox("📊 Deseja realizar avaliação física completa?", value=False)
 
 if usar_avaliacao:
-    st.markdown("### 📏 Insira as medidas das dobras cutâneas (em mm)")
-    st.caption("💡 **Instruções:** Meça cada dobra separadamente nos lados DIREITO (D) e ESQUERDO (E). O sistema calculará automaticamente a média para a fórmula científica.")
+    # ========== FUNÇÃO PARA CRIAR 3 MEDIÇÕES ==========
+    def criar_medicao_tripla(nome, valor_padrao=15.0, key_prefix=""):
+        st.markdown(f"**{nome}**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            m1 = st.number_input(f"Medição 1 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m1")
+        with col2:
+            m2 = st.number_input(f"Medição 2 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m2")
+        with col3:
+            m3 = st.number_input(f"Medição 3 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m3")
+        media = (m1 + m2 + m3) / 3
+        st.caption(f"📊 **Média: {media:.1f} mm** (diferença máxima permitida entre medidas: 5%)")
+        return media
+    
+    st.markdown("---")
+    
+    # SEÇÃO 1: ADIPÔMETRO (Dobras Cutâneas)
+    st.markdown("## 📏 SEÇÃO 1: DOBRAS CUTÂNEAS (ADIPÔMETRO)")
+    st.markdown("""
+    <div class='equipamento-adipometro'>
+        <strong>🔵 ADIPÔMETRO (Plicômetro):</strong> Utilizado para medir a espessura da gordura subcutânea. 
+        Estas medidas são usadas para calcular o <strong>percentual de gordura corporal</strong>.
+        <br>Unidade: <strong>milímetros (mm)</strong>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption("💡 **Instruções:** Para cada dobra, realize 3 medições. O sistema calculará automaticamente a média. Meça sempre no **lado direito** do corpo.")
     
     sexo_avaliacao = st.radio("Sexo para avaliação:", ["Masculino", "Feminino"], horizontal=True)
     
-    usar_7_dobras = False
-    soma_dobras = 0
+    st.markdown("### 💪 Braços")
+    triceps_media = criar_medicao_tripla("TRÍCEPS", 12.0, "adipometro")
+    biceps_media = criar_medicao_tripla("BÍCEPS", 10.0, "adipometro")
     
+    st.markdown("### 🏋️ Tronco")
+    peitoral = criar_medicao_tripla("PEITORAL", 15.0, "adipometro")
+    subescapular = criar_medicao_tripla("SUBESCAPULAR", 15.0, "adipometro")
+    abdominal = criar_medicao_tripla("ABDOME", 20.0, "adipometro")
+    
+    st.markdown("### 📐 Quadril / Axila")
+    axilar = criar_medicao_tripla("AXILAR MÉDIA", 12.0, "adipometro")
+    suprailiaca = criar_medicao_tripla("SUPRA-ILÍACA", 18.0, "adipometro")
+    
+    st.markdown("### 🆕 Supra-espinal (SS)")
+    st.caption("Utilizada no cálculo do somatotipo de Heath-Carter. Localizada 5-7 cm acima da espinha ilíaca anterior.")
+    supra_espinal = criar_medicao_tripla("SUPRA-ESPINAL", 14.0, "adipometro")
+    
+    st.markdown("### 🦵 Pernas")
+    coxa_media = criar_medicao_tripla("COXA", 25.0, "adipometro")
+    panturrilha_media = criar_medicao_tripla("PANTURRILHA", 15.0, "adipometro")
+    
+        # SEÇÃO 2: FITA MÉTRICA (Circunferências)
     st.markdown("---")
-    st.markdown("#### 📏 Braços (média entre D e E)")
+    st.markdown("## 📏 SEÇÃO 2: CIRCUNFERÊNCIAS (FITA MÉTRICA)")
+    st.markdown("""
+    <div class='equipamento-fita'>
+        <strong>🟢 FITA MÉTRICA:</strong> Utilizada para medir perímetros musculares e circunferências corporais.
+        Estas medidas avaliam o <strong>tamanho muscular</strong> e a distribuição da gordura.
+        <br>Unidade: <strong>centímetros (cm)</strong>
+    </div>
+    """, unsafe_allow_html=True)
     
-    col_braco1, col_braco2 = st.columns(2)
+    col_fita1, col_fita2 = st.columns(2)
+    with col_fita1:
+        st.markdown("**💪 Braço Contraído**")
+        braco_d = st.number_input("Braço Direito (cm)", 20.0, 60.0, 32.0, step=0.5)
+        braco_e = st.number_input("Braço Esquerdo (cm)", 20.0, 60.0, 31.5, step=0.5)
+        braco_media_cm = (braco_d + braco_e) / 2
+        st.caption(f"Média: {braco_media_cm:.1f} cm")
+        
+        st.markdown("**📏 Peitoral / Tórax**")
+        st.caption("Medida na altura dos mamilos, em expiração normal.")
+        peitoral_cm = st.number_input("Circunferência Torácica (cm)", 60.0, 150.0, 95.0, step=0.5)
+        
+        st.markdown("**📐 Cintura**")
+        cintura = st.number_input("Circunferência da Cintura (cm)", 50.0, 150.0, 85.0, step=0.5)
+        
+    with col_fita2:
+        st.markdown("**🦵 Coxa**")
+        coxa_cm_d = st.number_input("Coxa Direita (cm)", 40.0, 80.0, 55.0, step=0.5)
+        coxa_cm_e = st.number_input("Coxa Esquerda (cm)", 40.0, 80.0, 54.5, step=0.5)
+        coxa_media_cm = (coxa_cm_d + coxa_cm_e) / 2
+        st.caption(f"Média: {coxa_media_cm:.1f} cm")
+        
+        st.markdown("**🦵 Panturrilha**")
+        panturrilha_cm_d = st.number_input("Panturrilha Direita (cm)", 25.0, 50.0, 36.0, step=0.5)
+        panturrilha_cm_e = st.number_input("Panturrilha Esquerda (cm)", 25.0, 50.0, 35.5, step=0.5)
+        panturrilha_media_cm = (panturrilha_cm_d + panturrilha_cm_e) / 2
+        st.caption(f"Média: {panturrilha_media_cm:.1f} cm")
     
-    with col_braco1:
-        st.markdown("**TRÍCEPS**")
-        triceps_d = st.number_input("Tríceps Direito (mm)", 5.0, 50.0, 12.0, step=0.5)
-        triceps_e = st.number_input("Tríceps Esquerdo (mm)", 5.0, 50.0, 11.5, step=0.5)
+    st.markdown("**🫀 Relação Cintura-Quadril (RCQ)**")
+    quadril = st.number_input("Circunferência do Quadril (cm)", 60.0, 150.0, 95.0, step=0.5)
+    if quadril > 0:
+        rcq = cintura / quadril
+        if sexo_avaliacao == "Masculino":
+            risco_rcq = "⚠️ Risco cardiovascular elevado" if rcq > 0.95 else "✅ Risco cardiovascular normal"
+        else:
+            risco_rcq = "⚠️ Risco cardiovascular elevado" if rcq > 0.85 else "✅ Risco cardiovascular normal"
+        st.caption(f"Relação Cintura-Quadril: **{rcq:.2f}** - {risco_rcq}")
     
-    with col_braco2:
-        st.markdown("**BÍCEPS**")
-        biceps_d = st.number_input("Bíceps Direito (mm)", 5.0, 50.0, 10.0, step=0.5)
-        biceps_e = st.number_input("Bíceps Esquerdo (mm)", 5.0, 50.0, 9.5, step=0.5)
-    
+    # SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES
     st.markdown("---")
-    st.markdown("#### 🏋️ Tronco")
+    st.markdown("## 💪 SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES")
+    st.markdown("""
+    <div class='equipamento-complementar'>
+        <strong>🟡 Handgrip e Banco de Wells:</strong> Estas avaliações NÃO entram no cálculo do percentual de gordura,
+        mas são importantes para o perfil completo do avaliado.
+    </div>
+    """, unsafe_allow_html=True)
     
-    col_tronco1, col_tronco2, col_tronco3 = st.columns(3)
+    col_comp1, col_comp2 = st.columns(2)
+    with col_comp1:
+        st.markdown("**🤝 Força de Preensão Palmar (Handgrip)**")
+        st.caption("Mede a força de preensão manual, indicador de força geral e saúde cardiovascular.")
+        handgrip_d = st.number_input("Handgrip Direito (kg/f)", 10.0, 80.0, 35.0, step=0.5)
+        handgrip_e = st.number_input("Handgrip Esquerdo (kg/f)", 10.0, 80.0, 32.0, step=0.5)
+        handgrip_media = (handgrip_d + handgrip_e) / 2
+        
+        if sexo_avaliacao == "Masculino":
+            if handgrip_media < 35:
+                nivel_forca = "🔴 Fraco (abaixo da média)"
+            elif handgrip_media < 45:
+                nivel_forca = "🟡 Regular (na média)"
+            else:
+                nivel_forca = "🟢 Forte (acima da média)"
+        else:
+            if handgrip_media < 25:
+                nivel_forca = "🔴 Fraco (abaixo da média)"
+            elif handgrip_media < 35:
+                nivel_forca = "🟡 Regular (na média)"
+            else:
+                nivel_forca = "🟢 Forte (acima da média)"
+        st.caption(f"Média: {handgrip_media:.1f} kg/f - Nível: {nivel_forca}")
     
-    with col_tronco1:
-        st.markdown("**PEITORAL**")
-        peitoral = st.number_input("Peitoral (mm)", 5.0, 50.0, 15.0, step=0.5)
+    with col_comp2:
+        st.markdown("**🧘 Flexibilidade (Banco de Wells)**")
+        st.caption("Mede a flexibilidade da região lombar e posterior da coxa.")
+        wells = st.number_input("Banco de Wells (cm)", -20.0, 50.0, 25.0, step=0.5)
+        
+        if sexo_avaliacao == "Masculino":
+            if wells < 20:
+                nivel_flex = "🔴 Abaixo da média"
+            elif wells < 30:
+                nivel_flex = "🟡 Média"
+            else:
+                nivel_flex = "🟢 Acima da média"
+        else:
+            if wells < 25:
+                nivel_flex = "🔴 Abaixo da média"
+            elif wells < 35:
+                nivel_flex = "🟡 Média"
+            else:
+                nivel_flex = "🟢 Acima da média"
+        st.caption(f"Flexibilidade: {wells:.1f} cm - Nível: {nivel_flex}")
     
-    with col_tronco2:
-        st.markdown("**SUBESCAPULAR**")
-        subescapular = st.number_input("Subescapular (mm)", 5.0, 50.0, 15.0, step=0.5)
-    
-    with col_tronco3:
-        st.markdown("**ABDOME**")
-        abdominal = st.number_input("Abdome (mm)", 5.0, 60.0, 20.0, step=0.5)
-    
+    # ========== CÁLCULOS JACKSON & POLLOCK ==========
     st.markdown("---")
-    st.markdown("#### 📐 Quadril / Axila")
-    
-    col_quadril1, col_quadril2 = st.columns(2)
-    
-    with col_quadril1:
-        st.markdown("**AXILAR MÉDIA**")
-        axilar = st.number_input("Axilar Média (mm)", 5.0, 50.0, 12.0, step=0.5)
-    
-    with col_quadril2:
-        st.markdown("**SUPRA-ILÍACA**")
-        suprailiaca = st.number_input("Supra-ilíaca (mm)", 5.0, 60.0, 18.0, step=0.5)
-    
-    st.markdown("---")
-    st.markdown("#### 🦵 Pernas (média entre D e E)")
-    
-    col_perna1, col_perna2 = st.columns(2)
-    
-    with col_perna1:
-        st.markdown("**COXA**")
-        coxa_d = st.number_input("Coxa Direita (mm)", 10.0, 70.0, 25.0, step=0.5)
-        coxa_e = st.number_input("Coxa Esquerda (mm)", 10.0, 70.0, 24.5, step=0.5)
-    
-    with col_perna2:
-        st.markdown("**PANTURRILHA**")
-        panturrilha_d = st.number_input("Panturrilha Direita (mm)", 5.0, 50.0, 15.0, step=0.5)
-        panturrilha_e = st.number_input("Panturrilha Esquerda (mm)", 5.0, 50.0, 14.5, step=0.5)
-    
-    triceps_media = (triceps_d + triceps_e) / 2
-    biceps_media = (biceps_d + biceps_e) / 2
-    coxa_media = (coxa_d + coxa_e) / 2
-    panturrilha_media = (panturrilha_d + panturrilha_e) / 2
-    
-    with st.expander("📊 Ver médias calculadas (D+E)/2"):
-        st.markdown(f"""
-        - **Tríceps:** D: {triceps_d:.1f}mm | E: {triceps_e:.1f}mm | **Média: {triceps_media:.1f}mm**
-        - **Bíceps:** D: {biceps_d:.1f}mm | E: {biceps_e:.1f}mm | **Média: {biceps_media:.1f}mm**
-        - **Coxa:** D: {coxa_d:.1f}mm | E: {coxa_e:.1f}mm | **Média: {coxa_media:.1f}mm**
-        - **Panturrilha:** D: {panturrilha_d:.1f}mm | E: {panturrilha_e:.1f}mm | **Média: {panturrilha_media:.1f}mm**
-        """)
-    
-    st.markdown("---")
-    st.markdown("#### 🔬 Protocolo de Dobras")
+    st.markdown("#### 🔬 Protocolo de Dobras (Jackson & Pollock)")
     
     if sexo_avaliacao == "Masculino":
         usar_7_dobras = st.radio(
@@ -865,7 +950,7 @@ if usar_avaliacao:
         <div class='card-com-explicacao'>
             <div class='card-icon'>🎯</div>
             <div class='card-valor'>{percentual_gordura_jp:.1f}%</div>
-            <div class='card-titulo'>% Gordura</div>
+            <div class='card-titulo'>% Gordura (Adipômetro)</div>
             <div class='card-explicacao'>Classificação: {classif_gordura}<br>Risco: {risco_saude}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -999,7 +1084,7 @@ if usar_avaliacao:
     | **IMC** | {imc:.1f} ({classificacao_imc_laudo}) |
     """)
     
-    st.markdown("### 📏 Resultados da Avaliação por Dobras Cutâneas")
+    st.markdown("### 📏 Resultados da Avaliação por Dobras Cutâneas (Adipômetro)")
     st.markdown(f"""
     | Medida | Valor |
     |--------|-------|
@@ -1009,6 +1094,27 @@ if usar_avaliacao:
     | **Risco à Saúde** | {risco_saude} |
     | **Massa de Gordura** | {massa_gordura_jp:.1f} kg |
     | **Massa Magra** | {massa_magra_jp:.1f} kg |
+    """)
+    
+    st.markdown("### 📏 Resultados das Circunferências (Fita Métrica)")
+    st.markdown(f"""
+    | Medida | Valor |
+    |--------|-------|
+    | **Braço (média D+E)** | {braco_media_cm:.1f} cm |
+    | **Peitoral / Tórax** | {peitoral_cm:.1f} cm |
+    | **Coxa (média D+E)** | {coxa_media_cm:.1f} cm |
+    | **Panturrilha (média D+E)** | {panturrilha_media_cm:.1f} cm |
+    | **Cintura** | {cintura:.1f} cm |
+    | **Quadril** | {quadril:.1f} cm |
+    | **Relação Cintura-Quadril** | {rcq:.2f} - {risco_rcq} |
+    """)
+    
+    st.markdown("### 💪 Resultados das Avaliações Complementares")
+    st.markdown(f"""
+    | Medida | Valor |
+    |--------|-------|
+    | **Handgrip (média D+E)** | {handgrip_media:.1f} kg/f - {nivel_forca} |
+    | **Banco de Wells** | {wells:.1f} cm - {nivel_flex} |
     """)
     
     st.markdown("### 🧬 Biotipo Corporal")
@@ -1024,17 +1130,59 @@ if usar_avaliacao:
     st.markdown(f"""
     | Item | Informação |
     |------|-------------|
-    | **Protocolo** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
+    | **Protocolo de Dobras** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
     | **Fórmula de Densidade** | Siri (1961) |
+    | **Equipamentos** | Adipômetro, Fita Métrica, Handgrip, Banco de Wells |
     | **Referência** | ACSM - American College of Sports Medicine |
     """)
     
+    # Botão para baixar Laudo da Avaliação Física em CSV
     st.markdown("---")
+    st.markdown("#### 📥 Baixar Laudo da Avaliação Física")
+    
+    dados_laudo_avaliacao = {
+        "Categoria": [
+            "Data da Avaliação", "Sexo", "Idade", "Peso", "Altura", "IMC",
+            "Protocolo Utilizado", "Soma das Dobras (mm)", "Densidade Corporal (g/cm³)",
+            "% Gordura (Adipômetro)", "Classificação % Gordura", "Risco à Saúde",
+            "Massa de Gordura (kg)", "Massa Magra (kg)", "Biotipo",
+            "Circunferência do Braço (média cm)", "Circunferência do Peitoral (cm)",
+            "Circunferência da Coxa (média cm)", "Circunferência da Panturrilha (média cm)",
+            "Circunferência da Cintura (cm)", "Circunferência do Quadril (cm)", 
+            "Relação Cintura-Quadril (RCQ)",
+            "Força Handgrip (média kg/f)", "Nível de Força",
+            "Flexibilidade Banco de Wells (cm)", "Nível de Flexibilidade"
+        ],
+        "Valor": [
+            pd.Timestamp.now().strftime('%d/%m/%Y %H:%M'),
+            sexo_avaliacao, idade, f"{peso_at} kg", f"{alt_cm} cm", f"{imc:.1f} ({classificacao_imc_laudo})",
+            f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
+            f"{soma_dobras:.1f} mm", f"{densidade:.3f}",
+            f"{percentual_gordura_jp:.1f}%", classif_gordura, risco_saude,
+            f"{massa_gordura_jp:.1f} kg", f"{massa_magra_jp:.1f} kg", biotipo,
+            f"{braco_media_cm:.1f} cm", f"{peitoral_cm:.1f} cm",
+            f"{coxa_media_cm:.1f} cm", f"{panturrilha_media_cm:.1f} cm",
+            f"{cintura:.1f} cm", f"{quadril:.1f} cm", f"{rcq:.2f} - {risco_rcq}",
+            f"{handgrip_media:.1f} kg/f", nivel_forca,
+            f"{wells:.1f} cm", nivel_flex
+        ]
+    }
+    
+    df_laudo_avaliacao = pd.DataFrame(dados_laudo_avaliacao)
+    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(index=False, encoding='utf-8-sig')
+    
+    st.download_button(
+        "📄 Baixar Laudo da Avaliação Física (CSV)", 
+        data=csv_laudo_avaliacao, 
+        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv", 
+        mime="text/csv",
+        use_container_width=True
+    )
+    
     st.markdown(f"*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*")
-    st.markdown(f"*BioGestão 360 - {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M')}*")
 
 else:
-    st.info("💡 **Dica:** Para uma avaliação mais precisa, ative a opção acima e insira as medidas das dobras cutâneas. Recomendado para profissionais de Educação Física e Nutrição.")
+    st.info("💡 **Dica:** Ative a opção acima para realizar uma avaliação física completa com dobras cutâneas (adipômetro), circunferências (fita métrica), handgrip e banco de wells.")
 
 # ============================================
 # 20. MONTAGEM DO PLANO ALIMENTAR
