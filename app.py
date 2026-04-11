@@ -1448,8 +1448,8 @@ with col_down2:
 
 st.caption("Os arquivos CSV podem ser abertos no Excel, Google Sheets ou qualquer editor de planilhas")
 
-# 28. INFORMAÇÃO OMS
-with st.expander("📋 Informações OMS sobre Classificação de Alimentos"):
+# 28. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA
+with st.expander("📋 Informações OMS e Documentação Técnica", expanded=False):
     st.markdown("""
     ### Classificação da OMS/IARC para alimentos:
     
@@ -1466,6 +1466,23 @@ with st.expander("📋 Informações OMS sobre Classificação de Alimentos"):
     - ✅ Aumente consumo de fibras (frutas, verduras, legumes)
     
     **Fonte:** Agência Internacional de Pesquisa sobre o Câncer (IARC/OMS)
+    
+    ---
+    
+    ### 📚 Documentação Técnica do BioGestão 360
+    
+    Conheça as fórmulas científicas utilizadas no app:
+    
+    | Cálculo | Fórmula | Fonte |
+    |---------|---------|-------|
+    | **TMB (Homens)** | 66.47 + (13.75 × peso) + (5.0 × altura) - (6.75 × idade) | Harris-Benedict (1919) |
+    | **TMB (Mulheres)** | 655.1 + (9.56 × peso) + (1.85 × altura) - (4.67 × idade) | Harris-Benedict (1919) |
+    | **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × idade) - (16.2 ou 5.4) | Deurenberg et al. |
+    | **% Gordura (Dobras)** | Protocolo Jackson & Pollock + Fórmula de Siri | ACSM |
+    
+    📄 [📥 Baixar Documentação Técnica Completa](https://raw.githubusercontent.com/adilsonximenes/biogestao-360/main/DOCUMENTO_TECNICO.md)
+    
+    🔗 [🌐 Ver no GitHub](https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md)
     """)
 
 # 29. BOTÃO DE LIMPAR
@@ -1504,6 +1521,7 @@ st.markdown("""
 <div style='text-align: center; font-size: 11px; color: #666; padding: 15px;'>
     <b>BioGestão 360 v3.0</b> | Tabela TACO (UNICAMP) | Equações Harris-Benedict<br>
     <b>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</b><br>
-    Consulte sempre um nutricionista ou médico antes de fazer mudanças significativas na sua alimentação.
+    📚 <a href='https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md' target='_blank'>Documentação Técnica</a> | 
+    💻 <a href='https://github.com/adilsonximenes/biogestao-360' target='_blank'>Código Fonte</a>
 </div>
 """, unsafe_allow_html=True)
