@@ -319,18 +319,3 @@ Agradeço a todos que contribuírem academicamente para este projeto! Juntos pod
 Feito com ❤️ para a comunidade acadêmica e desenvolvimento open-source educacional
 
 *BioGestão 360 - Tecnologia humanizada para avaliação física* 🏋️‍♂️🤝💻
-```bash
-
----
-
-## 📋 Resumo do que foi adicionado/atualizado:
-
-| Seção | O que mudou |
-|-------|-------------|
-| **Título principal** | Adicionado "Indústria 5.0" e subtítulo "Tecnologia Humanizada" |
-| **Nova seção** | "O que é Indústria 5.0 e como o BioGestão 360 se encaixa?" com os 3 pilares |
-| **Novas funcionalidades** | Lista destacada com todas as atualizações (3 medições, adipômetro vs fita, supra-espinal, handgrip, wells, laudo CSV) |
-| **Metodologia científica** | Adicionadas tabelas completas de dobras, circunferências, handgrip, wells, classificação ACSM e biotipos |
-| **Privacidade** | Relacionada aos 3 pilares da Indústria 5.0 |
-| **Filosofia** | Frase de impacto: "A máquina calcula, o profissional interpreta" |
-| **Rodapé** | Nova assinatura: "BioGestão 360 - Tecnologia humanizada para avaliação física" |
