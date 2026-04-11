@@ -1,10 +1,40 @@
-# 🏋️‍♂️ BioGestão 360
+# 🏋️‍♂️ BioGestão 360 - Indústria 5.0
 
-**Sistema universal de análise de bioimpedância e planejamento alimentar baseado na metodologia TACO e protocolos científicos Harris-Benedict**
+## 🤖 Tecnologia Humanizada para Avaliação Física
+
+**BioGestão 360: Onde a precisão científica encontra o toque humano da Indústria 5.0**
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://biogestao-360.streamlit.app)
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
+---
+
+## 🌐 O que é Indústria 5.0 e como o BioGestão 360 se encaixa?
+
+**Indústria 5.0** representa a evolução da automação para a **colaboração humano-máquina**. Diferente da Indústria 4.0 (focada em eficiência e automação), a 5.0 coloca o **ser humano no centro** da tecnologia.
+
+### Os 3 pilares da Indústria 5.0 no BioGestão 360:
+
+| Pilar | Como o BioGestão 360 aplica |
+|-------|----------------------------|
+| **🌍 Centrado no Humano** | A tecnologia auxilia, mas a decisão final é do profissional. O sistema NÃO substitui o avaliador - apenas organiza os dados. |
+| **🌱 Sustentável** | 100% gratuito, código aberto, sem servidores externos. Zero carbono digital desnecessário. |
+| **🔄 Resiliente** | Processamento 100% local. Mesmo sem internet, o sistema funciona (após carregar). |
+
+### O que NÃO somos:
+
+❌ Não somos um sistema que "diagnostica" automaticamente
+❌ Não substituímos o profissional de Educação Física ou Nutrição
+❌ Não tomamos decisões por você
+
+### O que SOMOS:
+
+✅ Uma ferramenta que potencializa o seu conhecimento profissional
+✅ Um sistema que organiza dados para você interpretar
+✅ Um parceiro tecnológico que respeita o seu julgamento clínico
+
+> **"A máquina calcula, o profissional interpreta. O BioGestão 360 calcula para você interpretar melhor."**
 
 ---
 
@@ -21,19 +51,30 @@
 
 O **BioGestão 360** é uma ferramenta web **gratuita e de código aberto para fins acadêmicos** que permite:
 
+### 🆕 NOVAS FUNCIONALIDADES (Atualização 2026)
+
+- ✅ **Separação Adipômetro vs Fita Métrica** - Agora fica claro: dobras cutâneas (mm) para % de gordura, circunferências (cm) para tamanho muscular
+- ✅ **Sistema de 3 Medições com Média Automática** - Protocolo científico: 3 tentativas, média calculada automaticamente
+- ✅ **Dobra Supra-espinal (SS) Incluída** - Para cálculo do somatotipo de Heath-Carter
+- ✅ **Handgrip (Força)** - Avaliação de força de preensão palmar com classificação por nível
+- ✅ **Banco de Wells (Flexibilidade)** - Avaliação de flexibilidade com classificação por nível
+- ✅ **Laudo CSV Exclusivo** - Botão separado para baixar o laudo da avaliação física
+
+### Funcionalidades já existentes
+
 - ✅ **Análise de composição corporal** (percentual de gordura, massa magra, peso ideal)
 - ✅ **Cálculo do gasto energético** (TMB e GET baseado em Harris-Benedict)
-- ✅ **Planejamento alimentar** usando a Tabela TACO (Tabela Brasileira de Composição de Alimentos)
+- ✅ **Planejamento alimentar** usando a Tabela TACO
 - ✅ **Laudo técnico** com projeção de resultados em 30 dias
-- ✅ **Interface adaptativa** que segue o tema do seu sistema operacional
 - ✅ **Modo de impressão econômica** para economizar tinta/papel
 
 ### 🎯 **Público-alvo**
 
+- Profissionais de Educação Física
+- Nutricionistas
 - Estudantes de nutrição e educação física
-- Profissionais da saúde que buscam uma ferramenta de apoio educacional
-- Desenvolvedores interessados em projetos de saúde tech
 - Pesquisadores da área de nutrição e metabolismo
+- Desenvolvedores interessados em projetos de saúde tech
 
 ---
 
@@ -58,7 +99,15 @@ Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial
 
 ---
 
-## 🧠 **Metodologia Científica**
+## 🧠 **Metodologia Científica - Indústria 5.0**
+
+### 3 MEDIÇÕES COM MÉDIA AUTOMÁTICA (Protocolo Científico)
+
+O sistema implementa o protocolo padrão de avaliação física:
+- 3 medições não consecutivas para cada dobra cutânea
+- Média calculada automaticamente
+- Diferença máxima entre medidas: 5%
+- Caso exceda, o profissional deve realizar nova série
 
 ### Fórmulas utilizadas:
 
@@ -67,9 +116,63 @@ Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial
 | **TMB (Homens)** | 66.47 + (13.75 × peso) + (5.0 × altura) - (6.75 × idade) | Harris-Benedict (1919) |
 | **TMB (Mulheres)** | 655.1 + (9.56 × peso) + (1.85 × altura) - (4.67 × idade) | Harris-Benedict (1919) |
 | **GET** | TMB × Fator de Atividade | WHO/FAO |
-| **% Gordura** | (1.20 × IMC) + (0.23 × idade) - (16.2 ou 5.4) | Deurenberg et al. |
+| **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × idade) - (16.2 ou 5.4) | Deurenberg et al. |
+| **% Gordura (Dobras)** | Jackson & Pollock + Siri | ACSM |
+| **Densidade Corporal** | Protocolo Jackson & Pollock (3 ou 7 dobras) | Jackson AS, Pollock ML (1978) |
+| **% Gordura por Densidade** | (4.95 / Densidade - 4.5) × 100 | Siri WE (1961) |
 | **Peso Ideal** | IMC ideal (21.7/21.3) × altura² | Metropolitan Life Insurance |
 | **Variação 30 dias** | Saldo calórico × 30 ÷ 7700 | Termodinâmica (7700 kcal/kg) |
+
+### Dobras Cutâneas Disponíveis:
+
+| # | Dobra | Localização | Protocolo |
+|---|-------|-------------|-----------|
+| 1 | Tríceps | Face posterior do braço | 3 ou 7 dobras |
+| 2 | Bíceps | Face anterior do braço | 7 dobras |
+| 3 | Peitoral | Metade axila-mamilo | 3 ou 7 dobras |
+| 4 | Subescapular | 2cm abaixo da escápula | 7 dobras |
+| 5 | Axilar Média | Linha axilar média | 7 dobras |
+| 6 | Supra-ilíaca | Sobre a crista ilíaca | 3 ou 7 dobras |
+| 7 | Supra-espinal | 5-7cm acima da espinha ilíaca | Somatotipo |
+| 8 | Abdominal | 2cm à direita do umbigo | 3 ou 7 dobras |
+| 9 | Coxa | Ponto médio inguinal-patela | 3 ou 7 dobras |
+| 10 | Panturrilha | Maior perímetro da perna | 7 dobras |
+
+### Circunferências (Fita Métrica):
+
+| Medida | Localização | Unidade |
+|--------|-------------|---------|
+| Braço Contraído | Maior circunferência com contração | cm |
+| Peitoral / Tórax | Altura dos mamilos, expiração normal | cm |
+| Cintura | Ponto médio costela-crista ilíaca | cm |
+| Quadril | Maior circunferência glútea | cm |
+| Coxa | Terço proximal da coxa | cm |
+| Panturrilha | Maior circunferência da perna | cm |
+
+### Avaliações Complementares:
+
+| Equipamento | O que avalia | Classificação (Homens) | Classificação (Mulheres) |
+|-------------|--------------|------------------------|--------------------------|
+| **Handgrip** | Força de preensão palmar | Fraco <35kg / Regular 35-45kg / Forte >45kg | Fraco <25kg / Regular 25-35kg / Forte >35kg |
+| **Banco de Wells** | Flexibilidade | Abaixo <20cm / Média 20-30cm / Acima >30cm | Abaixo <25cm / Média 25-35cm / Acima >35cm |
+
+### Classificação do Percentual de Gordura (ACSM):
+
+| Classificação | Homens | Mulheres | Risco |
+|---------------|--------|----------|-------|
+| Gordura Essencial | 2-5% | 10-13% | Mínimo |
+| Atleta | 6-13% | 14-20% | Muito baixo |
+| Saudável | 14-17% | 21-24% | Baixo |
+| Aceitável | 18-21% | 25-31% | Moderado |
+| Obesidade | >22% | >32% | Alto |
+
+### Biotipos Corporais (Heath-Carter):
+
+| Biotipo | Característica | % Gordura típico | Recomendação |
+|---------|----------------|------------------|--------------|
+| **Endomorfo** | Tendência a acumular gordura | >25% (H) / >28% (M) | Déficit calórico + treino de força |
+| **Mesomorfo** | Estrutura atlética natural | 10-18% (H) / 18-25% (M) | Treino equilibrado |
+| **Ectomorfo** | Metabolismo acelerado | <10% (H) / <18% (M) | Superávit calórico + força |
 
 ### Fatores de Atividade Física (NAF):
 
@@ -127,14 +230,12 @@ biogestao-360/
 └── .gitignore             # Arquivos ignorados pelo Git
 ```
 ## 🖨️ Funcionalidade de Impressão
+
 O sistema possui um modo especial de impressão que:
 
 ✅ Economiza tinta (fundo branco, texto preto)
-
 ✅ Remove elementos desnecessários (sidebar, botões)
-
 ✅ Otimiza margens para papel
-
 ✅ Mantém todas as informações importantes
 
 Como usar:
@@ -149,28 +250,8 @@ Selecione "Imprimir"
 
 Configure "Margens: Mínimas"
 
-## 🤝 Como Contribuir (Academicamente)
-Este é um projeto acadêmico e toda contribuição educacional é bem-vinda!
-
-Você pode ajudar de várias formas:
-🐛 Reportar bugs → Abra uma Issue
-
-💡 Sugerir melhorias → Abra uma Issue
-
-📚 Melhorar documentação → Corrija erros ou adicione exemplos
-
-🔬 Validar dados científicos → Compare com outras fontes
-
-🧪 Testar em diferentes cenários → Compartilhe os resultados
-
-⚠️ Importante sobre contribuições:
-Todas as contribuições devem ser para fins acadêmicos
-
-Não serão aceitas contribuições para uso comercial
-
-Ao contribuir, você concorda com a licença CC BY-NC-ND 4.0
-
 ## 📊 Base de Dados - Tabela TACO
+
 Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
 
 Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
@@ -181,23 +262,19 @@ Ano da versão utilizada: 2011 (última versão completa disponível publicament
 
 ⚠️ Nota sobre os dados: A tabela TACO tem limitações e pode não refletir variações sazonais, regionais ou de preparo dos alimentos. Este projeto usa os dados "como estão" para fins educacionais.
 
-## 🛡️ Privacidade e Segurança
+## 🛡️ Privacidade e Segurança - Indústria 5.0
 Zero-Footprint Total! 🔒
-
-✅ Nenhum dado é enviado para servidores externos
-
-✅ Todo processamento é 100% local no seu navegador
-
-✅ Não há banco de dados, login ou coleta de informações
-
+✅ Nenhum dado é enviado para servidores externos (Resiliência)
+✅ Todo processamento é 100% local no seu navegador (Sustentabilidade)
+✅ Não há banco de dados, login ou coleta de informações (Centrado no humano)
 ✅ Ao fechar a aba, todos os dados são permanentemente deletados
-
 ✅ Você pode usar sem preocupações com privacidade
+
+"Seus dados são seus. O BioGestão 360 apenas organiza o que você já sabe."
 
 ## 📄 Licença
 Este projeto está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 
-Resumo da licença:
 Permissão	Status
 ✅ Compartilhar (copiar e redistribuir)	Permitido com atribuição
 ✅ Uso acadêmico e educacional	Permitido
@@ -212,6 +289,8 @@ Autor: ADILSON GONCALVES XIMENES
 
 Finalidade: Exclusivamente acadêmica e educacional
 
+Filosofia: Indústria 5.0 - Tecnologia a serviço do humano
+
 Contato para uso comercial: Abrir uma Issue no GitHub
 
 ## ⭐ Reconhecimentos
@@ -219,7 +298,13 @@ UNICAMP - Tabela TACO
 
 Harris & Benedict - Equação de metabolismo basal
 
-Deurenberg et al. - Fórmula de composição corporal
+Jackson & Pollock - Protocolo de dobras cutâneas
+
+Siri WE - Fórmula de densidade para % de gordura
+
+Deurenberg et al. - Fórmula de composição corporal por IMC
+
+ACSM - Classificações de referência
 
 Comunidade Streamlit - Framework incrível
 
@@ -229,41 +314,23 @@ Issues: GitHub Issues
 Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
 
 ## 🙏 Agradecimentos
-Agradeço a todos que contribuírem academicamente para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais pessoas a entenderem sua saúde metabólica.
+Agradeço a todos que contribuírem academicamente para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais profissionais a realizarem avaliações físicas de qualidade.
 
 Feito com ❤️ para a comunidade acadêmica e desenvolvimento open-source educacional
+
+*BioGestão 360 - Tecnologia humanizada para avaliação física* 🏋️‍♂️🤝💻
 ```bash
 
 ---
 
-## 📜 **Arquivo LICENSE (crie um arquivo `LICENSE` no repositório)**
+## 📋 Resumo do que foi adicionado/atualizado:
 
-```markdown
-# Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
-
-Creative Commons Corporation ("Creative Commons") não é uma sociedade de advogados e não presta serviços jurídicos ou aconselhamento. A distribuição desta licença não cria uma relação advogado-cliente ou qualquer outra relação. A Creative Commons disponibiliza as suas licenças e informações relacionadas "no estado em que se encontram". A Creative Commons não oferece garantias em relação às suas licenças, aos materiais licenciados nos seus termos, ou a qualquer informação relacionada. A Creative Commons exime-se de toda a responsabilidade por danos resultantes da sua utilização na máxima medida possível.
-
-### Uso da Licença Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
-
-Este trabalho está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International. Para visualizar uma cópia desta licença, visite http://creativecommons.org/licenses/by-nc-nd/4.0/ ou envie uma carta para Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
-
-### Você tem permissão para:
-
-- **Compartilhar** — copiar e redistribuir o material em qualquer suporte ou formato
-
-### Sob as seguintes condições:
-
-- **Atribuição** — Você deve dar o crédito apropriado, prover um link para a licença e indicar se mudanças foram feitas. Você deve fazê-lo em qualquer circunstância razoável, mas de nenhuma maneira que sugira que o licenciante apoia você ou o seu uso.
-
-- **NãoComercial** — Você não pode usar o material para fins comerciais.
-
-- **SemDerivações** — Se você remixar, transformar ou criar a partir do material, você não pode distribuir o material modificado.
-
-- **Sem restrições adicionais** — Você não pode aplicar termos jurídicos ou medidas de caráter tecnológico que restrinjam legalmente outros de fazerem algo que a licença permita.
-
-### Avisos:
-
-Não é necessário cumprir com os termos da licença em relação aos elementos do material que estejam no domínio público ou cuja utilização seja permitida por uma exceção ou limite aplicável.
-
-Não são dadas quaisquer garantias. A licença pode não lhe dar todas as autorizações necessárias para o uso pretendido. Por exemplo, outros direitos, tais como direitos de imagem, de privacidade ou direitos morais, podem limitar o uso do material.
-```
+| Seção | O que mudou |
+|-------|-------------|
+| **Título principal** | Adicionado "Indústria 5.0" e subtítulo "Tecnologia Humanizada" |
+| **Nova seção** | "O que é Indústria 5.0 e como o BioGestão 360 se encaixa?" com os 3 pilares |
+| **Novas funcionalidades** | Lista destacada com todas as atualizações (3 medições, adipômetro vs fita, supra-espinal, handgrip, wells, laudo CSV) |
+| **Metodologia científica** | Adicionadas tabelas completas de dobras, circunferências, handgrip, wells, classificação ACSM e biotipos |
+| **Privacidade** | Relacionada aos 3 pilares da Indústria 5.0 |
+| **Filosofia** | Frase de impacto: "A máquina calcula, o profissional interpreta" |
+| **Rodapé** | Nova assinatura: "BioGestão 360 - Tecnologia humanizada para avaliação física" |
