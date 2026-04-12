@@ -9,20 +9,28 @@ import io
 from PIL import Image
 
 # 1. CONFIGURAÇÃO DE PÁGINA
-st.set_page_config(page_title="BioGestão 360 - Profissional", layout="wide", page_icon="🏋️")
+st.set_page_config(
+    page_title="BioGestão 360 - Profissional", layout="wide", page_icon="🏋️"
+)
 
 # 2. INICIALIZAÇÕES
-if 'modo_impressao' not in st.session_state:
+if "modo_impressao" not in st.session_state:
     st.session_state.modo_impressao = False
-if 'planejamento_tipo' not in st.session_state:
+if "planejamento_tipo" not in st.session_state:
     st.session_state.planejamento_tipo = "Diário"
-if 'cardapio_semanal' not in st.session_state:
+if "cardapio_semanal" not in st.session_state:
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
-    st.session_state.cardapio_semanal = {dia: {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]} for dia in dias_semana}
-if 'dia_atual' not in st.session_state:
+    st.session_state.cardapio_semanal = {
+        dia: {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+        for dia in dias_semana
+    }
+if "dia_atual" not in st.session_state:
     st.session_state.dia_atual = "Segunda"
-if 'cardapio' not in st.session_state:
-    st.session_state.cardapio = {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+if "cardapio" not in st.session_state:
+    st.session_state.cardapio = {
+        k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+    }
+
 
 # 3. FUNÇÃO PARA GERAR QR CODE PIX
 def gerar_qr_code_pix():
@@ -32,9 +40,10 @@ def gerar_qr_code_pix():
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
     img_bytes = io.BytesIO()
-    img.save(img_bytes, format='PNG')
+    img.save(img_bytes, format="PNG")
     img_bytes.seek(0)
     return img_bytes
+
 
 # 4. FUNÇÃO PARA GERAR BOTÃO PAYPAL
 def get_paypal_html():
@@ -56,74 +65,99 @@ def get_paypal_html():
     </div>
     """
 
+
 # 5. ALIMENTOS DE RISCO (Grupo OMS)
 def carregar_alimentos_risco():
     return {
-        'grupo1': {
-            'alimentos': ['salsicha', 'presunto', 'linguiça', 'bacon', 'salame', 'mortadela', 'nuggets', 'peixe salgado'],
-            'mensagem': '⚠️ GRUPO 1: CANCERÍGENO PARA HUMANOS! Consumo diário de 50g aumenta em 18% o risco de câncer colorretal.'
+        "grupo1": {
+            "alimentos": [
+                "salsicha",
+                "presunto",
+                "linguiça",
+                "bacon",
+                "salame",
+                "mortadela",
+                "nuggets",
+                "peixe salgado",
+            ],
+            "mensagem": "⚠️ GRUPO 1: CANCERÍGENO PARA HUMANOS! Consumo diário de 50g aumenta em 18% o risco de câncer colorretal.",
         },
-        'grupo2a': {
-            'alimentos': ['carne bovina', 'carne de porco', 'carneiro', 'cordeiro', 'vitela'],
-            'mensagem': '⚠️ GRUPO 2A: PROVAVELMENTE CANCERÍGENO! Limite a 500g por semana.'
+        "grupo2a": {
+            "alimentos": [
+                "carne bovina",
+                "carne de porco",
+                "carneiro",
+                "cordeiro",
+                "vitela",
+            ],
+            "mensagem": "⚠️ GRUPO 2A: PROVAVELMENTE CANCERÍGENO! Limite a 500g por semana.",
         },
-        'grupo2b': {
-            'alimentos': ['aspartame', 'bebida adoçada', 'refrigerante diet', 'adoçante artificial'],
-            'mensagem': '⚠️ GRUPO 2B: POSSIVELMENTE CANCERÍGENO! Ingestão diária aceitável: 40mg/kg.'
-        }
+        "grupo2b": {
+            "alimentos": [
+                "aspartame",
+                "bebida adoçada",
+                "refrigerante diet",
+                "adoçante artificial",
+            ],
+            "mensagem": "⚠️ GRUPO 2B: POSSIVELMENTE CANCERÍGENO! Ingestão diária aceitável: 40mg/kg.",
+        },
     }
+
 
 ALIMENTOS_RISCO = carregar_alimentos_risco()
 
+
 def verificar_risco_oms(nome_alimento):
     nome_lower = nome_alimento.lower()
-    for item in ALIMENTOS_RISCO['grupo1']['alimentos']:
+    for item in ALIMENTOS_RISCO["grupo1"]["alimentos"]:
         if item in nome_lower:
-            return ALIMENTOS_RISCO['grupo1']['mensagem']
-    for item in ALIMENTOS_RISCO['grupo2a']['alimentos']:
+            return ALIMENTOS_RISCO["grupo1"]["mensagem"]
+    for item in ALIMENTOS_RISCO["grupo2a"]["alimentos"]:
         if item in nome_lower:
-            return ALIMENTOS_RISCO['grupo2a']['mensagem']
-    for item in ALIMENTOS_RISCO['grupo2b']['alimentos']:
+            return ALIMENTOS_RISCO["grupo2a"]["mensagem"]
+    for item in ALIMENTOS_RISCO["grupo2b"]["alimentos"]:
         if item in nome_lower:
-            return ALIMENTOS_RISCO['grupo2b']['mensagem']
+            return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
     return None
+
 
 # 6. FUNÇÃO PARA CALCULAR COMPOSIÇÃO CORPORAL
 def calcular_composicao_corporal(peso, altura, idade, sexo):
     altura_m = altura / 100
-    imc = peso / (altura_m ** 2)
-    
+    imc = peso / (altura_m**2)
+
     if sexo == "Masculino":
         percentual_gordura = (1.20 * imc) + (0.23 * idade) - 16.2
     else:
         percentual_gordura = (1.20 * imc) + (0.23 * idade) - 5.4
-    
+
     percentual_gordura = max(5, min(50, percentual_gordura))
     massa_gordura = peso * (percentual_gordura / 100)
     massa_magra = peso - massa_gordura
-    
+
     if sexo == "Masculino":
         imc_ideal = 21.7
     else:
         imc_ideal = 21.3
-    
-    peso_ideal = imc_ideal * (altura_m ** 2)
-    
+
+    peso_ideal = imc_ideal * (altura_m**2)
+
     return {
-        'percentual_gordura': round(percentual_gordura, 1),
-        'massa_gordura': round(massa_gordura, 1),
-        'massa_magra': round(massa_magra, 1),
-        'peso_ideal': round(peso_ideal, 1),
-        'imc': round(imc, 1)
+        "percentual_gordura": round(percentual_gordura, 1),
+        "massa_gordura": round(massa_gordura, 1),
+        "massa_magra": round(massa_magra, 1),
+        "peso_ideal": round(peso_ideal, 1),
+        "imc": round(imc, 1),
     }
+
 
 # 7. FUNÇÃO PARA CALCULAR TOTAIS (DIÁRIO OU SEMANAL)
 def calcular_totais_cardapio(cardapio, planejamento_tipo, cardapio_semanal=None):
     if planejamento_tipo == "Diário":
-        total_kcal = sum(item['Kcal'] for ref in cardapio.values() for item in ref)
-        total_prot = sum(item['P'] for ref in cardapio.values() for item in ref)
-        total_carb = sum(item['C'] for ref in cardapio.values() for item in ref)
-        total_gord = sum(item['G'] for ref in cardapio.values() for item in ref)
+        total_kcal = sum(item["Kcal"] for ref in cardapio.values() for item in ref)
+        total_prot = sum(item["P"] for ref in cardapio.values() for item in ref)
+        total_carb = sum(item["C"] for ref in cardapio.values() for item in ref)
+        total_gord = sum(item["G"] for ref in cardapio.values() for item in ref)
         dias = 1
     else:
         total_kcal = 0
@@ -134,51 +168,66 @@ def calcular_totais_cardapio(cardapio, planejamento_tipo, cardapio_semanal=None)
         for dia in cardapio_semanal:
             for ref in cardapio_semanal[dia].values():
                 for item in ref:
-                    total_kcal += item['Kcal']
-                    total_prot += item['P']
-                    total_carb += item['C']
-                    total_gord += item['G']
-    
+                    total_kcal += item["Kcal"]
+                    total_prot += item["P"]
+                    total_carb += item["C"]
+                    total_gord += item["G"]
+
     return {
-        'total_kcal': total_kcal,
-        'total_prot': total_prot,
-        'total_carb': total_carb,
-        'total_gord': total_gord,
-        'media_diaria_kcal': total_kcal / dias if dias > 0 else 0,
-        'dias': dias
+        "total_kcal": total_kcal,
+        "total_prot": total_prot,
+        "total_carb": total_carb,
+        "total_gord": total_gord,
+        "media_diaria_kcal": total_kcal / dias if dias > 0 else 0,
+        "dias": dias,
     }
+
 
 # 8. FUNÇÕES DE LIMPEZA
 def limpar_cardapio():
     if st.session_state.planejamento_tipo == "Diário":
-        st.session_state.cardapio = {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+        st.session_state.cardapio = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
     else:
-        st.session_state.cardapio_semanal[st.session_state.dia_atual] = {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+        st.session_state.cardapio_semanal[st.session_state.dia_atual] = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
     st.success("✅ Cardápio limpo com sucesso!")
     st.rerun()
+
 
 def remover_item_semanal(dia, refeicao, idx):
     st.session_state.cardapio_semanal[dia][refeicao].pop(idx)
     st.rerun()
 
+
 def remover_item_diario(refeicao, idx):
     st.session_state.cardapio[refeicao].pop(idx)
     st.rerun()
 
+
 def limpar_dia_semanal(dia):
-    st.session_state.cardapio_semanal[dia] = {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+    st.session_state.cardapio_semanal[dia] = {
+        k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+    }
     st.success(f"✅ Cardápio de {dia} limpo!")
     st.rerun()
+
 
 def limpar_semana_completa():
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
     for dia in dias_semana:
-        st.session_state.cardapio_semanal[dia] = {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+        st.session_state.cardapio_semanal[dia] = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
     st.success("✅ Semana inteira limpa!")
     st.rerun()
 
+
 # 9. CSS PROFISSIONAL
-st.markdown("""
+st.markdown(
+    """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
@@ -277,27 +326,47 @@ st.markdown("""
     .resumo-laudo p { color: #ffffff !important; margin: 10px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
     .resumo-laudo strong { color: #fbbf24 !important; }
     
-    .equipamento-adipometro {
-        background: linear-gradient(135deg, #1e3a5f, #0f172a);
-        border-left: 5px solid #3b82f6;
-        padding: 10px 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    .equipamento-fita {
-        background: linear-gradient(135deg, #1e3a5f, #0f172a);
-        border-left: 5px solid #10b981;
-        padding: 10px 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    .equipamento-complementar {
-        background: linear-gradient(135deg, #1e3a5f, #0f172a);
-        border-left: 5px solid #f59e0b;
-        padding: 10px 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
+/* CORREÇÃO - EQUIPAMENTO ADIPÔMETRO */
+.equipamento-adipometro {
+    background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    border-left: 5px solid #3b82f6;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin: 10px 0;
+    color: #ffffff !important;
+}
+
+.equipamento-adipometro strong {
+    color: #fbbf24 !important;
+}
+
+/* CORREÇÃO - EQUIPAMENTO FITA MÉTRICA */
+.equipamento-fita {
+    background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    border-left: 5px solid #10b981;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin: 10px 0;
+    color: #ffffff !important;
+}
+
+.equipamento-fita strong {
+    color: #fbbf24 !important;
+}
+
+/* CORREÇÃO - EQUIPAMENTO COMPLEMENTAR */
+.equipamento-complementar {
+    background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    border-left: 5px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin: 10px 0;
+    color: #ffffff !important;
+}
+
+.equipamento-complementar strong {
+    color: #fbbf24 !important;
+}
     
     /* IMPRESSAO - CORRIGIDA */
     @media print {
@@ -377,76 +446,103 @@ st.markdown("""
         }
     }
 </style>
-""", unsafe_allow_html=True) 
+""",
+    unsafe_allow_html=True,
+)
 
 # 10. SIDEBAR
 with st.sidebar:
     st.markdown("### 👤 Perfil Biológico")
     st.markdown("---")
-    
+
     peso_at = st.number_input("📊 Peso Atual (kg)", 30.0, 250.0, 85.8)
     alt_cm = st.number_input("📏 Altura (cm)", 100, 230, 164)
     idade = st.number_input("🎂 Idade (anos)", 10, 110, 47)
     sexo = st.selectbox("⚥ Sexo Biológico", ["Masculino", "Feminino"])
-    
+
     st.markdown("---")
     st.markdown("### 🎯 Objetivos")
-    
-    objetivo = st.radio("🎯 Seu objetivo principal:", ["Perda de peso", "Ganho de peso"], horizontal=True)
-    
+
+    objetivo = st.radio(
+        "🎯 Seu objetivo principal:",
+        ["Perda de peso", "Ganho de peso"],
+        horizontal=True,
+    )
+
     if objetivo == "Perda de peso":
-        p_alvo = st.number_input("🎯 Meta de Peso (kg)", 10.0, peso_at - 0.1, peso_at - 10)
+        p_alvo = st.number_input(
+            "🎯 Meta de Peso (kg)", 10.0, peso_at - 0.1, peso_at - 10
+        )
         st.caption(f"Para perda de peso, a meta deve ser menor que {peso_at} kg")
     else:
-        p_alvo = st.number_input("🎯 Meta de Peso (kg)", peso_at + 0.1, 300.0, peso_at + 10)
+        p_alvo = st.number_input(
+            "🎯 Meta de Peso (kg)", peso_at + 0.1, 300.0, peso_at + 10
+        )
         st.caption(f"Para ganho de peso, a meta deve ser maior que {peso_at} kg")
-    
+
     opcoes_naf = {
         "Sedentário (Sem exercício)": 1.2,
         "Leve (1-3 dias/sem)": 1.375,
         "Moderado (3-5 dias/sem)": 1.55,
         "Intenso (6-7 dias/sem)": 1.725,
-        "Atleta (Treino pesado 2x dia)": 1.9
+        "Atleta (Treino pesado 2x dia)": 1.9,
     }
-    naf_label = st.selectbox("🏃 Frequência de Atividade Física:", list(opcoes_naf.keys()))
+    naf_label = st.selectbox(
+        "🏃 Frequência de Atividade Física:", list(opcoes_naf.keys())
+    )
     naf_val = opcoes_naf[naf_label]
-    
+
     st.markdown("---")
-    
-    planejamento_tipo = st.radio("📅 Tipo de Planejamento:", ["Diário", "Semanal"], horizontal=True)
+
+    planejamento_tipo = st.radio(
+        "📅 Tipo de Planejamento:", ["Diário", "Semanal"], horizontal=True
+    )
     if planejamento_tipo != st.session_state.planejamento_tipo:
         st.session_state.planejamento_tipo = planejamento_tipo
         st.rerun()
-    
+
     st.markdown("---")
-    
-    st.info("""
+
+    st.info(
+        """
     🖨️ **IMPRESSÃO**
     
     1️⃣ Clique nos **3 pontinhos (⋮)** ao lado do botão Deploy
     2️⃣ Selecione **Imprimir**
     3️⃣ Mantenha as **margens padrão** do navegador
     4️⃣ Escolha **Salvar como PDF** 🌳
-    """)
-    
-    st.caption("💡 **Dica:** Para capturar a página inteira sem cortes, use a extensão GoFullPage no Chrome/Edge")
+    """
+    )
+
+    st.caption(
+        "💡 **Dica:** Para capturar a página inteira sem cortes, use a extensão GoFullPage no Chrome/Edge"
+    )
+
 
 # 11. CARGA DE DADOS
 @st.cache_data
 def load_db():
-    df_a = pd.read_csv('alimentos.csv') if os.path.exists('alimentos.csv') else pd.DataFrame()
+    df_a = (
+        pd.read_csv("alimentos.csv")
+        if os.path.exists("alimentos.csv")
+        else pd.DataFrame()
+    )
     return df_a, pd.DataFrame(), pd.DataFrame()
+
 
 df_taco, df_graxos, df_amino = load_db()
 
 # 12. HEADER
-st.markdown("""
+st.markdown(
+    """
 <div class='banner-profissional'>
     <div class='icones-esportes'>🏋️‍♂️ 🏊‍♂️ 🚴‍♂️ 🏃‍♂️ 🧘‍♀️</div>
     <h1>BioGestão 360</h1>
     <div class='slogan'>Evolua seu treino junto com os nutrientes que movem o seu corpo</div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 13. DOAÇÕES E DICAS DE IMPRESSÃO
 with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded=False):
@@ -461,41 +557,51 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
     with col_paypal:
         st.markdown("### 💳 PayPal")
         st.components.v1.html(get_paypal_html(), height=100)
-        st.caption("Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG")
+        st.caption(
+            "Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG"
+        )
     st.caption("Sua contribuição ajuda a manter o projeto gratuito!")
-    
+
     st.markdown("---")
     st.markdown("### 🖨️ Dica de Impressão")
-    st.info("""
+    st.info(
+        """
     ⚠️ A impressão nativa (Ctrl+P) pode cortar gráficos e tabelas.
     
     ✅ **Para melhor resultado:**
     - Use a extensão **GoFullPage** (Chrome/Edge)
     - Ou ajuste margens para **5mm** cada lado no Ctrl+P
-    """)
+    """
+    )
     st.caption("🌳 A natureza agradece o uso consciente do papel!")
 
 # 14. POLÍTICA DE PRIVACIDADE
-st.markdown("""
+st.markdown(
+    """
 <div class='privacidade-box'>
     <b>🔒 POLÍTICA DE PRIVACIDADE (ZERO-FOOTPRINT):</b><br>
     ✅ Nenhum dado é enviado para servidores externos<br>
     ✅ Processamento 100% local no seu navegador<br>
     ✅ Ao fechar a aba, todas as informações são permanentemente deletadas
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 15. AVISO CIENTÍFICO
-st.markdown("""
+st.markdown(
+    """
 <div class='aviso-cientifico'>
     <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP) e equações Harris-Benedict.
     <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</strong>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 16. CÁLCULOS BIOMÉTRICOS
 alt_m = alt_cm / 100
-imc = peso_at / (alt_m ** 2)
+imc = peso_at / (alt_m**2)
 if sexo == "Masculino":
     tmb = 66.47 + (13.75 * peso_at) + (5.0 * alt_cm) - (6.75 * idade)
 else:
@@ -521,7 +627,8 @@ else:
         texto_meta = "🎉 Parabéns! Meta alcançada!"
 
 # 17. PERFIL GIGANTE
-st.markdown(f"""
+st.markdown(
+    f"""
 <div class='perfil-gigante'>
     <div class='titulo'>📋 SEU PERFIL</div>
     <div class='dados-container'>
@@ -536,7 +643,9 @@ st.markdown(f"""
         <div class='meta-mensagem'>{texto_meta}</div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 18. DASHBOARD
 st.markdown("## ⚡ Metabolismo e Gasto Energético")
@@ -544,44 +653,56 @@ st.markdown("## ⚡ Metabolismo e Gasto Energético")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>⚡</div>
         <div class='card-valor'>{get_total:.0f} kcal</div>
         <div class='card-titulo'>Gasto Total (GET)</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Total de calorias que seu corpo gasta por dia.<br>📊 <strong>Como usar:</strong> Para manter o peso, consuma esta quantidade.</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 with col2:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>🔥</div>
         <div class='card-valor'>{tmb:.0f} kcal</div>
         <div class='card-titulo'>Metabolismo Basal (TMB)</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Calorias queimadas em repouso total.<br>📊 <strong>Como usar:</strong> É o mínimo que seu corpo precisa para viver.</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 with col3:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>📊</div>
         <div class='card-valor'>{composicao['imc']}</div>
         <div class='card-titulo'>Índice de Massa Corporal (IMC)</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Relação entre peso e altura.<br>📊 <strong>Referência:</strong> 18.5-25 = Saudável | 25-30 = Sobrepeso | >30 = Obesidade</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 with col4:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>🎯</div>
         <div class='card-valor'>{composicao['peso_ideal']} kg</div>
         <div class='card-titulo'>Peso Ideal Estimado</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso considerado mais saudável para sua altura.<br>📊 <strong>Como usar:</strong> Meta de longo prazo baseada em estudos científicos.</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 # 19. COMPOSIÇÃO CORPORAL
 st.markdown("---")
@@ -590,34 +711,43 @@ st.markdown("## 🧬 Composição Corporal")
 col_g1, col_g2, col_g3 = st.columns(3)
 
 with col_g1:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>🎯</div>
         <div class='card-valor'>{composicao['percentual_gordura']}%</div>
         <div class='card-titulo'>Percentual de Gordura</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Porcentagem do seu corpo que é gordura.<br>📊 <strong>Referência:</strong> Homens: 10-25% | Mulheres: 18-32%</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 with col_g2:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>⚖️</div>
         <div class='card-valor'>{composicao['massa_gordura']} kg</div>
         <div class='card-titulo'>Massa de Gordura</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso total da gordura no seu corpo.<br>📊 <strong>Como usar:</strong> Acompanhe a redução para perder peso saudável.</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 with col_g3:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>💪</div>
         <div class='card-valor'>{composicao['massa_magra']} kg</div>
         <div class='card-titulo'>Massa Magra</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Músculos + ossos + órgãos.<br>📊 <strong>Como usar:</strong> Quanto maior, melhor para o metabolismo!</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 st.markdown("---")
 
@@ -629,7 +759,8 @@ st.markdown("## 📏 Avaliação Física Profissional")
 st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
 
 with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
-    st.markdown("""
+    st.markdown(
+        """
     ### 🧪 Métodos de Avaliação
     
     | Método | Equipamento | O que avalia | Unidade |
@@ -674,9 +805,12 @@ with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     | **Ectomorfo** | Metabolismo acelerado, dificuldade para ganhar peso | Abaixo de 10% (H) / 18% (M) | Foco em superávit calórico + treino de força |
     
     > **Fonte:** Organização Mundial da Saúde (OMS) e American College of Sports Medicine (ACSM)
-    """)
+    """
+    )
 
-usar_avaliacao = st.checkbox("📊 Deseja realizar avaliação física completa?", value=False)
+usar_avaliacao = st.checkbox(
+    "📊 Deseja realizar avaliação física completa?", value=False
+)
 
 if usar_avaliacao:
     # ========== FUNÇÃO PARA CRIAR 3 MEDIÇÕES ==========
@@ -684,62 +818,97 @@ if usar_avaliacao:
         st.markdown(f"**{nome}**")
         col1, col2, col3 = st.columns(3)
         with col1:
-            m1 = st.number_input(f"Medição 1 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m1")
+            m1 = st.number_input(
+                f"Medição 1 (mm)",
+                3.0,
+                80.0,
+                valor_padrao,
+                step=0.5,
+                key=f"{key_prefix}_{nome}_m1",
+            )
         with col2:
-            m2 = st.number_input(f"Medição 2 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m2")
+            m2 = st.number_input(
+                f"Medição 2 (mm)",
+                3.0,
+                80.0,
+                valor_padrao,
+                step=0.5,
+                key=f"{key_prefix}_{nome}_m2",
+            )
         with col3:
-            m3 = st.number_input(f"Medição 3 (mm)", 3.0, 80.0, valor_padrao, step=0.5, key=f"{key_prefix}_{nome}_m3")
+            m3 = st.number_input(
+                f"Medição 3 (mm)",
+                3.0,
+                80.0,
+                valor_padrao,
+                step=0.5,
+                key=f"{key_prefix}_{nome}_m3",
+            )
         media = (m1 + m2 + m3) / 3
-        st.caption(f"📊 **Média: {media:.1f} mm** (diferença máxima permitida entre medidas: 5%)")
+        st.caption(
+            f"📊 **Média: {media:.1f} mm** (diferença máxima permitida entre medidas: 5%)"
+        )
         return media
-    
+
     st.markdown("---")
-    
+
     # SEÇÃO 1: ADIPÔMETRO (Dobras Cutâneas)
     st.markdown("## 📏 SEÇÃO 1: DOBRAS CUTÂNEAS (ADIPÔMETRO)")
-    st.markdown("""
+    st.markdown(
+        """
     <div class='equipamento-adipometro'>
         <strong>🔵 ADIPÔMETRO (Plicômetro):</strong> Utilizado para medir a espessura da gordura subcutânea. 
         Estas medidas são usadas para calcular o <strong>percentual de gordura corporal</strong>.
         <br>Unidade: <strong>milímetros (mm)</strong>
     </div>
-    """, unsafe_allow_html=True)
-    st.caption("💡 **Instruções:** Para cada dobra, realize 3 medições. O sistema calculará automaticamente a média. Meça sempre no **lado direito** do corpo.")
-    
-    sexo_avaliacao = st.radio("Sexo para avaliação:", ["Masculino", "Feminino"], horizontal=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "💡 **Instruções:** Para cada dobra, realize 3 medições. O sistema calculará automaticamente a média. Meça sempre no **lado direito** do corpo."
+    )
+
+    sexo_avaliacao = st.radio(
+        "Sexo para avaliação:", ["Masculino", "Feminino"], horizontal=True
+    )
+
     st.markdown("### 💪 Braços")
     triceps_media = criar_medicao_tripla("TRÍCEPS", 12.0, "adipometro")
     biceps_media = criar_medicao_tripla("BÍCEPS", 10.0, "adipometro")
-    
+
     st.markdown("### 🏋️ Tronco")
     peitoral = criar_medicao_tripla("PEITORAL", 15.0, "adipometro")
     subescapular = criar_medicao_tripla("SUBESCAPULAR", 15.0, "adipometro")
     abdominal = criar_medicao_tripla("ABDOME", 20.0, "adipometro")
-    
+
     st.markdown("### 📐 Quadril / Axila")
     axilar = criar_medicao_tripla("AXILAR MÉDIA", 12.0, "adipometro")
     suprailiaca = criar_medicao_tripla("SUPRA-ILÍACA", 18.0, "adipometro")
-    
+
     st.markdown("### 🆕 Supra-espinal (SS)")
-    st.caption("Utilizada no cálculo do somatotipo de Heath-Carter. Localizada 5-7 cm acima da espinha ilíaca anterior.")
+    st.caption(
+        "Utilizada no cálculo do somatotipo de Heath-Carter. Localizada 5-7 cm acima da espinha ilíaca anterior."
+    )
     supra_espinal = criar_medicao_tripla("SUPRA-ESPINAL", 14.0, "adipometro")
-    
+
     st.markdown("### 🦵 Pernas")
     coxa_media = criar_medicao_tripla("COXA", 25.0, "adipometro")
     panturrilha_media = criar_medicao_tripla("PANTURRILHA", 15.0, "adipometro")
-    
-        # SEÇÃO 2: FITA MÉTRICA (Circunferências)
+
+    # SEÇÃO 2: FITA MÉTRICA (Circunferências)
     st.markdown("---")
     st.markdown("## 📏 SEÇÃO 2: CIRCUNFERÊNCIAS (FITA MÉTRICA)")
-    st.markdown("""
+    st.markdown(
+        """
     <div class='equipamento-fita'>
         <strong>🟢 FITA MÉTRICA:</strong> Utilizada para medir perímetros musculares e circunferências corporais.
         Estas medidas avaliam o <strong>tamanho muscular</strong> e a distribuição da gordura.
         <br>Unidade: <strong>centímetros (cm)</strong>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     col_fita1, col_fita2 = st.columns(2)
     with col_fita1:
         st.markdown("**💪 Braço Contraído**")
@@ -747,55 +916,82 @@ if usar_avaliacao:
         braco_e = st.number_input("Braço Esquerdo (cm)", 20.0, 60.0, 31.5, step=0.5)
         braco_media_cm = (braco_d + braco_e) / 2
         st.caption(f"Média: {braco_media_cm:.1f} cm")
-        
+
         st.markdown("**📏 Peitoral / Tórax**")
         st.caption("Medida na altura dos mamilos, em expiração normal.")
-        peitoral_cm = st.number_input("Circunferência Torácica (cm)", 60.0, 150.0, 95.0, step=0.5)
-        
+        peitoral_cm = st.number_input(
+            "Circunferência Torácica (cm)", 60.0, 150.0, 95.0, step=0.5
+        )
+
         st.markdown("**📐 Cintura**")
-        cintura = st.number_input("Circunferência da Cintura (cm)", 50.0, 150.0, 85.0, step=0.5)
-        
+        cintura = st.number_input(
+            "Circunferência da Cintura (cm)", 50.0, 150.0, 85.0, step=0.5
+        )
+
     with col_fita2:
         st.markdown("**🦵 Coxa**")
         coxa_cm_d = st.number_input("Coxa Direita (cm)", 40.0, 80.0, 55.0, step=0.5)
         coxa_cm_e = st.number_input("Coxa Esquerda (cm)", 40.0, 80.0, 54.5, step=0.5)
         coxa_media_cm = (coxa_cm_d + coxa_cm_e) / 2
         st.caption(f"Média: {coxa_media_cm:.1f} cm")
-        
+
         st.markdown("**🦵 Panturrilha**")
-        panturrilha_cm_d = st.number_input("Panturrilha Direita (cm)", 25.0, 50.0, 36.0, step=0.5)
-        panturrilha_cm_e = st.number_input("Panturrilha Esquerda (cm)", 25.0, 50.0, 35.5, step=0.5)
+        panturrilha_cm_d = st.number_input(
+            "Panturrilha Direita (cm)", 25.0, 50.0, 36.0, step=0.5
+        )
+        panturrilha_cm_e = st.number_input(
+            "Panturrilha Esquerda (cm)", 25.0, 50.0, 35.5, step=0.5
+        )
         panturrilha_media_cm = (panturrilha_cm_d + panturrilha_cm_e) / 2
         st.caption(f"Média: {panturrilha_media_cm:.1f} cm")
-    
+
     st.markdown("**🫀 Relação Cintura-Quadril (RCQ)**")
-    quadril = st.number_input("Circunferência do Quadril (cm)", 60.0, 150.0, 95.0, step=0.5)
+    quadril = st.number_input(
+        "Circunferência do Quadril (cm)", 60.0, 150.0, 95.0, step=0.5
+    )
     if quadril > 0:
         rcq = cintura / quadril
         if sexo_avaliacao == "Masculino":
-            risco_rcq = "⚠️ Risco cardiovascular elevado" if rcq > 0.95 else "✅ Risco cardiovascular normal"
+            risco_rcq = (
+                "⚠️ Risco cardiovascular elevado"
+                if rcq > 0.95
+                else "✅ Risco cardiovascular normal"
+            )
         else:
-            risco_rcq = "⚠️ Risco cardiovascular elevado" if rcq > 0.85 else "✅ Risco cardiovascular normal"
+            risco_rcq = (
+                "⚠️ Risco cardiovascular elevado"
+                if rcq > 0.85
+                else "✅ Risco cardiovascular normal"
+            )
         st.caption(f"Relação Cintura-Quadril: **{rcq:.2f}** - {risco_rcq}")
-    
+
     # SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES
     st.markdown("---")
     st.markdown("## 💪 SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES")
-    st.markdown("""
+    st.markdown(
+        """
     <div class='equipamento-complementar'>
         <strong>🟡 Handgrip e Banco de Wells:</strong> Estas avaliações NÃO entram no cálculo do percentual de gordura,
         mas são importantes para o perfil completo do avaliado.
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     col_comp1, col_comp2 = st.columns(2)
     with col_comp1:
         st.markdown("**🤝 Força de Preensão Palmar (Handgrip)**")
-        st.caption("Mede a força de preensão manual, indicador de força geral e saúde cardiovascular.")
-        handgrip_d = st.number_input("Handgrip Direito (kg/f)", 10.0, 80.0, 35.0, step=0.5)
-        handgrip_e = st.number_input("Handgrip Esquerdo (kg/f)", 10.0, 80.0, 32.0, step=0.5)
+        st.caption(
+            "Mede a força de preensão manual, indicador de força geral e saúde cardiovascular."
+        )
+        handgrip_d = st.number_input(
+            "Handgrip Direito (kg/f)", 10.0, 80.0, 35.0, step=0.5
+        )
+        handgrip_e = st.number_input(
+            "Handgrip Esquerdo (kg/f)", 10.0, 80.0, 32.0, step=0.5
+        )
         handgrip_media = (handgrip_d + handgrip_e) / 2
-        
+
         if sexo_avaliacao == "Masculino":
             if handgrip_media < 35:
                 nivel_forca = "🔴 Fraco (abaixo da média)"
@@ -811,12 +1007,12 @@ if usar_avaliacao:
             else:
                 nivel_forca = "🟢 Forte (acima da média)"
         st.caption(f"Média: {handgrip_media:.1f} kg/f - Nível: {nivel_forca}")
-    
+
     with col_comp2:
         st.markdown("**🧘 Flexibilidade (Banco de Wells)**")
         st.caption("Mede a flexibilidade da região lombar e posterior da coxa.")
         wells = st.number_input("Banco de Wells (cm)", -20.0, 50.0, 25.0, step=0.5)
-        
+
         if sexo_avaliacao == "Masculino":
             if wells < 20:
                 nivel_flex = "🔴 Abaixo da média"
@@ -832,52 +1028,100 @@ if usar_avaliacao:
             else:
                 nivel_flex = "🟢 Acima da média"
         st.caption(f"Flexibilidade: {wells:.1f} cm - Nível: {nivel_flex}")
-    
+
     # ========== CÁLCULOS JACKSON & POLLOCK ==========
     st.markdown("---")
     st.markdown("#### 🔬 Protocolo de Dobras (Jackson & Pollock)")
-    
+
     if sexo_avaliacao == "Masculino":
-        usar_7_dobras = st.radio(
-            "Escolha o protocolo:",
-            ["3 dobras (Tríceps, Peitoral, Abdome)", "7 dobras (Completo - mais preciso)"],
-            horizontal=True
-        ) == "7 dobras (Completo - mais preciso)"
-        
+        usar_7_dobras = (
+            st.radio(
+                "Escolha o protocolo:",
+                [
+                    "3 dobras (Tríceps, Peitoral, Abdome)",
+                    "7 dobras (Completo - mais preciso)",
+                ],
+                horizontal=True,
+            )
+            == "7 dobras (Completo - mais preciso)"
+        )
+
         if usar_7_dobras:
-            soma_dobras = triceps_media + peitoral + abdominal + subescapular + axilar + suprailiaca + coxa_media
+            soma_dobras = (
+                triceps_media
+                + peitoral
+                + abdominal
+                + subescapular
+                + axilar
+                + suprailiaca
+                + coxa_media
+            )
             st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
-            densidade = 1.112 - (0.00043499 * soma_dobras) + (0.00000055 * (soma_dobras ** 2)) - (0.00028826 * idade)
+            densidade = (
+                1.112
+                - (0.00043499 * soma_dobras)
+                + (0.00000055 * (soma_dobras**2))
+                - (0.00028826 * idade)
+            )
         else:
             soma_dobras = triceps_media + peitoral + abdominal
             st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
-            densidade = 1.10938 - (0.0008267 * soma_dobras) + (0.0000016 * (soma_dobras ** 2)) - (0.0002574 * idade)
-    
+            densidade = (
+                1.10938
+                - (0.0008267 * soma_dobras)
+                + (0.0000016 * (soma_dobras**2))
+                - (0.0002574 * idade)
+            )
+
     else:
-        usar_7_dobras = st.radio(
-            "Escolha o protocolo:",
-            ["3 dobras (Tríceps, Supra-ilíaca, Coxa)", "7 dobras (Completo - mais preciso)"],
-            horizontal=True
-        ) == "7 dobras (Completo - mais preciso)"
-        
+        usar_7_dobras = (
+            st.radio(
+                "Escolha o protocolo:",
+                [
+                    "3 dobras (Tríceps, Supra-ilíaca, Coxa)",
+                    "7 dobras (Completo - mais preciso)",
+                ],
+                horizontal=True,
+            )
+            == "7 dobras (Completo - mais preciso)"
+        )
+
         if usar_7_dobras:
-            soma_dobras = triceps_media + suprailiaca + coxa_media + subescapular + peitoral + axilar + abdominal
+            soma_dobras = (
+                triceps_media
+                + suprailiaca
+                + coxa_media
+                + subescapular
+                + peitoral
+                + axilar
+                + abdominal
+            )
             st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
-            densidade = 1.097 - (0.00046971 * soma_dobras) + (0.00000056 * (soma_dobras ** 2)) - (0.00012828 * idade)
+            densidade = (
+                1.097
+                - (0.00046971 * soma_dobras)
+                + (0.00000056 * (soma_dobras**2))
+                - (0.00012828 * idade)
+            )
         else:
             soma_dobras = triceps_media + suprailiaca + coxa_media
             st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
-            densidade = 1.0994921 - (0.0009929 * soma_dobras) + (0.0000023 * (soma_dobras ** 2)) - (0.0001392 * idade)
-    
+            densidade = (
+                1.0994921
+                - (0.0009929 * soma_dobras)
+                + (0.0000023 * (soma_dobras**2))
+                - (0.0001392 * idade)
+            )
+
     if densidade > 0:
         percentual_gordura_jp = ((4.95 / densidade) - 4.5) * 100
         percentual_gordura_jp = max(5, min(50, percentual_gordura_jp))
     else:
         percentual_gordura_jp = 0
-    
+
     massa_gordura_jp = peso_at * (percentual_gordura_jp / 100)
     massa_magra_jp = peso_at - massa_gordura_jp
-    
+
     # Classificações
     if sexo_avaliacao == "Masculino":
         if percentual_gordura_jp < 6:
@@ -921,7 +1165,7 @@ if usar_avaliacao:
             classif_gordura = "Elevado"
             grau_obesidade = "Obesidade"
             risco_saude = "Alto"
-    
+
     # Biotipo
     if percentual_gordura_jp > 25:
         biotipo = "Endomorfo"
@@ -932,69 +1176,91 @@ if usar_avaliacao:
         biotipo = "Ectomorfo"
         cor_biotipo = "#3b82f6"
         desc_biotipo = "Metabolismo acelerado, dificuldade para ganhar peso e massa muscular, estrutura mais fina."
-        recomendacao_biotipo = "Foco em superávit calórico, treino de força com pouca frequência cardio."
+        recomendacao_biotipo = (
+            "Foco em superávit calórico, treino de força com pouca frequência cardio."
+        )
     else:
         biotipo = "Mesomorfo"
         cor_biotipo = "#10b981"
         desc_biotipo = "Estrutura atlética natural, facilidade para ganhar massa muscular e manter baixo percentual de gordura."
-        recomendacao_biotipo = "Treino equilibrado de força e cardio, facilidade para manutenção."
-    
+        recomendacao_biotipo = (
+            "Treino equilibrado de força e cardio, facilidade para manutenção."
+        )
+
     # Exibir resultados
     st.markdown("---")
     st.markdown("### 📊 Resultado da Avaliação Física (Jackson & Pollock)")
-    
+
     col_jp1, col_jp2, col_jp3 = st.columns(3)
-    
+
     with col_jp1:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='card-com-explicacao'>
             <div class='card-icon'>🎯</div>
             <div class='card-valor'>{percentual_gordura_jp:.1f}%</div>
             <div class='card-titulo'>% Gordura (Adipômetro)</div>
             <div class='card-explicacao'>Classificação: {classif_gordura}<br>Risco: {risco_saude}</div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     with col_jp2:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='card-com-explicacao'>
             <div class='card-icon'>⚖️</div>
             <div class='card-valor'>{massa_gordura_jp:.1f} kg</div>
             <div class='card-titulo'>Massa de Gordura</div>
             <div class='card-explicacao'>{((massa_gordura_jp/peso_at)*100):.1f}% do peso total</div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     with col_jp3:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='card-com-explicacao'>
             <div class='card-icon'>💪</div>
             <div class='card-valor'>{massa_magra_jp:.1f} kg</div>
             <div class='card-titulo'>Massa Magra</div>
             <div class='card-explicacao'>{((massa_magra_jp/peso_at)*100):.1f}% do peso total</div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     # Gráfico de pizza
     st.markdown("---")
     st.markdown("#### 🥧 Composição Corporal")
-    
+
     col_pizza, col_biotipo = st.columns(2)
-    
+
     with col_pizza:
-        composicao_corpo = pd.DataFrame({
-            'Componente': ['Massa Gorda', 'Massa Magra'],
-            'Valor': [percentual_gordura_jp, 100 - percentual_gordura_jp]
-        })
-        fig_pizza = px.pie(composicao_corpo, values='Valor', names='Componente',
-                           title='Proporção do seu corpo',
-                           color='Componente',
-                           color_discrete_map={'Massa Gorda': '#ef4444', 'Massa Magra': '#3b82f6'})
-        fig_pizza.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
+        composicao_corpo = pd.DataFrame(
+            {
+                "Componente": ["Massa Gorda", "Massa Magra"],
+                "Valor": [percentual_gordura_jp, 100 - percentual_gordura_jp],
+            }
+        )
+        fig_pizza = px.pie(
+            composicao_corpo,
+            values="Valor",
+            names="Componente",
+            title="Proporção do seu corpo",
+            color="Componente",
+            color_discrete_map={"Massa Gorda": "#ef4444", "Massa Magra": "#3b82f6"},
+        )
+        fig_pizza.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350
+        )
         st.plotly_chart(fig_pizza, use_container_width=True)
-    
+
     with col_biotipo:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class='card-com-explicacao' style='border-left: 5px solid {cor_biotipo};'>
             <div class='card-icon'>🧬</div>
             <div class='card-valor' style='color: {cor_biotipo};'>{biotipo}</div>
@@ -1002,12 +1268,14 @@ if usar_avaliacao:
             <div class='card-explicacao'>{desc_biotipo}<br><br>
             <strong>Recomendação:</strong> {recomendacao_biotipo}</div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     # Gráfico de barras comparativo
     st.markdown("---")
     st.markdown("#### 📊 Comparativo com Referências de Saúde")
-    
+
     if sexo_avaliacao == "Masculino":
         referencia_saudavel = 17
         referencia_atleta = 12
@@ -1018,49 +1286,91 @@ if usar_avaliacao:
         referencia_atleta = 20
         referencia_obesidade = 32
         referencia_essencial = 12
-    
-    df_comparacao = pd.DataFrame({
-        'Categoria': ['Seu % Gordura', 'Gordura Essencial', 'Atleta', 'Saudável', 'Obesidade'],
-        'Percentual': [percentual_gordura_jp, referencia_essencial, referencia_atleta, referencia_saudavel, referencia_obesidade]
-    })
-    
-    fig_comparacao = px.bar(df_comparacao, x='Categoria', y='Percentual', 
-                             title='Comparação do seu percentual de gordura com referências',
-                             color='Categoria',
-                             color_discrete_map={
-                                 'Seu % Gordura': '#3b82f6', 'Gordura Essencial': '#8b5cf6',
-                                 'Atleta': '#10b981', 'Saudável': '#f59e0b', 'Obesidade': '#ef4444'
-                             })
-    fig_comparacao.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=400,
-                                  yaxis_title='Percentual de Gordura (%)')
+
+    df_comparacao = pd.DataFrame(
+        {
+            "Categoria": [
+                "Seu % Gordura",
+                "Gordura Essencial",
+                "Atleta",
+                "Saudável",
+                "Obesidade",
+            ],
+            "Percentual": [
+                percentual_gordura_jp,
+                referencia_essencial,
+                referencia_atleta,
+                referencia_saudavel,
+                referencia_obesidade,
+            ],
+        }
+    )
+
+    fig_comparacao = px.bar(
+        df_comparacao,
+        x="Categoria",
+        y="Percentual",
+        title="Comparação do seu percentual de gordura com referências",
+        color="Categoria",
+        color_discrete_map={
+            "Seu % Gordura": "#3b82f6",
+            "Gordura Essencial": "#8b5cf6",
+            "Atleta": "#10b981",
+            "Saudável": "#f59e0b",
+            "Obesidade": "#ef4444",
+        },
+    )
+    fig_comparacao.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=400,
+        yaxis_title="Percentual de Gordura (%)",
+    )
     st.plotly_chart(fig_comparacao, use_container_width=True)
-    
+
     # Gráfico por idade
     st.markdown("---")
     st.markdown("#### 📈 Percentual de Gordura por Idade (Referência)")
-    
+
     idades = list(range(20, 71, 5))
     if sexo_avaliacao == "Masculino":
         percentuais_referencia = [18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29]
     else:
         percentuais_referencia = [25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36]
-    
-    df_idade = pd.DataFrame({'Idade': idades, 'Referência': percentuais_referencia,
-                              'Seu Valor': [percentual_gordura_jp] * len(idades)})
-    
-    fig_idade = px.line(df_idade, x='Idade', y='Referência', 
-                         title='Percentual de Gordura por Idade (Referência ACSM)',
-                         labels={'value': '% Gordura', 'Idade': 'Idade (anos)'})
-    fig_idade.add_hline(y=percentual_gordura_jp, line_dash="dash", line_color="#3b82f6", 
-                        annotation_text=f"Seu valor: {percentual_gordura_jp:.1f}%")
-    fig_idade.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=400)
+
+    df_idade = pd.DataFrame(
+        {
+            "Idade": idades,
+            "Referência": percentuais_referencia,
+            "Seu Valor": [percentual_gordura_jp] * len(idades),
+        }
+    )
+
+    fig_idade = px.line(
+        df_idade,
+        x="Idade",
+        y="Referência",
+        title="Percentual de Gordura por Idade (Referência ACSM)",
+        labels={"value": "% Gordura", "Idade": "Idade (anos)"},
+    )
+    fig_idade.add_hline(
+        y=percentual_gordura_jp,
+        line_dash="dash",
+        line_color="#3b82f6",
+        annotation_text=f"Seu valor: {percentual_gordura_jp:.1f}%",
+    )
+    fig_idade.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=400
+    )
     st.plotly_chart(fig_idade, use_container_width=True)
-    
+
     # LAUDO DA AVALIAÇÃO FÍSICA
     st.markdown("---")
     st.markdown("## 🖨️ LAUDO DA AVALIAÇÃO FÍSICA")
-    st.markdown("*Este laudo pode ser impresso para arquivo pessoal ou para compartilhar com profissionais*")
-    
+    st.markdown(
+        "*Este laudo pode ser impresso para arquivo pessoal ou para compartilhar com profissionais*"
+    )
+
     if imc < 18.5:
         classificacao_imc_laudo = "Abaixo do peso"
     elif imc < 25:
@@ -1073,19 +1383,22 @@ if usar_avaliacao:
         classificacao_imc_laudo = "Obesidade Grau II"
     else:
         classificacao_imc_laudo = "Obesidade Grau III"
-    
+
     st.markdown("### 📊 Dados do Avaliado")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Medida | Valor |
     |--------|-------|
     | **Peso** | {peso_at:.1f} kg |
     | **Altura** | {alt_cm} cm |
     | **Idade** | {idade} anos |
     | **IMC** | {imc:.1f} ({classificacao_imc_laudo}) |
-    """)
-    
+    """
+    )
+
     st.markdown("### 📏 Resultados da Avaliação por Dobras Cutâneas (Adipômetro)")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Medida | Valor |
     |--------|-------|
     | **Percentual de Gordura** | {percentual_gordura_jp:.1f}% |
@@ -1094,10 +1407,12 @@ if usar_avaliacao:
     | **Risco à Saúde** | {risco_saude} |
     | **Massa de Gordura** | {massa_gordura_jp:.1f} kg |
     | **Massa Magra** | {massa_magra_jp:.1f} kg |
-    """)
-    
+    """
+    )
+
     st.markdown("### 📏 Resultados das Circunferências (Fita Métrica)")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Medida | Valor |
     |--------|-------|
     | **Braço (média D+E)** | {braco_media_cm:.1f} cm |
@@ -1107,88 +1422,132 @@ if usar_avaliacao:
     | **Cintura** | {cintura:.1f} cm |
     | **Quadril** | {quadril:.1f} cm |
     | **Relação Cintura-Quadril** | {rcq:.2f} - {risco_rcq} |
-    """)
-    
+    """
+    )
+
     st.markdown("### 💪 Resultados das Avaliações Complementares")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Medida | Valor |
     |--------|-------|
     | **Handgrip (média D+E)** | {handgrip_media:.1f} kg/f - {nivel_forca} |
     | **Banco de Wells** | {wells:.1f} cm - {nivel_flex} |
-    """)
-    
+    """
+    )
+
     st.markdown("### 🧬 Biotipo Corporal")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Medida | Valor |
     |--------|-------|
     | **Biotipo** | {biotipo} |
     | **Descrição** | {desc_biotipo} |
     | **Recomendação** | {recomendacao_biotipo} |
-    """)
-    
+    """
+    )
+
     st.markdown("### 📋 Protocolo Utilizado")
-    st.markdown(f"""
+    st.markdown(
+        f"""
     | Item | Informação |
     |------|-------------|
     | **Protocolo de Dobras** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
     | **Fórmula de Densidade** | Siri (1961) |
     | **Equipamentos** | Adipômetro, Fita Métrica, Handgrip, Banco de Wells |
     | **Referência** | ACSM - American College of Sports Medicine |
-    """)
-    
+    """
+    )
+
     # Botão para baixar Laudo da Avaliação Física em CSV
     st.markdown("---")
     st.markdown("#### 📥 Baixar Laudo da Avaliação Física")
-    
+
     dados_laudo_avaliacao = {
         "Categoria": [
-            "Data da Avaliação", "Sexo", "Idade", "Peso", "Altura", "IMC",
-            "Protocolo Utilizado", "Soma das Dobras (mm)", "Densidade Corporal (g/cm³)",
-            "% Gordura (Adipômetro)", "Classificação % Gordura", "Risco à Saúde",
-            "Massa de Gordura (kg)", "Massa Magra (kg)", "Biotipo",
-            "Circunferência do Braço (média cm)", "Circunferência do Peitoral (cm)",
-            "Circunferência da Coxa (média cm)", "Circunferência da Panturrilha (média cm)",
-            "Circunferência da Cintura (cm)", "Circunferência do Quadril (cm)", 
+            "Data da Avaliação",
+            "Sexo",
+            "Idade",
+            "Peso",
+            "Altura",
+            "IMC",
+            "Protocolo Utilizado",
+            "Soma das Dobras (mm)",
+            "Densidade Corporal (g/cm³)",
+            "% Gordura (Adipômetro)",
+            "Classificação % Gordura",
+            "Risco à Saúde",
+            "Massa de Gordura (kg)",
+            "Massa Magra (kg)",
+            "Biotipo",
+            "Circunferência do Braço (média cm)",
+            "Circunferência do Peitoral (cm)",
+            "Circunferência da Coxa (média cm)",
+            "Circunferência da Panturrilha (média cm)",
+            "Circunferência da Cintura (cm)",
+            "Circunferência do Quadril (cm)",
             "Relação Cintura-Quadril (RCQ)",
-            "Força Handgrip (média kg/f)", "Nível de Força",
-            "Flexibilidade Banco de Wells (cm)", "Nível de Flexibilidade"
+            "Força Handgrip (média kg/f)",
+            "Nível de Força",
+            "Flexibilidade Banco de Wells (cm)",
+            "Nível de Flexibilidade",
         ],
         "Valor": [
-            pd.Timestamp.now().strftime('%d/%m/%Y %H:%M'),
-            sexo_avaliacao, idade, f"{peso_at} kg", f"{alt_cm} cm", f"{imc:.1f} ({classificacao_imc_laudo})",
+            pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
+            sexo_avaliacao,
+            idade,
+            f"{peso_at} kg",
+            f"{alt_cm} cm",
+            f"{imc:.1f} ({classificacao_imc_laudo})",
             f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
-            f"{soma_dobras:.1f} mm", f"{densidade:.3f}",
-            f"{percentual_gordura_jp:.1f}%", classif_gordura, risco_saude,
-            f"{massa_gordura_jp:.1f} kg", f"{massa_magra_jp:.1f} kg", biotipo,
-            f"{braco_media_cm:.1f} cm", f"{peitoral_cm:.1f} cm",
-            f"{coxa_media_cm:.1f} cm", f"{panturrilha_media_cm:.1f} cm",
-            f"{cintura:.1f} cm", f"{quadril:.1f} cm", f"{rcq:.2f} - {risco_rcq}",
-            f"{handgrip_media:.1f} kg/f", nivel_forca,
-            f"{wells:.1f} cm", nivel_flex
-        ]
+            f"{soma_dobras:.1f} mm",
+            f"{densidade:.3f}",
+            f"{percentual_gordura_jp:.1f}%",
+            classif_gordura,
+            risco_saude,
+            f"{massa_gordura_jp:.1f} kg",
+            f"{massa_magra_jp:.1f} kg",
+            biotipo,
+            f"{braco_media_cm:.1f} cm",
+            f"{peitoral_cm:.1f} cm",
+            f"{coxa_media_cm:.1f} cm",
+            f"{panturrilha_media_cm:.1f} cm",
+            f"{cintura:.1f} cm",
+            f"{quadril:.1f} cm",
+            f"{rcq:.2f} - {risco_rcq}",
+            f"{handgrip_media:.1f} kg/f",
+            nivel_forca,
+            f"{wells:.1f} cm",
+            nivel_flex,
+        ],
     }
-    
+
     df_laudo_avaliacao = pd.DataFrame(dados_laudo_avaliacao)
-    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(index=False, encoding='utf-8-sig')
-    
+    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(index=False, encoding="utf-8-sig")
+
     st.download_button(
-        "📄 Baixar Laudo da Avaliação Física (CSV)", 
-        data=csv_laudo_avaliacao, 
-        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv", 
+        "📄 Baixar Laudo da Avaliação Física (CSV)",
+        data=csv_laudo_avaliacao,
+        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
-        use_container_width=True
+        use_container_width=True,
     )
-    
-    st.markdown(f"*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*")
+
+    st.markdown(
+        f"*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*"
+    )
 
 else:
-    st.info("💡 **Dica:** Ative a opção acima para realizar uma avaliação física completa com dobras cutâneas (adipômetro), circunferências (fita métrica), handgrip e banco de wells.")
+    st.info(
+        "💡 **Dica:** Ative a opção acima para realizar uma avaliação física completa com dobras cutâneas (adipômetro), circunferências (fita métrica), handgrip e banco de wells."
+    )
 
 # ============================================
 # 20. MONTAGEM DO PLANO ALIMENTAR
 # ============================================
 st.markdown("## 🍏 Montagem do Plano Alimentar")
-st.info("💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão!")
+st.info(
+    "💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão!"
+)
 
 if st.session_state.planejamento_tipo == "Semanal":
     st.markdown("### 📅 Selecione o dia")
@@ -1197,54 +1556,72 @@ if st.session_state.planejamento_tipo == "Semanal":
     for i, dia in enumerate(dias_semana):
         with cols[i]:
             if st.session_state.dia_atual == dia:
-                st.markdown(f"<div class='dia-btn-selected'>{dia} ✅</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='dia-btn-selected'>{dia} ✅</div>",
+                    unsafe_allow_html=True,
+                )
             else:
                 if st.button(dia, key=f"dia_{dia}", use_container_width=True):
                     st.session_state.dia_atual = dia
                     st.rerun()
-    st.markdown(f"<div style='text-align: center; margin: 15px 0;'><div style='background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 10px 20px; border-radius: 50px; display: inline-block; font-weight: bold;'>📌 Editando: {st.session_state.dia_atual}</div></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='text-align: center; margin: 15px 0;'><div style='background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 10px 20px; border-radius: 50px; display: inline-block; font-weight: bold;'>📌 Editando: {st.session_state.dia_atual}</div></div>",
+        unsafe_allow_html=True,
+    )
     st.markdown("---")
 
 if not st.session_state.modo_impressao and not df_taco.empty:
     with st.container():
         col1, col2, col3, col4 = st.columns([1.5, 3, 1, 1])
-        with col1: 
-            refeicao_sel = st.selectbox("Refeição", ["Café da Manhã", "Almoço", "Lanches", "Jantar"])
-        with col2: 
-            alimento_sel = st.selectbox("Alimento", df_taco['Descrição dos alimentos'].unique())
-        with col3: 
+        with col1:
+            refeicao_sel = st.selectbox(
+                "Refeição", ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+            )
+        with col2:
+            alimento_sel = st.selectbox(
+                "Alimento", df_taco["Descrição dos alimentos"].unique()
+            )
+        with col3:
             qtd_unidade = st.number_input("Unidades", 0.0, 50.0, 1.0)
-        with col4: 
+        with col4:
             peso_real = st.number_input("Peso Real (g/ml)", 0.0, 2000.0, 0.0)
 
     if st.button("➕ Adicionar ao Plano", use_container_width=True):
-        item = df_taco[df_taco['Descrição dos alimentos'] == alimento_sel].iloc[0]
-        is_liquido = any(x in alimento_sel.lower() for x in ["suco", "leite", "café", "bebida", "água", "chá"])
-        
+        item = df_taco[df_taco["Descrição dos alimentos"] == alimento_sel].iloc[0]
+        is_liquido = any(
+            x in alimento_sel.lower()
+            for x in ["suco", "leite", "café", "bebida", "água", "chá"]
+        )
+
         if peso_real > 0:
             peso_final = peso_real
             label_qtd = f"{peso_real}ml" if is_liquido else f"{peso_real}g"
         else:
             base_peso = 200 if is_liquido else 50
             peso_final = qtd_unidade * base_peso
-            label_qtd = f"{qtd_unidade} unid (~{peso_final}{'ml' if is_liquido else 'g'})"
-        
+            label_qtd = (
+                f"{qtd_unidade} unid (~{peso_final}{'ml' if is_liquido else 'g'})"
+            )
+
         fator_calc = peso_final / 100
         risco_oms = verificar_risco_oms(alimento_sel)
-        
+
         novo_item = {
-            "Ali": alimento_sel, "Qtd": label_qtd,
-            "Kcal": round(item['Energia..kcal.'] * fator_calc, 1),
-            "P": round(item['Proteína..g.'] * fator_calc, 1),
-            "C": round(item['Carboidrato..g.'] * fator_calc, 1),
-            "G": round(item['Lipídeos..g.'] * fator_calc, 1),
-            "Risco": risco_oms
+            "Ali": alimento_sel,
+            "Qtd": label_qtd,
+            "Kcal": round(item["Energia..kcal."] * fator_calc, 1),
+            "P": round(item["Proteína..g."] * fator_calc, 1),
+            "C": round(item["Carboidrato..g."] * fator_calc, 1),
+            "G": round(item["Lipídeos..g."] * fator_calc, 1),
+            "Risco": risco_oms,
         }
-        
+
         if st.session_state.planejamento_tipo == "Diário":
             st.session_state.cardapio[refeicao_sel].append(novo_item)
         else:
-            st.session_state.cardapio_semanal[st.session_state.dia_atual][refeicao_sel].append(novo_item)
+            st.session_state.cardapio_semanal[st.session_state.dia_atual][
+                refeicao_sel
+            ].append(novo_item)
         st.rerun()
 
 st.markdown("---")
@@ -1252,84 +1629,144 @@ st.markdown("---")
 # 21. EXIBIÇÃO DO PLANO
 if st.session_state.planejamento_tipo == "Diário":
     st.markdown("### 📋 Seu Cardápio de Hoje")
-    
+
     if st.session_state.cardapio["Café da Manhã"]:
-        st.markdown("<div class='header-cafe'>🌅 CAFÉ DA MANHÃ</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='header-cafe'>🌅 CAFÉ DA MANHÃ</div>", unsafe_allow_html=True
+        )
         for idx, item in enumerate(st.session_state.cardapio["Café da Manhã"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA:
+                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB:
+                st.markdown(
+                    f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                    unsafe_allow_html=True,
+                )
             with colC:
                 if st.button("🗑️", key=f"del_cafe_{idx}"):
                     remover_item_diario("Café da Manhã", idx)
-            if item.get('Risco'):
-                st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
+            if item.get("Risco"):
+                st.markdown(
+                    f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                    unsafe_allow_html=True,
+                )
             st.divider()
-    
+
     if st.session_state.cardapio["Almoço"]:
-        st.markdown("<div class='header-almoco'>🍜 ALMOÇO</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='header-almoco'>🍜 ALMOÇO</div>", unsafe_allow_html=True
+        )
         for idx, item in enumerate(st.session_state.cardapio["Almoço"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA:
+                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB:
+                st.markdown(
+                    f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                    unsafe_allow_html=True,
+                )
             with colC:
                 if st.button("🗑️", key=f"del_almoco_{idx}"):
                     remover_item_diario("Almoço", idx)
-            if item.get('Risco'):
-                st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
+            if item.get("Risco"):
+                st.markdown(
+                    f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                    unsafe_allow_html=True,
+                )
             st.divider()
-    
+
     if st.session_state.cardapio["Lanches"]:
-        st.markdown("<div class='header-lanches'>🍎 LANCHES</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='header-lanches'>🍎 LANCHES</div>", unsafe_allow_html=True
+        )
         for idx, item in enumerate(st.session_state.cardapio["Lanches"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA:
+                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB:
+                st.markdown(
+                    f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                    unsafe_allow_html=True,
+                )
             with colC:
                 if st.button("🗑️", key=f"del_lanches_{idx}"):
                     remover_item_diario("Lanches", idx)
-            if item.get('Risco'):
-                st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
+            if item.get("Risco"):
+                st.markdown(
+                    f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                    unsafe_allow_html=True,
+                )
             st.divider()
-    
+
     if st.session_state.cardapio["Jantar"]:
-        st.markdown("<div class='header-jantar'>🌙 JANTAR</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='header-jantar'>🌙 JANTAR</div>", unsafe_allow_html=True
+        )
         for idx, item in enumerate(st.session_state.cardapio["Jantar"]):
             colA, colB, colC = st.columns([3, 4, 1])
-            with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-            with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+            with colA:
+                st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+            with colB:
+                st.markdown(
+                    f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                    unsafe_allow_html=True,
+                )
             with colC:
                 if st.button("🗑️", key=f"del_jantar_{idx}"):
                     remover_item_diario("Jantar", idx)
-            if item.get('Risco'):
-                st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
+            if item.get("Risco"):
+                st.markdown(
+                    f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                    unsafe_allow_html=True,
+                )
             st.divider()
 
 else:
     st.markdown(f"### 📅 Planejamento Semanal - {st.session_state.dia_atual}")
-    
+
     refeicoes = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
-    headers = {"Café da Manhã": "header-cafe", "Almoço": "header-almoco", "Lanches": "header-lanches", "Jantar": "header-jantar"}
+    headers = {
+        "Café da Manhã": "header-cafe",
+        "Almoço": "header-almoco",
+        "Lanches": "header-lanches",
+        "Jantar": "header-jantar",
+    }
     icons = {"Café da Manhã": "🌅", "Almoço": "🍜", "Lanches": "🍎", "Jantar": "🌙"}
-    
+
     for refeicao in refeicoes:
-        itens = st.session_state.cardapio_semanal.get(st.session_state.dia_atual, {}).get(refeicao, [])
+        itens = st.session_state.cardapio_semanal.get(
+            st.session_state.dia_atual, {}
+        ).get(refeicao, [])
         if itens:
-            st.markdown(f"<div class='{headers[refeicao]}'>{icons[refeicao]} {refeicao.upper()}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='{headers[refeicao]}'>{icons[refeicao]} {refeicao.upper()}</div>",
+                unsafe_allow_html=True,
+            )
             for idx, item in enumerate(itens):
                 colA, colB, colC = st.columns([3, 4, 1])
-                with colA: st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
-                with colB: st.markdown(f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>", unsafe_allow_html=True)
+                with colA:
+                    st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+                with colB:
+                    st.markdown(
+                        f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> <span class='macro-tag-proteina'>🥩 {item['P']}g</span> <span class='macro-tag-carb'>🍞 {item['C']}g</span> <span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                        unsafe_allow_html=True,
+                    )
                 with colC:
                     if st.button("🗑️", key=f"del_semanal_{refeicao}_{idx}"):
                         remover_item_semanal(st.session_state.dia_atual, refeicao, idx)
-                if item.get('Risco'):
-                    st.markdown(f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>", unsafe_allow_html=True)
+                if item.get("Risco"):
+                    st.markdown(
+                        f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                        unsafe_allow_html=True,
+                    )
                 st.divider()
-    
+
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        if st.button(f"🗑️ Limpar {st.session_state.dia_atual}", use_container_width=True):
+        if st.button(
+            f"🗑️ Limpar {st.session_state.dia_atual}", use_container_width=True
+        ):
             limpar_dia_semanal(st.session_state.dia_atual)
     with col_btn2:
         if st.button("🗑️ Limpar Semana Inteira", use_container_width=True):
@@ -1338,13 +1775,17 @@ else:
 st.markdown("---")
 
 # 22. CÁLCULO DOS TOTAIS
-totais = calcular_totais_cardapio(st.session_state.cardapio, st.session_state.planejamento_tipo, st.session_state.cardapio_semanal)
+totais = calcular_totais_cardapio(
+    st.session_state.cardapio,
+    st.session_state.planejamento_tipo,
+    st.session_state.cardapio_semanal,
+)
 
-total_kcal = totais['total_kcal']
-total_prot = totais['total_prot']
-total_carb = totais['total_carb']
-total_gord = totais['total_gord']
-media_diaria = totais['media_diaria_kcal']
+total_kcal = totais["total_kcal"]
+total_prot = totais["total_prot"]
+total_carb = totais["total_carb"]
+total_gord = totais["total_gord"]
+media_diaria = totais["media_diaria_kcal"]
 
 saldo_diario = get_total - media_diaria
 variacao_semanal = abs((saldo_diario * 7) / 7700)
@@ -1353,58 +1794,94 @@ variacao_30dias = abs((saldo_diario * 30) / 7700)
 # 23. GRÁFICOS
 if total_kcal > 0:
     st.markdown("## 📊 Análise Nutricional")
-    
+
     col_graf1, col_graf2 = st.columns(2)
     with col_graf1:
-        macros_data = pd.DataFrame({
-            'Macronutriente': ['Proteínas', 'Carboidratos', 'Gorduras'],
-            'Calorias': [total_prot * 4, total_carb * 4, total_gord * 9]
-        })
-        fig_pizza = px.pie(macros_data, values='Calorias', names='Macronutriente', 
-                           title='Distribuição dos Macronutrientes',
-                           color_discrete_sequence=['#ef4444', '#3b82f6', '#f59e0b'])
-        fig_pizza.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
+        macros_data = pd.DataFrame(
+            {
+                "Macronutriente": ["Proteínas", "Carboidratos", "Gorduras"],
+                "Calorias": [total_prot * 4, total_carb * 4, total_gord * 9],
+            }
+        )
+        fig_pizza = px.pie(
+            macros_data,
+            values="Calorias",
+            names="Macronutriente",
+            title="Distribuição dos Macronutrientes",
+            color_discrete_sequence=["#ef4444", "#3b82f6", "#f59e0b"],
+        )
+        fig_pizza.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350
+        )
         st.plotly_chart(fig_pizza, use_container_width=True)
-    
+
     with col_graf2:
-        balanco_data = pd.DataFrame({
-            'Categoria': ['Gasto Total (GET)', 'Consumo Médio', 'Diferença'],
-            'Valor (kcal)': [get_total, media_diaria, abs(saldo_diario)]
-        })
-        fig_balanco = px.bar(balanco_data, x='Categoria', y='Valor (kcal)', 
-                              title='Balanço Energético',
-                              color='Categoria',
-                              color_discrete_map={'Gasto Total (GET)': '#ef4444', 'Consumo Médio': '#10b981', 'Diferença': '#f59e0b'})
-        fig_balanco.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
+        balanco_data = pd.DataFrame(
+            {
+                "Categoria": ["Gasto Total (GET)", "Consumo Médio", "Diferença"],
+                "Valor (kcal)": [get_total, media_diaria, abs(saldo_diario)],
+            }
+        )
+        fig_balanco = px.bar(
+            balanco_data,
+            x="Categoria",
+            y="Valor (kcal)",
+            title="Balanço Energético",
+            color="Categoria",
+            color_discrete_map={
+                "Gasto Total (GET)": "#ef4444",
+                "Consumo Médio": "#10b981",
+                "Diferença": "#f59e0b",
+            },
+        )
+        fig_balanco.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350
+        )
         st.plotly_chart(fig_balanco, use_container_width=True)
-    
-    st.markdown("""
+
+    st.markdown(
+        """
     <div style='background: var(--bg-secondary); border-radius: 10px; padding: 10px 15px; margin-top: 10px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;'>
         <span>🔥 <strong>kcal</strong> = Energia total do alimento</span>
         <span>🥩 <strong>Proteínas (g)</strong> = Essenciais para construção muscular</span>
         <span>🍞 <strong>Carboidratos (g)</strong> = Principal fonte de energia do corpo</span>
         <span>🥑 <strong>Gorduras (g)</strong> = Importantes para hormônios e vitaminas</span>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown("---")
 
 # 24. LAUDO TÉCNICO COMPLETO
 st.markdown("## 📋 LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR")
 
 if st.session_state.planejamento_tipo == "Diário":
-    st.caption(f"📅 **Período analisado:** Hoje (1 dia) | Total de {total_kcal:.1f} kcal no dia")
+    st.caption(
+        f"📅 **Período analisado:** Hoje (1 dia) | Total de {total_kcal:.1f} kcal no dia"
+    )
 else:
-    st.caption(f"📅 **Período analisado:** Semana completa (7 dias) | Total de {total_kcal:.1f} kcal na semana | Média diária: {media_diaria:.1f} kcal")
+    st.caption(
+        f"📅 **Período analisado:** Semana completa (7 dias) | Total de {total_kcal:.1f} kcal na semana | Média diária: {media_diaria:.1f} kcal"
+    )
 
 col1, col2, col3 = st.columns(3)
-with col1: 
-    st.metric("🥗 Consumo Planejado", f"{media_diaria:.1f} kcal" if st.session_state.planejamento_tipo == "Semanal" else f"{total_kcal:.1f} kcal")
-with col2: 
+with col1:
+    st.metric(
+        "🥗 Consumo Planejado",
+        (
+            f"{media_diaria:.1f} kcal"
+            if st.session_state.planejamento_tipo == "Semanal"
+            else f"{total_kcal:.1f} kcal"
+        ),
+    )
+with col2:
     st.metric("⚡ Gasto Estimado (GET)", f"{get_total:.0f} kcal")
-with col3: 
+with col3:
     delta_texto = "Déficit" if saldo_diario > 0 else "Superávit"
-    st.metric("💪 Saldo Energético Diário", f"{abs(saldo_diario):.1f} kcal", delta_texto)
+    st.metric(
+        "💪 Saldo Energético Diário", f"{abs(saldo_diario):.1f} kcal", delta_texto
+    )
 
 st.markdown("---")
 st.markdown("#### 🍽️ MACRONUTRIENTES TOTAIS DO PLANO")
@@ -1412,19 +1889,43 @@ st.markdown("#### 🍽️ MACRONUTRIENTES TOTAIS DO PLANO")
 col_p, col_c, col_g = st.columns(3)
 
 if st.session_state.planejamento_tipo == "Diário":
-    with col_p: 
-        st.metric("🥩 Proteínas", f"{total_prot:.1f} g", f"{((total_prot*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias")
-    with col_c: 
-        st.metric("🍞 Carboidratos", f"{total_carb:.1f} g", f"{((total_carb*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias")
-    with col_g: 
-        st.metric("🥑 Gorduras", f"{total_gord:.1f} g", f"{((total_gord*9)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias")
+    with col_p:
+        st.metric(
+            "🥩 Proteínas",
+            f"{total_prot:.1f} g",
+            f"{((total_prot*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+        )
+    with col_c:
+        st.metric(
+            "🍞 Carboidratos",
+            f"{total_carb:.1f} g",
+            f"{((total_carb*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+        )
+    with col_g:
+        st.metric(
+            "🥑 Gorduras",
+            f"{total_gord:.1f} g",
+            f"{((total_gord*9)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+        )
 else:
-    with col_p: 
-        st.metric("🥩 Proteínas (semana)", f"{total_prot:.1f} g", f"Média: {total_prot/7:.1f}g/dia")
-    with col_c: 
-        st.metric("🍞 Carboidratos (semana)", f"{total_carb:.1f} g", f"Média: {total_carb/7:.1f}g/dia")
-    with col_g: 
-        st.metric("🥑 Gorduras (semana)", f"{total_gord:.1f} g", f"Média: {total_gord/7:.1f}g/dia")
+    with col_p:
+        st.metric(
+            "🥩 Proteínas (semana)",
+            f"{total_prot:.1f} g",
+            f"Média: {total_prot/7:.1f}g/dia",
+        )
+    with col_c:
+        st.metric(
+            "🍞 Carboidratos (semana)",
+            f"{total_carb:.1f} g",
+            f"Média: {total_carb/7:.1f}g/dia",
+        )
+    with col_g:
+        st.metric(
+            "🥑 Gorduras (semana)",
+            f"{total_gord:.1f} g",
+            f"Média: {total_gord/7:.1f}g/dia",
+        )
 
 st.markdown("---")
 st.markdown("#### 📊 ESTIMATIVA DE RESULTADOS")
@@ -1434,29 +1935,49 @@ col_result1, col_result2, col_result3 = st.columns(3)
 with col_result1:
     if objetivo == "Perda de peso":
         if saldo_diario > 0:
-            st.success(f"🎯 **Você está em DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia, seu corpo vai usar gordura como energia.")
+            st.success(
+                f"🎯 **Você está em DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia, seu corpo vai usar gordura como energia."
+            )
         else:
-            st.warning(f"⚠️ **Você está em SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia, seu corpo pode armazenar gordura.")
+            st.warning(
+                f"⚠️ **Você está em SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia, seu corpo pode armazenar gordura."
+            )
     else:
         if saldo_diario < 0:
-            st.success(f"🎯 **Você está em SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia, ideal para ganho de massa muscular.")
+            st.success(
+                f"🎯 **Você está em SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia, ideal para ganho de massa muscular."
+            )
         else:
-            st.warning(f"⚠️ **Você está em DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia, pode prejudicar o ganho muscular.")
+            st.warning(
+                f"⚠️ **Você está em DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia, pode prejudicar o ganho muscular."
+            )
 
 with col_result2:
     if st.session_state.planejamento_tipo == "Diário":
-        st.info(f"📉 **Projeção em 7 dias:** {variacao_semanal:.2f} kg\n\n📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg")
+        st.info(
+            f"📉 **Projeção em 7 dias:** {variacao_semanal:.2f} kg\n\n📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg"
+        )
     else:
-        st.info(f"📉 **Projeção semanal:** {variacao_semanal:.2f} kg\n\n📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg")
+        st.info(
+            f"📉 **Projeção semanal:** {variacao_semanal:.2f} kg\n\n📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg"
+        )
 
 with col_result3:
     if saldo_diario != 0:
         if objetivo == "Perda de peso" and saldo_diario > 0:
-            semanas_meta = abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
-            st.success(f"⏱️ **Tempo estimado para meta:** {max(1, int(semanas_meta))} semanas")
+            semanas_meta = (
+                abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+            )
+            st.success(
+                f"⏱️ **Tempo estimado para meta:** {max(1, int(semanas_meta))} semanas"
+            )
         elif objetivo == "Ganho de peso" and saldo_diario < 0:
-            semanas_meta = abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
-            st.success(f"⏱️ **Tempo estimado para meta:** {max(1, int(semanas_meta))} semanas")
+            semanas_meta = (
+                abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+            )
+            st.success(
+                f"⏱️ **Tempo estimado para meta:** {max(1, int(semanas_meta))} semanas"
+            )
         else:
             st.warning("⚡ **Ajuste seu consumo para atingir a meta!**")
     else:
@@ -1465,7 +1986,9 @@ with col_result3:
 # 25. RESUMO COMPLETO PARA IMPRESSÃO
 st.markdown("---")
 st.markdown("## 🖨️ RESUMO COMPLETO PARA IMPRESSÃO")
-st.markdown("*Esta seção contém todos os alimentos selecionados para fácil impressão - sem botões de excluir*")
+st.markdown(
+    "*Esta seção contém todos os alimentos selecionados para fácil impressão - sem botões de excluir*"
+)
 
 todos_alimentos = []
 dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
@@ -1473,30 +1996,57 @@ dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Dom
 if st.session_state.planejamento_tipo == "Diário":
     for refeicao, itens in st.session_state.cardapio.items():
         for item in itens:
-            todos_alimentos.append({
-                "Dia": "Hoje", "Refeição": refeicao, "Alimento": item['Ali'],
-                "Quantidade": item['Qtd'], "Kcal": item['Kcal'], "Proteínas(g)": item['P'],
-                "Carboidratos(g)": item['C'], "Gorduras(g)": item['G'], 
-                "Alerta OMS": item.get('Risco', '')[:50] if item.get('Risco') else '-'
-            })
+            todos_alimentos.append(
+                {
+                    "Dia": "Hoje",
+                    "Refeição": refeicao,
+                    "Alimento": item["Ali"],
+                    "Quantidade": item["Qtd"],
+                    "Kcal": item["Kcal"],
+                    "Proteínas(g)": item["P"],
+                    "Carboidratos(g)": item["C"],
+                    "Gorduras(g)": item["G"],
+                    "Alerta OMS": (
+                        item.get("Risco", "")[:50] if item.get("Risco") else "-"
+                    ),
+                }
+            )
 else:
     for dia in dias_semana:
         for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
-            for item in st.session_state.cardapio_semanal.get(dia, {}).get(refeicao, []):
-                todos_alimentos.append({
-                    "Dia": dia, "Refeição": refeicao, "Alimento": item['Ali'],
-                    "Quantidade": item['Qtd'], "Kcal": item['Kcal'], "Proteínas(g)": item['P'],
-                    "Carboidratos(g)": item['C'], "Gorduras(g)": item['G'],
-                    "Alerta OMS": item.get('Risco', '')[:50] if item.get('Risco') else '-'
-                })
+            for item in st.session_state.cardapio_semanal.get(dia, {}).get(
+                refeicao, []
+            ):
+                todos_alimentos.append(
+                    {
+                        "Dia": dia,
+                        "Refeição": refeicao,
+                        "Alimento": item["Ali"],
+                        "Quantidade": item["Qtd"],
+                        "Kcal": item["Kcal"],
+                        "Proteínas(g)": item["P"],
+                        "Carboidratos(g)": item["C"],
+                        "Gorduras(g)": item["G"],
+                        "Alerta OMS": (
+                            item.get("Risco", "")[:50] if item.get("Risco") else "-"
+                        ),
+                    }
+                )
 
 if todos_alimentos:
     df_resumo = pd.DataFrame(todos_alimentos)
     st.dataframe(df_resumo, use_container_width=True, hide_index=True)
-    csv = df_resumo.to_csv(index=False, encoding='utf-8-sig')
-    st.download_button("📥 Baixar Resumo em CSV", data=csv, file_name="resumo_alimentar.csv", mime="text/csv")
+    csv = df_resumo.to_csv(index=False, encoding="utf-8-sig")
+    st.download_button(
+        "📥 Baixar Resumo em CSV",
+        data=csv,
+        file_name="resumo_alimentar.csv",
+        mime="text/csv",
+    )
 else:
-    st.info("ℹ️ Nenhum alimento adicionado ainda. Adicione alimentos para gerar o resumo.")
+    st.info(
+        "ℹ️ Nenhum alimento adicionado ainda. Adicione alimentos para gerar o resumo."
+    )
 
 # 26. RESUMO DO LAUDO TÉCNICO
 st.markdown("---")
@@ -1504,17 +2054,22 @@ st.markdown("## 📋 RESUMO DO LAUDO TÉCNICO")
 
 if saldo_diario != 0:
     if objetivo == "Perda de peso" and saldo_diario > 0:
-        semanas_meta = abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+        semanas_meta = (
+            abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+        )
         texto_tempo = f"{max(1, int(semanas_meta))} semanas"
     elif objetivo == "Ganho de peso" and saldo_diario < 0:
-        semanas_meta = abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+        semanas_meta = (
+            abs(diferenca_meta) / (variacao_semanal) if variacao_semanal > 0 else 0
+        )
         texto_tempo = f"{max(1, int(semanas_meta))} semanas"
     else:
         texto_tempo = "Ajuste necessário"
 else:
     texto_tempo = "Manutenção"
 
-st.markdown(f"""
+st.markdown(
+    f"""
 <div class='resumo-laudo'>
     <h4>📊 Resumo da Análise</h4>
     <p><strong>📅 Período analisado:</strong> {'Hoje (1 dia)' if st.session_state.planejamento_tipo == "Diário" else 'Semana completa (7 dias)'}</p>
@@ -1525,7 +2080,9 @@ st.markdown(f"""
     <p><strong>📉 Projeção de variação em 30 dias:</strong> {variacao_30dias:.2f} kg</p>
     <p><strong>⏱️ Tempo estimado para meta:</strong> {texto_tempo}</p>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 27. BOTÃO PARA BAIXAR LAUDO COMPLETO EM CSV
 st.markdown("---")
@@ -1546,28 +2103,67 @@ else:
 
 dados_laudo = {
     "Informação": [
-        "Data do relatório", "Tipo de Planejamento", "Período analisado",
-        "Objetivo", "Peso Atual (kg)", "Altura (cm)", "Idade (anos)", "Sexo",
-        "Meta de Peso (kg)", "Frequência de Atividade Física",
-        "Gasto Total (GET) - kcal/dia", "Metabolismo Basal (TMB) - kcal/dia",
-        "IMC Atual", "Classificação IMC", "Peso Ideal Estimado (kg)",
-        "Percentual de Gordura (%)", "Massa de Gordura (kg)", "Massa Magra (kg)",
-        "Consumo Total do Período (kcal)", "Média Diária de Consumo (kcal)",
-        "Saldo Energético Diário (kcal)", "Status do Saldo",
-        "Projeção de Variação em 30 dias (kg)", "Tempo Estimado para Meta",
-        "Macronutrientes - Proteínas (g)", "Macronutrientes - Carboidratos (g)",
-        "Macronutrientes - Gorduras (g)"
+        "Data do relatório",
+        "Tipo de Planejamento",
+        "Período analisado",
+        "Objetivo",
+        "Peso Atual (kg)",
+        "Altura (cm)",
+        "Idade (anos)",
+        "Sexo",
+        "Meta de Peso (kg)",
+        "Frequência de Atividade Física",
+        "Gasto Total (GET) - kcal/dia",
+        "Metabolismo Basal (TMB) - kcal/dia",
+        "IMC Atual",
+        "Classificação IMC",
+        "Peso Ideal Estimado (kg)",
+        "Percentual de Gordura (%)",
+        "Massa de Gordura (kg)",
+        "Massa Magra (kg)",
+        "Consumo Total do Período (kcal)",
+        "Média Diária de Consumo (kcal)",
+        "Saldo Energético Diário (kcal)",
+        "Status do Saldo",
+        "Projeção de Variação em 30 dias (kg)",
+        "Tempo Estimado para Meta",
+        "Macronutrientes - Proteínas (g)",
+        "Macronutrientes - Carboidratos (g)",
+        "Macronutrientes - Gorduras (g)",
     ],
     "Valor": [
-        pd.Timestamp.now().strftime('%d/%m/%Y %H:%M'),
+        pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
         st.session_state.planejamento_tipo,
-        "Hoje (1 dia)" if st.session_state.planejamento_tipo == "Diário" else "Semana completa (7 dias)",
-        objetivo, peso_at, alt_cm, idade, sexo, p_alvo, naf_label,
-        get_total, tmb, composicao['imc'], classificacao_imc, composicao['peso_ideal'],
-        composicao['percentual_gordura'], composicao['massa_gordura'], composicao['massa_magra'],
-        total_kcal, media_diaria, abs(saldo_diario), "Déficit" if saldo_diario > 0 else "Superávit",
-        variacao_30dias, texto_tempo, total_prot, total_carb, total_gord
-    ]
+        (
+            "Hoje (1 dia)"
+            if st.session_state.planejamento_tipo == "Diário"
+            else "Semana completa (7 dias)"
+        ),
+        objetivo,
+        peso_at,
+        alt_cm,
+        idade,
+        sexo,
+        p_alvo,
+        naf_label,
+        get_total,
+        tmb,
+        composicao["imc"],
+        classificacao_imc,
+        composicao["peso_ideal"],
+        composicao["percentual_gordura"],
+        composicao["massa_gordura"],
+        composicao["massa_magra"],
+        total_kcal,
+        media_diaria,
+        abs(saldo_diario),
+        "Déficit" if saldo_diario > 0 else "Superávit",
+        variacao_30dias,
+        texto_tempo,
+        total_prot,
+        total_carb,
+        total_gord,
+    ],
 }
 
 df_laudo = pd.DataFrame(dados_laudo)
@@ -1575,30 +2171,33 @@ df_laudo = pd.DataFrame(dados_laudo)
 col_down1, col_down2 = st.columns(2)
 
 with col_down1:
-    csv_laudo = df_laudo.to_csv(index=False, encoding='utf-8-sig')
+    csv_laudo = df_laudo.to_csv(index=False, encoding="utf-8-sig")
     st.download_button(
-        "📊 Baixar Laudo Técnico Completo (CSV)", 
-        data=csv_laudo, 
-        file_name=f"laudo_biogestao_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv", 
+        "📊 Baixar Laudo Técnico Completo (CSV)",
+        data=csv_laudo,
+        file_name=f"laudo_biogestao_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
-        use_container_width=True
+        use_container_width=True,
     )
 
 with col_down2:
     if todos_alimentos:
         st.download_button(
-            "🍽️ Baixar Cardápio Detalhado (CSV)", 
-            data=df_resumo.to_csv(index=False, encoding='utf-8-sig'), 
-            file_name=f"cardapio_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv", 
+            "🍽️ Baixar Cardápio Detalhado (CSV)",
+            data=df_resumo.to_csv(index=False, encoding="utf-8-sig"),
+            file_name=f"cardapio_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv",
-            use_container_width=True
+            use_container_width=True,
         )
 
-st.caption("Os arquivos CSV podem ser abertos no Excel, Google Sheets ou qualquer editor de planilhas")
+st.caption(
+    "Os arquivos CSV podem ser abertos no Excel, Google Sheets ou qualquer editor de planilhas"
+)
 
 # 28. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA
 with st.expander("📋 Informações OMS e Documentação Técnica", expanded=False):
-    st.markdown("""
+    st.markdown(
+        """
     ### Classificação da OMS/IARC para alimentos:
     
     | Grupo | Classificação | Alimentos | Recomendação |
@@ -1631,7 +2230,8 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     📄 [📥 Baixar Documentação Técnica Completa](https://raw.githubusercontent.com/adilsonximenes/biogestao-360/main/DOCUMENTO_TECNICO.md)
     
     🔗 [🌐 Ver no GitHub](https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md)
-    """)
+    """
+    )
 
 # 29. BOTÃO DE LIMPAR
 if st.session_state.planejamento_tipo == "Diário":
@@ -1653,7 +2253,8 @@ if st.session_state.modo_impressao:
 
 # 31. DICAS DE IMPRESSÃO (antes do rodapé)
 with st.expander("🖨️ Dicas para melhor impressão", expanded=False):
-    st.markdown("""
+    st.markdown(
+        """
     ### ⚠️ Atenção
     A impressão nativa do navegador (Ctrl+P) pode cortar gráficos, tabelas e legendas.
     
@@ -1662,14 +2263,18 @@ with st.expander("🖨️ Dicas para melhor impressão", expanded=False):
     **1. Extensão GoFullPage (Chrome/Edge) - Gratuita**
     - Capture a página inteira sem cortes
     - Salve como PDF com um clique
-    """)
-    
+    """
+    )
+
 # 32. RODAPÉ
-st.markdown("""
+st.markdown(
+    """
 <div style='text-align: center; font-size: 11px; color: #666; padding: 15px;'>
     <b>BioGestão 360 v3.0</b> | Tabela TACO (UNICAMP) | Equações Harris-Benedict<br>
     <b>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</b><br>
     📚 <a href='https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md' target='_blank'>Documentação Técnica</a> | 
     💻 <a href='https://github.com/adilsonximenes/biogestao-360' target='_blank'>Código Fonte</a>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
