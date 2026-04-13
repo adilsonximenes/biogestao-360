@@ -283,6 +283,38 @@ Média diária = Total kcal / 7
 
 ========================================
 
+4.4 Tratamento de Dados Ausentes na Tabela TACO
+
+**Problema identificado:**
+A Tabela TACO (UNICAMP) contém valores "NA" (Not Available) ou "traço" para alguns alimentos,
+especialmente em campos como:
+- Energia (kcal)
+- Proteínas
+- Carboidratos
+- Gorduras
+
+**Exemplo prático:**
+"Leite, de vaca, integral" (código 458) possui valores NA para calorias, proteínas, carboidratos e gorduras.
+
+**Solução implementada:**
+O sistema utiliza uma função de tratamento que:
+- Detecta valores NA, NaN, None ou "traço"
+- Converte automaticamente para 0 (zero)
+- Permite que o cálculo dos totais continue funcionando
+
+**Código de tratamento:**
+```python
+def tratar_valor(valor):
+    if pd.isna(valor) or valor == "NA" or valor is None:
+        return 0.0
+    try:
+        return float(valor)
+    except (ValueError, TypeError):
+        return 0.0
+```
+
+========================================
+
 5. LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR
 
 5.1 Consumo Planejado
