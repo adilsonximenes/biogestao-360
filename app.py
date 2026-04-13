@@ -1575,6 +1575,116 @@ st.markdown(
 )
 # ========== FIM DO AVISO ==========
 
+
+# ========== FUNÇÃO PARA DETERMINAR UNIDADE PADRÃO POR CATEGORIA ==========
+def obter_unidade_padrao(categoria, descricao_alimento):
+    """
+    Retorna a unidade padrão e o peso base baseado na categoria e descrição do alimento
+    """
+    categoria_lower = categoria.lower() if categoria else ""
+    descricao_lower = descricao_alimento.lower() if descricao_alimento else ""
+
+    # ========== PALAVRAS QUE INDICAM SÓLIDO (mesmo em categorias líquidas) ==========
+    palavras_solidas = [
+        "canjica",
+        "mingau",
+        "arroz",
+        "feijão",
+        "carne",
+        "frango",
+        "peixe",
+        "ovo",
+        "queijo",
+        "pão",
+        "bolo",
+        "biscoito",
+        "pastel",
+        "macarrão",
+        "batata",
+        "mandioca",
+        "farinha",
+        "polenta",
+        "cuscuz",
+        "tapioca",
+        "sopa",
+        "caldo",
+        "purê",
+        "creme",
+        "farofa",
+        "torrada",
+        "omelete",
+    ]
+
+    # ========== CATEGORIAS E PALAVRAS PARA LÍQUIDOS ==========
+    categorias_liquidas = ["bebidas"]
+    palavras_liquidas = [
+        "suco",
+        "leite",
+        "café",
+        "bebida",
+        "água",
+        "chá",
+        "refrigerante",
+        "cerveja",
+        "vinho",
+        "aguardente",
+        "caldo",
+    ]
+
+    # ========== CATEGORIAS E PALAVRAS PARA UNIDADES (ovos, etc) ==========
+    palavras_unidade = ["ovo", "unidade", "codorna", "ovos"]
+
+    # ========== PRIORIDADE 1: VERIFICAR SE É SÓLIDO (sobrescreve categoria) ==========
+    is_solido = False
+    for palavra in palavras_solidas:
+        if palavra in descricao_lower:
+            is_solido = True
+            break
+
+    # ========== PRIORIDADE 2: VERIFICAR SE É LÍQUIDO ==========
+    is_liquido = False
+    if not is_solido:
+        for cat in categorias_liquidas:
+            if cat in categoria_lower:
+                is_liquido = True
+                break
+        if not is_liquido:
+            for palavra in palavras_liquidas:
+                if palavra in descricao_lower:
+                    is_liquido = True
+                    break
+
+    # ========== PRIORIDADE 3: VERIFICAR SE USA UNIDADES ==========
+    usa_unidade = False
+    for palavra in palavras_unidade:
+        if palavra in descricao_lower:
+            usa_unidade = True
+            break
+
+    # ========== DEFINE PESO BASE E UNIDADE ==========
+    if usa_unidade:
+        peso_base = 1
+        unidade_simbolo = "un"
+    elif is_liquido:
+        peso_base = 200
+        unidade_simbolo = "ml"
+    else:
+        peso_base = 50
+        unidade_simbolo = "g"
+
+    return is_liquido, usa_unidade, peso_base, unidade_simbolo
+
+
+# ========== FUNÇÃO PARA TRATAR VALORES NAN/NA ==========
+def tratar_valor(valor):
+    if pd.isna(valor) or valor == "NA" or valor is None:
+        return 0.0
+    try:
+        return float(valor)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 if st.session_state.planejamento_tipo == "Semanal":
     st.markdown("### 📅 Selecione o dia")
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
@@ -1614,32 +1724,47 @@ if not st.session_state.modo_impressao and not df_taco.empty:
 
     if st.button("➕ Adicionar ao Plano", use_container_width=True):
         item = df_taco[df_taco["Descrição dos alimentos"] == alimento_sel].iloc[0]
-        is_liquido = any(
-            x in alimento_sel.lower()
-            for x in ["suco", "leite", "café", "bebida", "água", "chá"]
+
+        categoria_alimento = (
+            item["Categoria do alimento"]
+            if "Categoria do alimento" in item.index
+            else ""
+        )
+
+        is_liquido, usa_unidade, peso_base, unidade_simbolo = obter_unidade_padrao(
+            categoria_alimento, alimento_sel
         )
 
         if peso_real > 0:
-            peso_final = peso_real
-            label_qtd = f"{peso_real}ml" if is_liquido else f"{peso_real}g"
+            if qtd_unidade > 0:
+                peso_final = peso_real * qtd_unidade
+            else:
+                peso_final = peso_real
+
+            if qtd_unidade > 0:
+                if is_liquido:
+                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} ml)"
+                elif usa_unidade:
+                    label_qtd = (
+                        f"{qtd_unidade:g} {unidade_simbolo} ({peso_final:.0f} g)"
+                    )
+                else:
+                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} g)"
+            else:
+                if is_liquido:
+                    label_qtd = f"{peso_final:.0f} ml"
+                else:
+                    label_qtd = f"{peso_final:.0f} g"
         else:
-            base_peso = 200 if is_liquido else 50
-            peso_final = qtd_unidade * base_peso
-            label_qtd = (
-                f"{qtd_unidade} unid (~{peso_final}{'ml' if is_liquido else 'g'})"
-            )
+            if usa_unidade:
+                peso_final = qtd_unidade * peso_base
+                label_qtd = f"{qtd_unidade:g} {unidade_simbolo}"
+            else:
+                peso_final = qtd_unidade * peso_base
+                label_qtd = f"{qtd_unidade:g} un (~{peso_final:.0f}{unidade_simbolo})"
 
         fator_calc = peso_final / 100
         risco_oms = verificar_risco_oms(alimento_sel)
-
-        # ========== TRATAMENTO DE VALORES NAN/NA ==========
-        def tratar_valor(valor):
-            if pd.isna(valor) or valor == "NA" or valor is None:
-                return 0.0
-            try:
-                return float(valor)
-            except (ValueError, TypeError):
-                return 0.0
 
         kcal_raw = item["Energia..kcal."]
         prot_raw = item["Proteína..g."]
@@ -2084,8 +2209,12 @@ else:
                 )
 
 if todos_alimentos:
+    # Tabela para exibição na tela (sem categoria)
     df_resumo = pd.DataFrame(todos_alimentos)
     st.dataframe(df_resumo, use_container_width=True, hide_index=True)
+
+    # CSV para download (pode incluir mais informações, como categoria)
+    # Se quiser incluir categoria no CSV, precisa buscar da tabela original
     csv = df_resumo.to_csv(index=False, encoding="utf-8-sig")
     st.download_button(
         "📥 Baixar Resumo em CSV",
