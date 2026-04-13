@@ -265,17 +265,17 @@ Alguns alimentos possuem dados incompletos (valores "NA" ou "traço"). Exemplo: 
 
 Como o sistema trata:
 
-Valores ausentes são convertidos para 0 (zero)
+. Valores ausentes são convertidos para 0 (zero)
 
-O cálculo não quebra e continua funcionando
+. O cálculo não quebra e continua funcionando
 
-O usuário é informado sobre a limitação no app
+. O usuário é informado sobre a limitação no app
 
 Recomendação para dados incompletos:
 
-Consulte fontes complementares (USDA FoodData Central, rótulos nutricionais)
+. Consulte fontes complementares (USDA FoodData Central, rótulos nutricionais)
 
-Utilize o bom senso profissional para ajustes
+. Utilize o bom senso profissional para ajustes
 
 ## 🛡️ Privacidade e Segurança - Indústria 5.0
 Zero-Footprint Total! 🔒
@@ -300,44 +300,44 @@ Texto completo da licença: https://creativecommons.org/licenses/by-nc-nd/4.0/
 ## 👨‍💻 Desenvolvedor
 Desenvolvido como ferramenta educacional para estudo de atividade física e consumo energético de alimentos.
 
-Autor: ADILSON GONCALVES XIMENES
+. Autor: ADILSON GONCALVES XIMENES
 
-Finalidade: Exclusivamente acadêmica e educacional
+. Finalidade: Exclusivamente acadêmica e educacional
 
-Filosofia: Indústria 5.0 - Tecnologia a serviço do humano
+. Filosofia: Indústria 5.0 - Tecnologia a serviço do humano
 
-Contato para uso comercial: Abrir uma Issue no GitHub
+. Contato para uso comercial: Abrir uma Issue no GitHub
 
 ## ⭐ Reconhecimentos
-UNICAMP - Tabela TACO
+. UNICAMP - Tabela TACO
 
-Harris & Benedict - Equação de metabolismo basal
+. Harris & Benedict - Equação de metabolismo basal
 
-Jackson & Pollock - Protocolo de dobras cutâneas
+. Jackson & Pollock - Protocolo de dobras cutâneas
 
-Siri WE - Fórmula de densidade para % de gordura
+. Siri WE - Fórmula de densidade para % de gordura
 
-Deurenberg et al. - Fórmula de composição corporal por IMC
+. Deurenberg et al. - Fórmula de composição corporal por IMC
 
-ACSM - Classificações de referência
+. ACSM - Classificações de referência
 
-Comunidade Streamlit - Framework incrível
+. Comunidade Streamlit - Framework incrível
 
 ## 📞 Contato
-Issues: GitHub Issues
+. Issues: GitHub Issues
 
-Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
+. Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
 
 ## 🌐 Language
 Currently available in Portuguese (Brazil) only.
 
 If you need an English version, feel free to:
 
-Fork the repository
+. Fork the repository
 
-Translate the interface
+. Translate the interface
 
-Submit a pull request
+. Submit a pull request
 
 The code is open source for educational purposes.
 
