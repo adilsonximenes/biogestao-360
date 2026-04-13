@@ -313,6 +313,17 @@ Issues: GitHub Issues
 
 Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
 
+## 🌐 Language
+
+Currently available in **Portuguese (Brazil)** only.
+
+If you need an English version, feel free to:
+- Fork the repository
+- Translate the interface
+- Submit a pull request
+
+The code is open source for educational purposes.
+
 ## 🙏 Agradecimentos
 Agradeço a todos que contribuírem academicamente para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais profissionais a realizarem avaliações físicas de qualidade.
 
