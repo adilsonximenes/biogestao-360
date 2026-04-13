@@ -1565,6 +1565,10 @@ st.markdown(
     <br><br>
     <strong>⚠️ Importante:</strong> Todos os alimentos possuem valores nutricionais baseados na Tabela TACO.
     Consulte seu nutricionista ou médico para ajustes personalizados.
+    <br><br>
+    <strong>⚠️ Atenção:</strong> Alguns alimentos na Tabela TACO podem ter dados incompletos (valores não informados).
+    Nesses casos, o sistema considera o valor como 0 (zero) para não prejudicar os cálculos totais.
+    Verifique a composição completa do alimento em fontes complementares.
 </div>
 """,
     unsafe_allow_html=True,
@@ -1628,13 +1632,37 @@ if not st.session_state.modo_impressao and not df_taco.empty:
         fator_calc = peso_final / 100
         risco_oms = verificar_risco_oms(alimento_sel)
 
+        # ========== TRATAMENTO DE VALORES NAN/NA ==========
+        def tratar_valor(valor):
+            if pd.isna(valor) or valor == "NA" or valor is None:
+                return 0.0
+            try:
+                return float(valor)
+            except (ValueError, TypeError):
+                return 0.0
+
+        kcal_raw = item["Energia..kcal."]
+        prot_raw = item["Proteína..g."]
+        carb_raw = item["Carboidrato..g."]
+        gord_raw = item["Lipídeos..g."]
+
+        kcal_val = tratar_valor(kcal_raw)
+        prot_val = tratar_valor(prot_raw)
+        carb_val = tratar_valor(carb_raw)
+        gord_val = tratar_valor(gord_raw)
+
+        kcal_final = round(kcal_val * fator_calc, 1)
+        prot_final = round(prot_val * fator_calc, 1)
+        carb_final = round(carb_val * fator_calc, 1)
+        gord_final = round(gord_val * fator_calc, 1)
+
         novo_item = {
             "Ali": alimento_sel,
             "Qtd": label_qtd,
-            "Kcal": round(item["Energia..kcal."] * fator_calc, 1),
-            "P": round(item["Proteína..g."] * fator_calc, 1),
-            "C": round(item["Carboidrato..g."] * fator_calc, 1),
-            "G": round(item["Lipídeos..g."] * fator_calc, 1),
+            "Kcal": kcal_final,
+            "P": prot_final,
+            "C": carb_final,
+            "G": gord_final,
             "Risco": risco_oms,
         }
 
