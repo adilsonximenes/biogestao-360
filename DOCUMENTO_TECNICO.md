@@ -312,6 +312,24 @@ def tratar_valor(valor):
     except (ValueError, TypeError):
         return 0.0
 ```
+Impacto nos resultados:
+
+Alimentos com dados completos: calculados normalmente
+
+Alimentos com dados ausentes: contribuem com 0 (zero) para os totais
+
+O sistema NÃO quebra (sem NaN ou erros)
+
+O usuário é alertado sobre a limitação
+
+Recomendação:
+Para alimentos com dados incompletos na TACO, recomenda-se consultar fontes complementares:
+
+USDA FoodData Central (https://fdc.nal.usda.gov/)
+
+Tabela Brasileira de Composição de Alimentos (versão completa impressa)
+
+Rótulos nutricionais dos produtos
 
 ========================================
 
