@@ -231,7 +231,7 @@ biogestao-360/
 ├── README.md              # Este arquivo
 └── .gitignore             # Arquivos ignorados pelo Git
 ```
-## 🖨️ Funcionalidade de Impressão
+🖨️ Funcionalidade de Impressão
 O sistema possui um modo especial de impressão que:
 
 ✅ Economiza tinta (fundo branco, texto preto)
@@ -241,29 +241,109 @@ O sistema possui um modo especial de impressão que:
 
 Como usar:
 
-1.Clique em "Gerar Versão para Impressão" no menu lateral
-2.Aguarde o recarregamento
-3.Clique nos 3 pontinhos (⋮) do navegador
-4.Selecione "Imprimir"
-5.Configure "Margens: Mínimas"
+Clique em "Gerar Versão para Impressão" no menu lateral
+
+Aguarde o recarregamento
+
+Clique nos 3 pontinhos (⋮) do navegador
+
+Selecione "Imprimir"
+
+Configure "Margens: Mínimas"
 
 ## 📊 Base de Dados - Tabela TACO
 Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
 
-. Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
-. Instituição: UNICAMP
-. Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
+Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
+
+Instituição: UNICAMP
+
+Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
 
 ## ⚠️ Limitações da Tabela TACO
 Alguns alimentos possuem dados incompletos (valores "NA" ou "traço"). Exemplo: "Leite, de vaca, integral" não tem calorias informadas.
 
 Como o sistema trata:
 
-. Valores ausentes são convertidos para 0 (zero)
-. O cálculo não quebra e continua funcionando
-. O usuário é informado sobre a limitação no app
+Valores ausentes são convertidos para 0 (zero)
+
+O cálculo não quebra e continua funcionando
+
+O usuário é informado sobre a limitação no app
 
 Recomendação para dados incompletos:
 
-. Consulte fontes complementares (USDA FoodData Central, rótulos nutricionais)
-. Utilize o bom senso profissional para ajustes
+Consulte fontes complementares (USDA FoodData Central, rótulos nutricionais)
+
+Utilize o bom senso profissional para ajustes
+
+## 🛡️ Privacidade e Segurança - Indústria 5.0
+Zero-Footprint Total! 🔒
+✅ Nenhum dado é enviado para servidores externos (Resiliência)
+✅ Todo processamento é 100% local no seu navegador (Sustentabilidade)
+✅ Não há banco de dados, login ou coleta de informações (Centrado no humano)
+✅ Ao fechar a aba, todos os dados são permanentemente deletados
+✅ Você pode usar sem preocupações com privacidade
+
+"Seus dados são seus. O BioGestão 360 apenas organiza o que você já sabe."
+
+## 📄 Licença
+Este projeto está licenciado sob a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
+
+Permissão	Status
+✅ Compartilhar (copiar e redistribuir)	Permitido com atribuição
+✅ Uso acadêmico e educacional	Permitido
+❌ Uso comercial	PROIBIDO
+❌ Modificar ou criar derivados	PROIBIDO
+Texto completo da licença: https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+## 👨‍💻 Desenvolvedor
+Desenvolvido como ferramenta educacional para estudo de atividade física e consumo energético de alimentos.
+
+Autor: ADILSON GONCALVES XIMENES
+
+Finalidade: Exclusivamente acadêmica e educacional
+
+Filosofia: Indústria 5.0 - Tecnologia a serviço do humano
+
+Contato para uso comercial: Abrir uma Issue no GitHub
+
+## ⭐ Reconhecimentos
+UNICAMP - Tabela TACO
+
+Harris & Benedict - Equação de metabolismo basal
+
+Jackson & Pollock - Protocolo de dobras cutâneas
+
+Siri WE - Fórmula de densidade para % de gordura
+
+Deurenberg et al. - Fórmula de composição corporal por IMC
+
+ACSM - Classificações de referência
+
+Comunidade Streamlit - Framework incrível
+
+## 📞 Contato
+Issues: GitHub Issues
+
+Para uso comercial: Abra uma Issue com o título "USO COMERCIAL"
+
+## 🌐 Language
+Currently available in Portuguese (Brazil) only.
+
+If you need an English version, feel free to:
+
+Fork the repository
+
+Translate the interface
+
+Submit a pull request
+
+The code is open source for educational purposes.
+
+## 🙏 Agradecimentos
+Agradeço a todos que contribuírem academicamente para este projeto! Juntos podemos melhorar a ferramenta e ajudar mais profissionais a realizarem avaliações físicas de qualidade.
+
+Feito com ❤️ para a comunidade acadêmica e desenvolvimento open-source educacional
+
+*BioGestão 360 - Tecnologia humanizada para avaliação física* 🏋️‍♂️🤝💻
