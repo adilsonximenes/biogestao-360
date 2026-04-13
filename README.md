@@ -241,24 +241,24 @@ O sistema possui um modo especial de impressão que:
 
 Como usar:
 
-Clique em "Gerar Versão para Impressão" no menu lateral
+1.Clique em "Gerar Versão para Impressão" no menu lateral
 
-Aguarde o recarregamento
+2.Aguarde o recarregamento
 
-Clique nos 3 pontinhos (⋮) do navegador
+3.Clique nos 3 pontinhos (⋮) do navegador
 
-Selecione "Imprimir"
+4.Selecione "Imprimir"
 
-Configure "Margens: Mínimas"
+5.Configure "Margens: Mínimas"
 
 ## 📊 Base de Dados - Tabela TACO
 Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
 
-Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
+. Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
 
-Instituição: UNICAMP
+. Instituição: UNICAMP
 
-Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
+. Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
 
 ## ⚠️ Limitações da Tabela TACO
 Alguns alimentos possuem dados incompletos (valores "NA" ou "traço"). Exemplo: "Leite, de vaca, integral" não tem calorias informadas.
