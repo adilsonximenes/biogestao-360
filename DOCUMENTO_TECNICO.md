@@ -283,7 +283,32 @@ Média diária = Total kcal / 7
 
 ========================================
 
-4.4 Tratamento de Dados Ausentes na Tabela TACO
+4.4 Sistema de Unidades Inteligente
+
+O sistema classifica automaticamente os alimentos para determinar a unidade de medida correta:
+
+**Classificação por categoria e palavras-chave:**
+
+| Tipo | Unidade | Exemplos |
+|------|---------|----------|
+| Líquidos | ml | Leite, suco, café, refrigerante |
+| Sólidos | g | Arroz, feijão, carne, frango, canjica |
+| Unidades | un | Ovos, codorna |
+
+**Combinação de Unidades com Peso Real:**
+
+O sistema permite que o usuário informe tanto a quantidade de unidades quanto o peso real por unidade:
+
+- Exemplo: 2 unidades de suco com 250ml cada = 500ml total
+- Exemplo: 3 unidades de ovo com 50g cada = 150g total
+
+**Lógica de cálculo:**
+- Se Peso Real > 0: Peso Final = Peso Real × Unidades
+- Se Peso Real = 0: Peso Final = Unidades × Peso Base (50g para sólidos, 200ml para líquidos)
+
+========================================
+
+4.5 Tratamento de Dados Ausentes na Tabela TACO
 
 **Problema identificado:**
 A Tabela TACO (UNICAMP) contém valores "NA" (Not Available) ou "traço" para alguns alimentos,
@@ -303,7 +328,6 @@ O sistema utiliza uma função de tratamento que:
 - Permite que o cálculo dos totais continue funcionando
 
 **Código de tratamento:**
-```python
 def tratar_valor(valor):
     if pd.isna(valor) or valor == "NA" or valor is None:
         return 0.0
@@ -311,25 +335,18 @@ def tratar_valor(valor):
         return float(valor)
     except (ValueError, TypeError):
         return 0.0
-```
-Impacto nos resultados:
 
-Alimentos com dados completos: calculados normalmente
+**Impacto nos resultados:**
+- Alimentos com dados completos: calculados normalmente
+- Alimentos com dados ausentes: contribuem com 0 (zero) para os totais
+- O sistema NÃO quebra (sem NaN ou erros)
+- O usuário é alertado sobre a limitação
 
-Alimentos com dados ausentes: contribuem com 0 (zero) para os totais
-
-O sistema NÃO quebra (sem NaN ou erros)
-
-O usuário é alertado sobre a limitação
-
-Recomendação:
+**Recomendação:**
 Para alimentos com dados incompletos na TACO, recomenda-se consultar fontes complementares:
-
-USDA FoodData Central (https://fdc.nal.usda.gov/)
-
-Tabela Brasileira de Composição de Alimentos (versão completa impressa)
-
-Rótulos nutricionais dos produtos
+- USDA FoodData Central (https://fdc.nal.usda.gov/)
+- Tabela Brasileira de Composição de Alimentos (versão completa impressa)
+- Rótulos nutricionais dos produtos
 
 ========================================
 
@@ -479,4 +496,4 @@ App online: https://biogestao-360.streamlit.app
 ========================================
 
 Documento gerado em: Abril/2026
-Versão: 3.0
+Versão: 3.1
