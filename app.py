@@ -1549,6 +1549,28 @@ st.info(
     "💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão!"
 )
 
+# ========== AVISO PARA SEGUIR RECEITA DA NUTRI ==========
+st.markdown(
+    """
+<div class='aviso-cientifico' style='margin-bottom: 15px;'>
+    <strong>📋 Para seguir sua receita da nutri:</strong>
+    <br><br>
+    1️⃣ Identifique os alimentos da sua receita na tabela TACO (busque pelo nome)
+    <br>
+    2️⃣ Adicione um a um nos campos abaixo com as quantidades prescritas
+    <br>
+    3️⃣ O sistema calcula automaticamente calorias e nutrientes com base em dados científicos (UNICAMP)
+    <br>
+    4️⃣ Use o resumo para impressão e acompanhamento
+    <br><br>
+    <strong>⚠️ Importante:</strong> Todos os alimentos possuem valores nutricionais baseados na Tabela TACO.
+    Consulte seu nutricionista ou médico para ajustes personalizados.
+</div>
+""",
+    unsafe_allow_html=True,
+)
+# ========== FIM DO AVISO ==========
+
 if st.session_state.planejamento_tipo == "Semanal":
     st.markdown("### 📅 Selecione o dia")
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
@@ -2226,6 +2248,23 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     | **TMB (Mulheres)** | 655.1 + (9.56 × peso) + (1.85 × altura) - (4.67 × idade) | Harris-Benedict (1919) |
     | **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × idade) - (16.2 ou 5.4) | Deurenberg et al. |
     | **% Gordura (Dobras)** | Protocolo Jackson & Pollock + Fórmula de Siri | ACSM |
+    
+    ### 📊 Sobre as Tabelas Nutricionais (TACO)
+    
+    O BioGestão 360 utiliza a **Tabela Brasileira de Composição de Alimentos** desenvolvida pela UNICAMP.
+    
+    | Arquivo | Conteúdo | Importância |
+    |---------|----------|-------------|
+    | **alimentos.csv** | Calorias, proteínas, carboidratos, gorduras | Base para cálculo nutricional diário |
+    | **acidos-graxos.csv** | Perfil de ácidos graxos (saturados, insaturados, trans) | ⚠️ Gorduras saturadas em excesso aumentam colesterol. Gorduras insaturadas (ômega 3) são anti-inflamatórias |
+    | **aminoacidos.csv** | Perfil de aminoácidos essenciais e não essenciais | ⚠️ Essenciais para construção muscular. Deficiência pode prejudicar ganho de massa magra |
+    
+    **Por que esses detalhes importam?**
+    
+    - **Ácidos graxos**: Consumir mais gorduras boas (peixes, azeite) e menos gorduras ruins (frituras, processados) ajuda no controle do colesterol e inflamação.
+    - **Aminoácidos**: São os blocos de construção dos músculos. Quem quer **ganhar massa muscular** precisa de proteínas completas (que contêm todos os aminoácidos essenciais).
+    
+    > 🔗 Fonte oficial: [github.com/machine-learning-mocha/taco](https://github.com/machine-learning-mocha/taco)
     
     📄 [📥 Baixar Documentação Técnica Completa](https://raw.githubusercontent.com/adilsonximenes/biogestao-360/main/DOCUMENTO_TECNICO.md)
     
