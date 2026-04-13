@@ -262,6 +262,17 @@ Ano da versão utilizada: 2011 (última versão completa disponível publicament
 
 ⚠️ Nota sobre os dados: A tabela TACO tem limitações e pode não refletir variações sazonais, regionais ou de preparo dos alimentos. Este projeto usa os dados "como estão" para fins educacionais.
 
+## ⚠️ **Limitação da Tabela TACO:**
+
+Alguns alimentos possuem dados incompletos (valores "NA"). Exemplo: "Leite, de vaca, integral" não tem calorias informadas.
+
+**Como o sistema trata:**
+- Valores ausentes são convertidos para 0 (zero)
+- O cálculo não quebra e continua funcionando
+- O usuário é informado sobre a limitação no app
+
+Para alimentos com dados incompletos, consulte fontes complementares (USDA, rótulos nutricionais).
+
 ## 🛡️ Privacidade e Segurança - Indústria 5.0
 Zero-Footprint Total! 🔒
 ✅ Nenhum dado é enviado para servidores externos (Resiliência)
