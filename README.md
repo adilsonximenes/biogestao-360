@@ -227,9 +227,13 @@ http://localhost:8501
 biogestao-360/
 ├── app.py                 # Aplicação principal Streamlit
 ├── requirements.txt       # Dependências do projeto
-├── alimentos.csv          # Base de dados TACO (alimentos)
-├── acidos-graxos.csv      # Base de dados (ácidos graxos)
-├── aminoacidos.csv        # Base de dados (aminoácidos)
+├── alimentos.csv          # Base de dados TACO (alimentos) - PRINCIPAL
+├── tabela_ibge.csv        # Base de dados IBGE (POF 2008-2009) - ALTERNATIVA
+├── acidos-graxos.csv      # Base de dados (ácidos graxos) - complementar
+├── aminoacidos.csv        # Base de dados (aminoácidos) - complementar
+├── Taco-4a-Edicao.xlsx    # Tabela TACO original (Excel) - referência
+├── tabelacompleta.xls     # Tabela IBGE original (Excel) - referência
+├── DOCUMENTO_TECNICO.md   # Documentação técnica completa
 ├── README.md              # Este arquivo
 └── .gitignore             # Arquivos ignorados pelo Git
 ```
@@ -253,33 +257,53 @@ Como usar:
 
 5.Configure "Margens: Mínimas"
 
-## 📚 BASES DE DADOS UTILIZADAS
+## 📚 Bases de Dados Utilizadas
 
-### Tabela TACO (UNICAMP)
+### Tabela TACO (UNICAMP) - Principal
 - **Fonte:** NEPA - Núcleo de Estudos e Pesquisas em Alimentação
 - **Instituição:** Universidade Estadual de Campinas (UNICAMP)
-- **Ano da versão:** 2011 (última versão completa disponível publicamente)
+- **Ano da versão:** 2011 (4ª Edição - última versão completa disponível publicamente)
 - **Site oficial:** https://www.tbca.net.br/
-- **Repositório de dados:** https://github.com/machine-learning-mocha/taco
+- **Arquivo no projeto:** `alimentos.csv`
 
-### Tabela IBGE (POF 2008-2009)
-- **Fonte:** Pesquisa de Orçamentos Familiares
+### Tabela IBGE (POF 2008-2009) - Alternativa
+- **Fonte:** Pesquisa de Orçamentos Familiares (POF)
 - **Instituição:** Instituto Brasileiro de Geografia e Estatística (IBGE)
 - **Ano:** 2008-2009
 - **Link oficial:** https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html
+- **Arquivo no projeto:** `tabela_ibge.csv`
 
 ### FAO/WHO
-- **Organização das Nações Unidas para Alimentação e Agricultura**
+- **Organização:** Food and Agriculture Organization / World Health Organization
 - **Link:** https://www.fao.org/
+- **Utilização:** Fatores de atividade física e referências nutricionais
 
-### Arquivos do Projeto
+### Arquivos Complementares
+
+| Arquivo | Conteúdo | Status |
+|---------|----------|--------|
+| `acidos-graxos.csv` | Perfil de ácidos graxos | Disponível para futuras implementações |
+| `aminoacidos.csv` | Perfil de aminoácidos | Disponível para futuras implementações |
+| `Taco-4a-Edicao.xlsx` | Tabela TACO original | Referência (não usado diretamente) |
+| `tabelacompleta.xls` | Tabela IBGE original | Referência (não usado diretamente) |
+
+### 📁 Arquivos do Projeto
 
 | Arquivo | Conteúdo | Utilização |
 |---------|----------|------------|
+| `app.py` | Aplicação principal Streamlit | Execução do sistema |
+| `requirements.txt` | Dependências do projeto | Instalação de pacotes |
 | `alimentos.csv` | Dados nutricionais básicos (kcal, proteínas, carboidratos, gorduras) | **Principal - usado nos cálculos** |
-| `acidos-graxos.csv` | Perfil de ácidos graxos (saturados, mono, poli-insaturados) | Complementar (não usado atualmente) |
-| `aminoacidos.csv` | Perfil de aminoácidos | Complementar (não usado atualmente) |
-| `tabela_ibge.csv` | Tabela IBGE POF 2008-2009 | Alternativa - selecionável pelo usuário |
+| `tabela_ibge.csv` | Tabela IBGE POF 2008-2009 | **Alternativa - selecionável pelo usuário** |
+| `acidos-graxos.csv` | Perfil de ácidos graxos (saturados, mono, poli-insaturados) | Complementar (futuras implementações) |
+| `aminoacidos.csv` | Perfil de aminoácidos | Complementar (futuras implementações) |
+| `Taco-4a-Edicao.xlsx` | Tabela TACO original (Excel) | Referência original (não usado diretamente) |
+| `tabelacompleta.xls` | Tabela IBGE original (Excel) | Referência original (não usado diretamente) |
+| `DOCUMENTO_TECNICO.md` | Documentação técnica completa | Referência científica |
+| `README.md` | Documentação do projeto | Este arquivo |
+| `.gitignore` | Arquivos ignorados pelo Git | Controle de versão |
+
+> 💡 Os arquivos `.xlsx` e `.xls` são mantidos como referência original. O sistema utiliza os arquivos `.csv` convertidos.
 
 ## ⚠️ Limitações da Tabela TACO
 Alguns alimentos possuem dados incompletos (valores "NA" ou "traço"). Exemplo: "Leite, de vaca, integral" não tem calorias informadas.
@@ -330,19 +354,19 @@ Desenvolvido como ferramenta educacional para estudo de atividade física e cons
 . Contato para uso comercial: Abrir uma Issue no GitHub
 
 ## ⭐ Reconhecimentos
-. UNICAMP - Tabela TACO
 
-. Harris & Benedict - Equação de metabolismo basal
-
-. Jackson & Pollock - Protocolo de dobras cutâneas
-
-. Siri WE - Fórmula de densidade para % de gordura
-
-. Deurenberg et al. - Fórmula de composição corporal por IMC
-
-. ACSM - Classificações de referência
-
-. Comunidade Streamlit - Framework incrível
+- **UNICAMP / NEPA** - Tabela Brasileira de Composição de Alimentos (TACO)
+- **IBGE** - Pesquisa de Orçamentos Familiares (POF 2008-2009)
+- **FAO/WHO** - Fatores de Atividade Física e referências nutricionais
+- **Harris & Benedict** - Equação de metabolismo basal (1919)
+- **Katch & McArdle** - Equação de metabolismo basal por massa magra (1975)
+- **Jackson & Pollock** - Protocolo de dobras cutâneas (1978)
+- **Siri WE** - Fórmula de densidade para percentual de gordura (1961)
+- **Deurenberg et al.** - Fórmula de composição corporal por IMC (1991)
+- **ACSM** - American College of Sports Medicine (classificações de referência)
+- **IARC/OMS** - Classificação de alimentos cancerígenos
+- **Comunidade Streamlit** - Framework incrível para aplicações web
+- **Machine Learning Mocha** - Organização do repositório TACO (github.com/machine-learning-mocha/taco)
 
 ## 📞 Contato
 . Issues: GitHub Issues
