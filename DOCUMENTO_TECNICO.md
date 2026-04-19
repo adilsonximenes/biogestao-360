@@ -445,32 +445,40 @@ Grupo 2B - Possivelmente cancerígeno:
 Aspartame, bebidas muito quentes (>65°C)
 
 ========================================
-
 7. BASES DE DADOS UTILIZADAS
 
-7.1 Tabela TACO (UNICAMP)
+7.1 Tabela TACO (UNICAMP) - Principal
 
 Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
 Instituição: Universidade Estadual de Campinas (UNICAMP)
 Versão: 2011 (última versão completa disponível publicamente)
+Site oficial: https://www.tbca.net.br/
+Repositório organizado: github.com/machine-learning-mocha/taco
 Dados: Composição de alimentos brasileiros (calorias, proteínas, carboidratos, gorduras)
 
-========================================
+7.2 Tabela IBGE (POF 2008-2009) - Alternativa
 
-7.2 Bases de Dados Utilizadas
+Fonte: Pesquisa de Orçamentos Familiares (POF)
+Instituição: Instituto Brasileiro de Geografia e Estatística (IBGE)
+Ano: 2008-2009
+Link: https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html
+Dados: Alimentos in natura e preparações regionais brasileiras
 
-O sistema utiliza três arquivos de dados provenientes do repositório "machine-learning-mocha/taco", que organiza e disponibiliza a Tabela Brasileira de Composição de Alimentos (TACO) em formato CSV.
+7.3 FAO/WHO
 
-alimentos.csv = Arquivo principal do sistema. Contém as informações nutricionais básicas de cada alimento, como Energia (kcal), Proteínas, Carboidratos, Lipídeos (gorduras).
+Organização: Food and Agriculture Organization / World Health Organization
+Link: https://www.fao.org/
+Utilização: Fatores de atividade física e referências nutricionais
 
-acidos-graxos.csv = Arquivo complementar com o perfil detalhado de ácidos graxos (saturados, monoinsaturados, poli-insaturados). Não é utilizado nos cálculos atuais.
+7.4 Arquivos do Sistema
 
-aminoacidos.csv = Arquivo complementar com o perfil detalhado de aminoácidos. Não é utilizado nos cálculos atuais.
+alimentos.csv = Arquivo principal (TACO). Contém as informações nutricionais básicas de cada alimento: Energia (kcal), Proteínas, Carboidratos, Lipídeos (gorduras).
 
-Fonte Oficial e Organização dos Dados:
-Repositório de origem: github.com/machine-learning-mocha/taco
-Dados originais: Tabela Brasileira de Composição de Alimentos (TACO) - NEPA/UNICAMP
-Site oficial: www.nepa.unicamp.br/taco/tabela.php
+acidos-graxos.csv = Arquivo complementar com o perfil detalhado de ácidos graxos (saturados, monoinsaturados, poli-insaturados). Não é utilizado nos cálculos atuais, mas está disponível para futuras implementações.
+
+aminoacidos.csv = Arquivo complementar com o perfil detalhado de aminoácidos. Não é utilizado nos cálculos atuais, mas está disponível para futuras implementações.
+
+tabela_ibge.csv = Arquivo alternativo (IBGE POF 2008-2009). Pode ser selecionado pelo usuário na barra lateral.
 
 ========================================
 
@@ -496,4 +504,4 @@ App online: https://biogestao-360.streamlit.app
 ========================================
 
 Documento gerado em: Abril/2026
-Versão: 3.1
+Versão: 3.2
