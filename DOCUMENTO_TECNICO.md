@@ -530,6 +530,7 @@ README.md	Documentação do projeto	-
 .gitignore	Arquivos ignorados pelo Git	-
 
 ## 8. REFERÊNCIAS CIENTÍFICAS
+
 Cálculo	Fórmula	Fonte	Ano
 TMB (Homens)	66.47 + (13.75 × P) + (5.0 × A) - (6.75 × I)	Harris-Benedict	1919
 TMB (Mulheres)	655.1 + (9.56 × P) + (1.85 × A) - (4.67 × I)	Harris-Benedict	1919
