@@ -407,7 +407,8 @@ Impacto:
 
 . O sistema NÃO quebra (sem NaN ou erros)
 
-5. LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR
+## 5. LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR
+
 5.1 Consumo Planejado
 
 Consumo Planejado = Total de calorias do cardápio (diário) ou Média diária (semanal)
