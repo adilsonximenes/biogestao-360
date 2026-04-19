@@ -251,14 +251,33 @@ Como usar:
 
 5.Configure "Margens: Mínimas"
 
-## 📊 Base de Dados - Tabela TACO
-Os dados alimentares são baseados na Tabela Brasileira de Composição de Alimentos (TACO) desenvolvida pela Universidade Estadual de Campinas (UNICAMP).
+## 📚 BASES DE DADOS UTILIZADAS
 
-. Fonte: NEPA - Núcleo de Estudos e Pesquisas em Alimentação
+### Tabela TACO (UNICAMP)
+- **Fonte:** NEPA - Núcleo de Estudos e Pesquisas em Alimentação
+- **Instituição:** Universidade Estadual de Campinas (UNICAMP)
+- **Ano da versão:** 2011 (última versão completa disponível publicamente)
+- **Site oficial:** https://www.tbca.net.br/
+- **Repositório de dados:** https://github.com/machine-learning-mocha/taco
 
-. Instituição: UNICAMP
+### Tabela IBGE (POF 2008-2009)
+- **Fonte:** Pesquisa de Orçamentos Familiares
+- **Instituição:** Instituto Brasileiro de Geografia e Estatística (IBGE)
+- **Ano:** 2008-2009
+- **Link oficial:** https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html
 
-. Ano da versão utilizada: 2011 (última versão completa disponível publicamente)
+### FAO/WHO
+- **Organização das Nações Unidas para Alimentação e Agricultura**
+- **Link:** https://www.fao.org/
+
+### Arquivos do Projeto
+
+| Arquivo | Conteúdo | Utilização |
+|---------|----------|------------|
+| `alimentos.csv` | Dados nutricionais básicos (kcal, proteínas, carboidratos, gorduras) | **Principal - usado nos cálculos** |
+| `acidos-graxos.csv` | Perfil de ácidos graxos (saturados, mono, poli-insaturados) | Complementar (não usado atualmente) |
+| `aminoacidos.csv` | Perfil de aminoácidos | Complementar (não usado atualmente) |
+| `tabela_ibge.csv` | Tabela IBGE POF 2008-2009 | Alternativa - selecionável pelo usuário |
 
 ## ⚠️ Limitações da Tabela TACO
 Alguns alimentos possuem dados incompletos (valores "NA" ou "traço"). Exemplo: "Leite, de vaca, integral" não tem calorias informadas.
