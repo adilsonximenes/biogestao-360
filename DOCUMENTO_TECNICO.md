@@ -412,6 +412,7 @@ Impacto:
 5.1 Consumo Planejado
 
 Consumo Planejado = Total de calorias do cardápio (diário) ou Média diária (semanal)
+
 5.2 Saldo Energético
 Fórmula:
 
@@ -483,7 +484,7 @@ Diferença = 10.0 kg
 Variação semanal = 0.5 kg
 Semanas = 10.0 / 0.5 = 20 semanas
 
-6. ALERTAS OMS (Alimentos de Risco)
+## 6. ALERTAS OMS (Alimentos de Risco)
 Classificação IARC/OMS:
 
 Grupo	Classificação	Alimentos	Recomendação
@@ -491,7 +492,7 @@ Grupo 1	Cancerígeno para humanos	Carnes processadas (salsicha, presunto, bacon,
 Grupo 2A	Provavelmente cancerígeno	Carne vermelha (bovina, suína, ovina, caprina)	Limitar a 500g por semana
 Grupo 2B	Possivelmente cancerígeno	Aspartame, bebidas muito quentes (>65°C)	Consumo moderado
 
-7. BASES DE DADOS UTILIZADAS
+## 7. BASES DE DADOS UTILIZADAS
 
 7.1 Tabela TACO (UNICAMP) - Principal
 Item	Informação
@@ -528,7 +529,7 @@ aminoacidos.csv	Perfil de aminoácidos	Complementar (futuro)
 README.md	Documentação do projeto	-
 .gitignore	Arquivos ignorados pelo Git	-
 
-8. REFERÊNCIAS CIENTÍFICAS
+## 8. REFERÊNCIAS CIENTÍFICAS
 Cálculo	Fórmula	Fonte	Ano
 TMB (Homens)	66.47 + (13.75 × P) + (5.0 × A) - (6.75 × I)	Harris-Benedict	1919
 TMB (Mulheres)	655.1 + (9.56 × P) + (1.85 × A) - (4.67 × I)	Harris-Benedict	1919
@@ -540,7 +541,7 @@ Densidade Corporal	Protocolo Jackson & Pollock	Jackson AS, Pollock ML	1978
 Classificação % Gordura	Tabela ACSM	American College of Sports Medicine	-
 Classificação IMC	Tabela OMS	World Health Organization	-
 
-9. DECLARAÇÃO DE TRANSPARÊNCIA
+## 9. DECLARAÇÃO DE TRANSPARÊNCIA
 O BioGestão 360 é um software de código aberto e 100% gratuito. Todos os cálculos são realizados localmente no navegador do usuário, sem envio de dados para servidores externos.
 
 Filosofia: Indústria 5.0
