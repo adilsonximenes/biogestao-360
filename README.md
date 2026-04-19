@@ -1,5 +1,7 @@
 # 🏋️‍♂️ BioGestão 360 - Indústria 5.0
 
+**Versão atual:** 3.2 (Abril/2026)
+
 ## 🤖 Tecnologia Humanizada para Avaliação Física
 
 **BioGestão 360: Onde a precisão científica encontra o toque humano da Indústria 5.0**
