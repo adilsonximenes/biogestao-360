@@ -6,14 +6,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 import qrcode
 import io
+import unicodedata
 from PIL import Image
 
+# ============================================
 # 1. CONFIGURAÇÃO DE PÁGINA
+# ============================================
 st.set_page_config(
     page_title="BioGestão 360 - Profissional", layout="wide", page_icon="🏋️"
 )
 
+# ============================================
 # 2. INICIALIZAÇÕES
+# ============================================
 if "modo_impressao" not in st.session_state:
     st.session_state.modo_impressao = False
 if "planejamento_tipo" not in st.session_state:
@@ -30,9 +35,15 @@ if "cardapio" not in st.session_state:
     st.session_state.cardapio = {
         k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
     }
+if "fonte_dados" not in st.session_state:
+    st.session_state.fonte_dados = "TACO (UNICAMP)"
+if "metodo_get" not in st.session_state:
+    st.session_state.metodo_get = "Harris-Benedict (Peso Total)"
 
 
+# ============================================
 # 3. FUNÇÃO PARA GERAR QR CODE PIX
+# ============================================
 def gerar_qr_code_pix():
     pix_data = "00020126580014br.gov.bcb.pix0136f3e890da-fb72-4e8c-a0cd-d88177457a305204000053039865802BR5925ADILSON GONCALVES XIMENES6012BELFORD ROXO62180514AdilsonXimenes6304B1CB"
     qr = qrcode.QRCode(version=1, box_size=5, border=2)
@@ -45,7 +56,9 @@ def gerar_qr_code_pix():
     return img_bytes
 
 
+# ============================================
 # 4. FUNÇÃO PARA GERAR BOTÃO PAYPAL
+# ============================================
 def get_paypal_html():
     return """
     <div id="donate-button-container" style="text-align: center; margin: 10px 0;">
@@ -66,7 +79,9 @@ def get_paypal_html():
     """
 
 
+# ============================================
 # 5. ALIMENTOS DE RISCO (Grupo OMS)
+# ============================================
 def carregar_alimentos_risco():
     return {
         "grupo1": {
@@ -121,7 +136,9 @@ def verificar_risco_oms(nome_alimento):
     return None
 
 
-# 6. FUNÇÃO PARA CALCULAR COMPOSIÇÃO CORPORAL
+# ============================================
+# 6. FUNÇÃO PARA CALCULAR COMPOSIÇÃO CORPORAL (Estimativa por IMC)
+# ============================================
 def calcular_composicao_corporal(peso, altura, idade, sexo):
     altura_m = altura / 100
     imc = peso / (altura_m**2)
@@ -151,7 +168,9 @@ def calcular_composicao_corporal(peso, altura, idade, sexo):
     }
 
 
+# ============================================
 # 7. FUNÇÃO PARA CALCULAR TOTAIS (DIÁRIO OU SEMANAL)
+# ============================================
 def calcular_totais_cardapio(cardapio, planejamento_tipo, cardapio_semanal=None):
     if planejamento_tipo == "Diário":
         total_kcal = sum(item["Kcal"] for ref in cardapio.values() for item in ref)
@@ -183,7 +202,9 @@ def calcular_totais_cardapio(cardapio, planejamento_tipo, cardapio_semanal=None)
     }
 
 
+# ============================================
 # 8. FUNÇÕES DE LIMPEZA
+# ============================================
 def limpar_cardapio():
     if st.session_state.planejamento_tipo == "Diário":
         st.session_state.cardapio = {
@@ -225,7 +246,342 @@ def limpar_semana_completa():
     st.rerun()
 
 
-# 9. CSS PROFISSIONAL
+# ============================================
+# 9. FUNÇÕES CORRIGIDAS PARA TRATAR VALORES NUTRICIONAIS
+# ============================================
+def tratar_valor_nutricional(valor):
+    """
+    CORREÇÃO: Converte valores da TACO/IBGE para float
+    Trata NA, *, Tr, -, vazio como 0
+    """
+    if valor is None:
+        return 0.0
+    
+    if pd.isna(valor):
+        return 0.0
+    
+    if isinstance(valor, str):
+        valor = valor.strip().upper()
+        
+        # Símbolos de dados ausentes
+        if valor in ['NA', 'N/A', '*', 'TR', '-', '']:
+            return 0.0
+        
+        # Converter vírgula para ponto
+        valor = valor.replace(',', '.')
+        
+        try:
+            return float(valor)
+        except ValueError:
+            return 0.0
+    
+    if isinstance(valor, (int, float)):
+        return float(valor) if not pd.isna(valor) else 0.0
+    
+    return 0.0
+
+
+# ============================================
+# 10. FUNÇÕES CORRIGIDAS PARA CARREGAR TABELAS
+# ============================================
+@st.cache_data
+def carregar_tabela_taco():
+    """Carrega a tabela TACO do arquivo CSV"""
+    try:
+        if os.path.exists("alimentos.csv"):
+            df = pd.read_csv("alimentos.csv", encoding="utf-8")
+            return df
+        else:
+            st.warning("Arquivo alimentos.csv não encontrado. Verifique se está na pasta correta.")
+            return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Erro ao carregar tabela TACO: {str(e)}")
+        return pd.DataFrame()
+
+
+@st.cache_data
+def carregar_tabela_ibge():
+    """
+    CORREÇÃO RADICAL: Carrega a tabela do IBGE ignorando as linhas de cabeçalho complexas
+    O arquivo tem várias linhas de cabeçalho antes dos dados reais
+    """
+    try:
+        if not os.path.exists("tabela_ibge.csv"):
+            st.warning("Arquivo tabela_ibge.csv não encontrado. Verifique se está na pasta correta.")
+            return pd.DataFrame()
+        
+        # CORREÇÃO: Pular as primeiras linhas até encontrar a linha de cabeçalho real
+        # A linha de cabeçalho real contém "CÓDIGO DO ALIMENTO"
+        cabecalho_linha = None
+        with open("tabela_ibge.csv", "r", encoding="utf-8") as f:
+            linhas = f.readlines()
+            for i, linha in enumerate(linhas):
+                if "CÓDIGO DO ALIMENTO" in linha and "DESCRIÇÃO DO ALIMENTO" in linha:
+                    cabecalho_linha = i
+                    break
+        
+        if cabecalho_linha is None:
+            st.error("Não foi possível encontrar o cabeçalho da tabela IBGE.")
+            return pd.DataFrame()
+        
+        # Ler o CSV a partir da linha de cabeçalho
+        df = pd.read_csv(
+            "tabela_ibge.csv", 
+            encoding="utf-8", 
+            sep=';',
+            skiprows=cabecalho_linha,
+            on_bad_lines='skip'
+        )
+        
+        # Limpar nomes das colunas
+        df.columns = df.columns.str.strip()
+        
+        # Renomear colunas para padronizar
+        colunas_renomear = {}
+        for col in df.columns:
+            col_lower = col.lower().strip()
+            if 'código do alimento' in col_lower or 'codigo do alimento' in col_lower:
+                colunas_renomear[col] = 'codigo'
+            elif 'descrição do alimento' in col_lower or 'descricao do alimento' in col_lower:
+                colunas_renomear[col] = 'descricao'
+            elif 'código da preparação' in col_lower or 'codigo da preparacao' in col_lower:
+                colunas_renomear[col] = 'codigo_preparacao'
+            elif 'descrição da preparação' in col_lower or 'descricao da preparacao' in col_lower:
+                colunas_renomear[col] = 'preparacao'
+            elif 'energia (kcal)' in col_lower or 'energia' in col_lower:
+                colunas_renomear[col] = 'energia_kcal'
+            elif 'proteína (g)' in col_lower or 'proteina (g)' in col_lower:
+                colunas_renomear[col] = 'proteina_g'
+            elif 'lipídeos totais (g)' in col_lower or 'lipideos totais (g)' in col_lower:
+                colunas_renomear[col] = 'lipideos_g'
+            elif 'carboidrato (g)' in col_lower:
+                colunas_renomear[col] = 'carboidrato_g'
+            elif 'fibra alimentar total (g)' in col_lower:
+                colunas_renomear[col] = 'fibra_g'
+        
+        df = df.rename(columns=colunas_renomear)
+        
+        # Criar coluna de descrição completa
+        if 'descricao' in df.columns:
+            if 'preparacao' in df.columns:
+                df['descricao_completa'] = df['descricao'].fillna('') + ' - ' + df['preparacao'].fillna('')
+            else:
+                df['descricao_completa'] = df['descricao']
+        
+        # Remover linhas vazias
+        df = df.dropna(subset=['descricao_completa'] if 'descricao_completa' in df.columns else ['descricao'], how='all')
+        
+        return df
+    
+    except Exception as e:
+        st.error(f"Erro ao carregar tabela do IBGE: {str(e)}")
+        return pd.DataFrame()
+
+
+@st.cache_data
+def carregar_acidosis_graxos():
+    """Carrega tabela de ácidos graxos (opcional)"""
+    try:
+        if os.path.exists("acidos-graxos.csv"):
+            df = pd.read_csv("acidos-graxos.csv", encoding="utf-8")
+            return df
+        return pd.DataFrame()
+    except Exception as e:
+        return pd.DataFrame()
+
+
+@st.cache_data
+def carregar_aminoacidos():
+    """Carrega tabela de aminoácidos (opcional)"""
+    try:
+        if os.path.exists("aminoacidos.csv"):
+            df = pd.read_csv("aminoacidos.csv", encoding="utf-8")
+            return df
+        return pd.DataFrame()
+    except Exception as e:
+        return pd.DataFrame()
+
+
+# ============================================
+# 11. FUNÇÃO CORRIGIDA PARA DETERMINAR PESO POR UNIDADE
+# ============================================
+def obter_peso_por_unidade(descricao_alimento):
+    """
+    CORREÇÃO: Retorna peso médio realista para "1 unidade" baseado no alimento
+    NÃO USA MAIS 50g COMO FALLBACK!
+    """
+    desc = descricao_alimento.lower() if descricao_alimento else ""
+    
+    # Tabela de pesos reais por unidade (calibrada)
+    pesos_por_unidade = {
+        # Biscoitos e bolachas (PEQUENOS)
+        'biscoito': 5,
+        'maisena': 4,
+        'cream cracker': 5,
+        'wafer': 6,
+        'bolacha': 5,
+        'cracker': 5,
+        'sequilho': 5,
+        'rosquinha': 6,
+        'biscoito doce': 5,
+        'biscoito salgado': 5,
+        
+        # Pães
+        'pão francês': 50,
+        'pão de forma': 25,
+        'pão integral': 25,
+        'torrada': 10,
+        'croissant': 45,
+        'brioche': 40,
+        'pão de queijo': 30,
+        
+        # Frutas (unidade média)
+        'maçã': 150,
+        'banana': 100,
+        'laranja': 120,
+        'pera': 130,
+        'manga': 200,
+        'melão': 300,
+        'melancia': 400,
+        'abacaxi': 500,
+        'uva': 5,
+        'morango': 12,
+        'kiwi': 70,
+        
+        # Ovos e derivados
+        'ovo': 50,
+        'omelete': 80,
+        'ovo de codorna': 9,
+        
+        # Queijos (fatia/unidade)
+        'queijo': 20,
+        'muçarela': 20,
+        'prato': 20,
+        'minas': 30,
+        'ricota': 25,
+        'parmesão': 15,
+        
+        # Carnes (fatia/unidade)
+        'presunto': 15,
+        'mortadela': 15,
+        'salame': 10,
+        'hambúrguer': 80,
+        'linguiça': 60,
+        'salsicha': 50,
+        
+        # Legumes (unidade média)
+        'cenoura': 50,
+        'beterraba': 60,
+        'batata': 100,
+        'tomate': 80,
+        'cebola': 100,
+        'pimentão': 100,
+        'abobrinha': 150,
+        'berinjela': 150,
+        'chuchu': 150,
+        'couve-flor': 200,
+        'brócolis': 200,
+    }
+    
+    # Verificar correspondência
+    for chave, peso in pesos_por_unidade.items():
+        if chave in desc:
+            return peso
+    
+    # CORREÇÃO: Fallback é 0 (não 50g!) - força o usuário a informar peso real
+    return 0
+
+
+def obter_unidade_padrao(categoria, descricao_alimento):
+    """
+    CORREÇÃO: Retorna a unidade padrão baseada na categoria e descrição
+    """
+    categoria_lower = categoria.lower() if categoria else ""
+    descricao_lower = descricao_alimento.lower() if descricao_alimento else ""
+
+    # Palavras que indicam líquido
+    palavras_liquidas = [
+        "suco", "leite", "café", "bebida", "água", "chá", "refrigerante",
+        "cerveja", "vinho", "aguardente", "caldo", "achocolatado"
+    ]
+
+    # Palavras que indicam unidade (não líquido)
+    palavras_unidade = ["ovo", "unidade", "codorna", "ovos", "biscoito", "pão", "fruta"]
+
+    # Verificar se é líquido
+    is_liquido = False
+    for palavra in palavras_liquidas:
+        if palavra in descricao_lower:
+            is_liquido = True
+            break
+    
+    # Verificar se usa unidade
+    usa_unidade = False
+    for palavra in palavras_unidade:
+        if palavra in descricao_lower:
+            usa_unidade = True
+            break
+    
+    # Definir unidade
+    if usa_unidade:
+        unidade_simbolo = "un"
+        peso_base = 1  # Será substituído pelo peso real
+    elif is_liquido:
+        unidade_simbolo = "ml"
+        peso_base = 200  # Padrão para copo
+    else:
+        unidade_simbolo = "g"
+        peso_base = 1  # Será substituído pelo peso informado
+    
+    return is_liquido, usa_unidade, peso_base, unidade_simbolo
+
+
+# ============================================
+# 12. FUNÇÕES PARA OBTER VALORES NUTRICIONAIS
+# ============================================
+def obter_valor_nutricional_taco(item, fator_calc):
+    """Extrai valores nutricionais da tabela TACO com tratamento de NA"""
+    kcal_raw = item.get("Energia..kcal.", 0)
+    prot_raw = item.get("Proteína..g.", 0)
+    carb_raw = item.get("Carboidrato..g.", 0)
+    gord_raw = item.get("Lipídeos..g.", 0)
+    
+    kcal_val = tratar_valor_nutricional(kcal_raw)
+    prot_val = tratar_valor_nutricional(prot_raw)
+    carb_val = tratar_valor_nutricional(carb_raw)
+    gord_val = tratar_valor_nutricional(gord_raw)
+    
+    return {
+        "kcal": round(kcal_val * fator_calc, 1),
+        "prot": round(prot_val * fator_calc, 1),
+        "carb": round(carb_val * fator_calc, 1),
+        "gord": round(gord_val * fator_calc, 1),
+    }
+
+
+def obter_valor_nutricional_ibge(item, fator_calc):
+    """Extrai valores nutricionais da tabela do IBGE com tratamento de NA"""
+    kcal_raw = item.get("energia_kcal", 0)
+    prot_raw = item.get("proteina_g", 0)
+    carb_raw = item.get("carboidrato_g", 0)
+    gord_raw = item.get("lipideos_g", 0)
+    
+    kcal_val = tratar_valor_nutricional(kcal_raw)
+    prot_val = tratar_valor_nutricional(prot_raw)
+    carb_val = tratar_valor_nutricional(carb_raw)
+    gord_val = tratar_valor_nutricional(gord_raw)
+    
+    return {
+        "kcal": round(kcal_val * fator_calc, 1),
+        "prot": round(prot_val * fator_calc, 1),
+        "carb": round(carb_val * fator_calc, 1),
+        "gord": round(gord_val * fator_calc, 1),
+    }
+
+
+# ============================================
+# 13. CSS PROFISSIONAL (CORRIGIDO PARA MODO CLARO/ESCURO)
+# ============================================
 st.markdown(
     """
 <style>
@@ -326,47 +682,134 @@ st.markdown(
     .resumo-laudo p { color: #ffffff !important; margin: 10px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
     .resumo-laudo strong { color: #fbbf24 !important; }
     
-/* CORREÇÃO - EQUIPAMENTO ADIPÔMETRO */
-.equipamento-adipometro {
-    background: linear-gradient(135deg, #1e3a5f, #0f172a);
-    border-left: 5px solid #3b82f6;
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin: 10px 0;
-    color: #ffffff !important;
-}
-
-.equipamento-adipometro strong {
-    color: #fbbf24 !important;
-}
-
-/* CORREÇÃO - EQUIPAMENTO FITA MÉTRICA */
-.equipamento-fita {
-    background: linear-gradient(135deg, #1e3a5f, #0f172a);
-    border-left: 5px solid #10b981;
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin: 10px 0;
-    color: #ffffff !important;
-}
-
-.equipamento-fita strong {
-    color: #fbbf24 !important;
-}
-
-/* CORREÇÃO - EQUIPAMENTO COMPLEMENTAR */
-.equipamento-complementar {
-    background: linear-gradient(135deg, #1e3a5f, #0f172a);
-    border-left: 5px solid #f59e0b;
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin: 10px 0;
-    color: #ffffff !important;
-}
-
-.equipamento-complementar strong {
-    color: #fbbf24 !important;
-}
+    .equipamento-adipometro {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #3b82f6;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-adipometro strong { color: #fbbf24 !important; }
+    
+    .equipamento-fita {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #10b981;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-fita strong { color: #fbbf24 !important; }
+    
+    .equipamento-complementar {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #f59e0b;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-complementar strong { color: #fbbf24 !important; }
+    
+    .seletor-fonte {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #ffd700;
+    }
+    
+    /* METODO SELECTOR */
+    .metodo-selector {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: 12px;
+        padding: 15px;
+        margin: 15px 0;
+        border: 1px solid #ffd700;
+    }
+    .metodo-selector h4 {
+        color: #ffd700 !important;
+        margin-bottom: 10px;
+    }
+    
+    /* AVISO PESO REAL - CORES AJUSTADAS PARA AMBOS OS MODOS */
+    .aviso-peso-real {
+        background: linear-gradient(135deg, #fef3c7, #fffbeb);
+        border-left: 8px solid #f59e0b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .aviso-peso-real h3 {
+        color: #92400e !important;
+        margin: 0 0 8px 0;
+    }
+    .aviso-peso-real p {
+        color: #78350f !important;
+        margin: 0;
+        font-size: 15px;
+    }
+    .aviso-peso-real .grid-referencia {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 15px 0;
+    }
+    
+    /* CORREÇÃO: Cards de referência - funcionando em modo claro E escuro */
+    .aviso-peso-real .card-peso {
+        background: #ffffff !important;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #fde68a;
+    }
+    .aviso-peso-real .card-peso strong {
+        color: #d97706 !important;
+    }
+    .aviso-peso-real .card-peso br {
+        display: block;
+        margin: 4px 0;
+    }
+    .aviso-peso-real .card-peso span {
+        color: #1e293b !important;
+    }
+    
+    /* Mantém o .obs original - já está funcionando */
+    .aviso-peso-real .obs {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #92400e !important;
+        background: #fffbeb;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #fde68a;
+    }
+    
+    /* INSTRUÇÃO CIENTÍFICA - CORES AJUSTADAS */
+    .instrucao-cientifica {
+        background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+        border-left: 5px solid #0284c7;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+    }
+    .instrucao-cientifica h4 {
+        color: #0369a1 !important;
+        margin: 0 0 10px 0;
+    }
+    .instrucao-cientifica ol {
+        margin: 0;
+        padding-left: 20px;
+        color: #0c4a6e !important;
+    }
+    .instrucao-cientifica p {
+        margin-top: 10px;
+        font-size: 13px;
+        color: #0369a1 !important;
+    }
     
     /* IMPRESSAO - CORRIGIDA */
     @media print {
@@ -385,7 +828,8 @@ st.markdown(
         .card-com-explicacao, .perfil-gigante, .meta-gigante,
         .header-cafe, .header-almoco, .header-lanches, .header-jantar,
         .resumo-laudo, .aviso-cientifico, .privacidade-box,
-        .equipamento-adipometro, .equipamento-fita, .equipamento-complementar {
+        .equipamento-adipometro, .equipamento-fita, .equipamento-complementar,
+        .aviso-peso-real, .instrucao-cientifica, .metodo-selector {
             color: black !important;
             background: white !important;
         }
@@ -440,7 +884,10 @@ st.markdown(
         .card-com-explicacao, .card-com-explicacao *,
         .resumo-laudo, .resumo-laudo *,
         .aviso-cientifico, .aviso-cientifico *,
-        .privacidade-box, .privacidade-box * {
+        .privacidade-box, .privacidade-box *,
+        .aviso-peso-real, .aviso-peso-real *,
+        .instrucao-cientifica, .instrucao-cientifica *,
+        .metodo-selector, .metodo-selector * {
             color: black !important;
             background: white !important;
         }
@@ -450,7 +897,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 10. SIDEBAR
+# ============================================
+# 14. SIDEBAR (ATUALIZADA COM FONTES COMPLETAS)
+# ============================================
 with st.sidebar:
     st.markdown("### 👤 Perfil Biológico")
     st.markdown("---")
@@ -493,6 +942,42 @@ with st.sidebar:
     naf_val = opcoes_naf[naf_label]
 
     st.markdown("---")
+    
+    st.markdown("### 📊 Fonte de Dados")
+    
+    fonte_dados = st.radio(
+        "📚 Selecione a tabela nutricional:",
+        ["TACO (UNICAMP)", "IBGE (POF 2008-2009)"],
+        horizontal=False,
+        index=0 if st.session_state.fonte_dados == "TACO (UNICAMP)" else 1
+    )
+    
+    if fonte_dados != st.session_state.fonte_dados:
+        st.session_state.fonte_dados = fonte_dados
+        st.rerun()
+    
+    st.caption("""
+    **TACO (UNICAMP):** Mais completa para alimentos industrializados e preparações comuns.
+    
+    **IBGE (POF 2008-2009):** Mais alimentos in natura e preparações regionais brasileiras.
+    
+    🔗 **Fontes científicas:**
+    - TACO: https://www.tbca.net.br/
+    - IBGE: https://www.ibge.gov.br/
+    - FAO: https://www.fao.org/
+    """)
+    
+    st.markdown("---")
+    st.caption("**📁 Arquivos de dados do sistema:**")
+    st.caption("""
+    - `alimentos.csv` - TACO (principal)
+    - `acidos-graxos.csv` - Perfil lipídico
+    - `aminoacidos.csv` - Perfil proteico
+    - `tabela_ibge.csv` - IBGE (alternativo)
+    """)
+    st.caption("💡 Os arquivos complementares (ácidos graxos e aminoácidos) estão disponíveis para futuras implementações.")
+    
+    st.markdown("---")
 
     planejamento_tipo = st.radio(
         "📅 Tipo de Planejamento:", ["Diário", "Semanal"], horizontal=True
@@ -519,20 +1004,21 @@ with st.sidebar:
     )
 
 
-# 11. CARGA DE DADOS
+# ============================================
+# 15. CARGA DE DADOS
+# ============================================
 @st.cache_data
 def load_db():
-    df_a = (
-        pd.read_csv("alimentos.csv")
-        if os.path.exists("alimentos.csv")
-        else pd.DataFrame()
-    )
-    return df_a, pd.DataFrame(), pd.DataFrame()
+    df_taco = carregar_tabela_taco()
+    df_ibge = carregar_tabela_ibge()
+    return df_taco, df_ibge
 
 
-df_taco, df_graxos, df_amino = load_db()
+df_taco, df_ibge = load_db()
 
-# 12. HEADER
+# ============================================
+# 16. HEADER
+# ============================================
 st.markdown(
     """
 <div class='banner-profissional'>
@@ -544,7 +1030,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 13. DOAÇÕES E DICAS DE IMPRESSÃO
+# ============================================
+# 17. DOAÇÕES E DICAS DE IMPRESSÃO
+# ============================================
 with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded=False):
     col_pix, col_paypal = st.columns(2)
     with col_pix:
@@ -575,7 +1063,9 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
     )
     st.caption("🌳 A natureza agradece o uso consciente do papel!")
 
-# 14. POLÍTICA DE PRIVACIDADE
+# ============================================
+# 18. POLÍTICA DE PRIVACIDADE
+# ============================================
 st.markdown(
     """
 <div class='privacidade-box'>
@@ -588,25 +1078,29 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 15. AVISO CIENTÍFICO
+# ============================================
+# 19. AVISO CIENTÍFICO
+# ============================================
 st.markdown(
     """
 <div class='aviso-cientifico'>
-    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP) e equações Harris-Benedict.
+    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP), Tabela IBGE (POF 2008-2009) e equações Harris-Benedict.
     <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</strong>
 </div>
 """,
     unsafe_allow_html=True,
 )
 
-# 16. CÁLCULOS BIOMÉTRICOS
+# ============================================
+# 20. CÁLCULOS BIOMÉTRICOS (Harris-Benedict padrão)
+# ============================================
 alt_m = alt_cm / 100
 imc = peso_at / (alt_m**2)
 if sexo == "Masculino":
-    tmb = 66.47 + (13.75 * peso_at) + (5.0 * alt_cm) - (6.75 * idade)
+    tmb_harris = 66.47 + (13.75 * peso_at) + (5.0 * alt_cm) - (6.75 * idade)
 else:
-    tmb = 655.1 + (9.56 * peso_at) + (1.85 * alt_cm) - (4.67 * idade)
-get_total = tmb * naf_val
+    tmb_harris = 655.1 + (9.56 * peso_at) + (1.85 * alt_cm) - (4.67 * idade)
+get_harris = tmb_harris * naf_val
 
 composicao = calcular_composicao_corporal(peso_at, alt_cm, idade, sexo)
 
@@ -626,7 +1120,9 @@ else:
     else:
         texto_meta = "🎉 Parabéns! Meta alcançada!"
 
-# 17. PERFIL GIGANTE
+# ============================================
+# 21. PERFIL GIGANTE
+# ============================================
 st.markdown(
     f"""
 <div class='perfil-gigante'>
@@ -647,17 +1143,24 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 18. DASHBOARD
+# ============================================
+# 22. DASHBOARD (com método selecionado)
+# ============================================
 st.markdown("## ⚡ Metabolismo e Gasto Energético")
 
 col1, col2, col3, col4 = st.columns(4)
+
+# Determinar qual GET mostrar (padrão é Harris até a avaliação ser feita)
+get_atual = get_harris
+tmb_atual = tmb_harris
+metodo_atual_nome = "Harris-Benedict (Peso Total)"
 
 with col1:
     st.markdown(
         f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>⚡</div>
-        <div class='card-valor'>{get_total:.0f} kcal</div>
+        <div class='card-valor'>{get_atual:.0f} kcal</div>
         <div class='card-titulo'>Gasto Total (GET)</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Total de calorias que seu corpo gasta por dia.<br>📊 <strong>Como usar:</strong> Para manter o peso, consuma esta quantidade.</div>
     </div>
@@ -670,7 +1173,7 @@ with col2:
         f"""
     <div class='card-com-explicacao'>
         <div class='card-icon'>🔥</div>
-        <div class='card-valor'>{tmb:.0f} kcal</div>
+        <div class='card-valor'>{tmb_atual:.0f} kcal</div>
         <div class='card-titulo'>Metabolismo Basal (TMB)</div>
         <div class='card-explicacao'>💡 <strong>O que é?</strong> Calorias queimadas em repouso total.<br>📊 <strong>Como usar:</strong> É o mínimo que seu corpo precisa para viver.</div>
     </div>
@@ -704,9 +1207,11 @@ with col4:
         unsafe_allow_html=True,
     )
 
-# 19. COMPOSIÇÃO CORPORAL
+# ============================================
+# 23. COMPOSIÇÃO CORPORAL (estimativa por IMC)
+# ============================================
 st.markdown("---")
-st.markdown("## 🧬 Composição Corporal")
+st.markdown("## 🧬 Composição Corporal (Estimativa por IMC)")
 
 col_g1, col_g2, col_g3 = st.columns(3)
 
@@ -752,7 +1257,7 @@ with col_g3:
 st.markdown("---")
 
 # ============================================
-# 19.5. AVALIAÇÃO FÍSICA PROFISSIONAL (VERSÃO CORRIGIDA)
+# 24. AVALIAÇÃO FÍSICA PROFISSIONAL
 # ============================================
 st.markdown("---")
 st.markdown("## 📏 Avaliação Física Profissional")
@@ -769,6 +1274,39 @@ with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     | **Circunferências** | Fita métrica inelástica | Perímetros musculares e cintura | cm (centímetros) |
     | **Força** | Handgrip (dinamômetro) | Força de preensão palmar | kg/f |
     | **Flexibilidade** | Banco de Wells | Alongamento e flexibilidade | cm |
+    
+    ---
+    
+    ### 🧬 Sobre o Protocolo de Dobras (3 ou 7 dobras)
+    
+    | Protocolo | Dobras utilizadas | Precisão | Tempo de coleta |
+    |-----------|-------------------|----------|-----------------|
+    | **3 dobras** | Tríceps, Peitoral/Subescapular*, Abdome/Supra-ilíaca* | Boa (erro ~3-4%) | Rápido (~5 min) |
+    | **7 dobras** | Todas as 7 dobras principais | Alta (erro ~2-3%) | Demorado (~15 min) |
+    
+    *Depende do sexo: Homens (Peitoral + Abdome) | Mulheres (Subescapular + Supra-ilíaca)
+    
+    **Recomendação:** Utilize 7 dobras para maior precisão clínica. 3 dobras é suficiente para triagem rápida.
+    
+    ---
+    
+    ### 📊 Sobre o GET por Katch-McArdle
+    
+    **Harris-Benedict (Método Padrão):**
+    - Fórmula: TMB = 66.47 + (13.75 × peso) + (5.0 × altura) - (6.75 × idade)
+    - Baseado no **PESO TOTAL** (gordura + massa magra)
+    - Menos preciso para pessoas com alto % de gordura
+    
+    **Katch-McArdle (Método Alternativo):**
+    - Fórmula: TMB = 370 + (21.6 × Massa Magra em kg)
+    - Baseado apenas na **MASSA MAGRA** (músculos + ossos + órgãos)
+    - **Mais preciso** porque a gordura não consome energia
+    
+    **Comparação:**
+    | Método | Base | Quando usar |
+    |--------|------|-------------|
+    | Harris-Benedict | Peso total | Padrão, para todos |
+    | Katch-McArdle | Massa magra | Para quem tem % de gordura elevado ou busca máxima precisão |
     
     ---
     
@@ -1187,7 +1725,131 @@ if usar_avaliacao:
             "Treino equilibrado de força e cardio, facilidade para manutenção."
         )
 
-    # Exibir resultados
+    # ========== SELEÇÃO DO MÉTODO DE CÁLCULO DO GET ==========
+    st.markdown("---")
+    st.markdown("### 🧮 Configuração do Gasto Energético (GET)")
+    
+    st.markdown("""
+    <div class='metodo-selector'>
+        <h4>📊 Método de Cálculo do GET</h4>
+        <p>Escolha qual método será utilizado para calcular seu Gasto Energético Total (GET).
+        O método selecionado será aplicado no dashboard e no plano alimentar.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col_metodo1, col_metodo2 = st.columns(2)
+    
+    with col_metodo1:
+        # Calcular Katch-McArdle
+        tmb_katch = 370 + (21.6 * massa_magra_jp)
+        get_katch = tmb_katch * naf_val
+        
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #1e293b, #0f172a); 
+                    border-radius: 12px; padding: 15px; 
+                    border: 2px solid {"#ffd700" if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)" else "#3b82f6"};
+                    cursor: pointer;'>
+            <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 10px;'>
+                <span style='font-size: 24px;'>📊</span>
+                <h4 style='color: #3b82f6; margin: 0;'>Harris-Benedict</h4>
+            </div>
+            <p style='color: #94a3b8; font-size: 13px; margin-bottom: 15px;'>
+                Baseado no <strong>PESO TOTAL</strong> ({peso_at:.1f} kg)
+            </p>
+            <div style='display: flex; justify-content: space-between; gap: 10px;'>
+                <div>
+                    <div style='font-size: 11px; color: #94a3b8;'>TMB</div>
+                    <div style='font-size: 24px; font-weight: bold; color: white;'>{tmb_harris:.0f} <span style='font-size: 14px;'>kcal</span></div>
+                </div>
+                <div>
+                    <div style='font-size: 11px; color: #94a3b8;'>GET</div>
+                    <div style='font-size: 24px; font-weight: bold; color: white;'>{get_harris:.0f} <span style='font-size: 14px;'>kcal</span></div>
+                </div>
+            </div>
+            <p style='color: #94a3b8; font-size: 11px; margin-top: 12px; margin-bottom: 0;'>
+                ✅ Padrão utilizado em estudos desde 1919
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("✅ Usar Harris-Benedict", key="btn_harris", use_container_width=True):
+            st.session_state.metodo_get = "Harris-Benedict (Peso Total)"
+            st.rerun()
+    
+    with col_metodo2:
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #1e293b, #0f172a); 
+                    border-radius: 12px; padding: 15px; 
+                    border: 2px solid {"#ffd700" if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)" else "#10b981"};
+                    cursor: pointer;'>
+            <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 10px;'>
+                <span style='font-size: 24px;'>🧬</span>
+                <h4 style='color: #10b981; margin: 0;'>Katch-McArdle</h4>
+            </div>
+            <p style='color: #94a3b8; font-size: 13px; margin-bottom: 15px;'>
+                Baseado na <strong>MASSA MAGRA</strong> ({massa_magra_jp:.1f} kg)
+            </p>
+            <div style='display: flex; justify-content: space-between; gap: 10px;'>
+                <div>
+                    <div style='font-size: 11px; color: #94a3b8;'>TMB</div>
+                    <div style='font-size: 24px; font-weight: bold; color: white;'>{tmb_katch:.0f} <span style='font-size: 14px;'>kcal</span></div>
+                    <div style='font-size: 12px; color: #fbbf24;'>{tmb_katch - tmb_harris:+.0f} kcal</div>
+                </div>
+                <div>
+                    <div style='font-size: 11px; color: #94a3b8;'>GET</div>
+                    <div style='font-size: 24px; font-weight: bold; color: white;'>{get_katch:.0f} <span style='font-size: 14px;'>kcal</span></div>
+                    <div style='font-size: 12px; color: #fbbf24;'>{get_katch - get_harris:+.0f} kcal</div>
+                </div>
+            </div>
+            <p style='color: #94a3b8; font-size: 11px; margin-top: 12px; margin-bottom: 0;'>
+                💡 <strong>MAIS PRECISO!</strong> A gordura não consome energia
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("✅ Usar Katch-McArdle", key="btn_katch", use_container_width=True):
+            st.session_state.metodo_get = "Katch-McArdle (Massa Magra)"
+            st.rerun()
+    
+    # Atualizar GET e TMB conforme método selecionado
+    if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)":
+        tmb_atual = tmb_katch
+        get_atual = get_katch
+        metodo_atual_nome = "Katch-McArdle (Massa Magra)"
+    else:
+        tmb_atual = tmb_harris
+        get_atual = get_harris
+        metodo_atual_nome = "Harris-Benedict (Peso Total)"
+    
+    # Mostrar método selecionado
+    st.info(f"""
+    🔬 **Método selecionado:** {metodo_atual_nome}
+    
+    Este método será utilizado para calcular seu Gasto Energético Total (GET) e TMB.
+    O plano alimentar será baseado neste cálculo.
+    """)
+    
+    # ========== COMPARAÇÃO RESUMIDA DOS MÉTODOS ==========
+    st.markdown("---")
+    st.markdown("### 📊 Comparação dos Métodos")
+    
+    df_comparacao_metodos = pd.DataFrame({
+        "Método": ["Harris-Benedict", "Katch-McArdle"],
+        "Base": ["Peso Total", "Massa Magra"],
+        "Valor": [f"{peso_at:.1f} kg", f"{massa_magra_jp:.1f} kg"],
+        "TMB (kcal)": [f"{tmb_harris:.0f}", f"{tmb_katch:.0f}"],
+        "GET (kcal)": [f"{get_harris:.0f}", f"{get_katch:.0f}"],
+        "Diferença": ["-", f"{get_katch - get_harris:+.0f} kcal"]
+    })
+    
+    st.dataframe(df_comparacao_metodos, use_container_width=True, hide_index=True)
+    
+    st.caption("""
+    💡 **Interpretação:** O método Katch-McArdle é cientificamente mais preciso para pessoas com percentual de gordura elevado,
+    pois a gordura corporal não consome energia. A diferença entre os métodos pode chegar a 10-15% do GET.
+    """)
+
+    # Exibir resultados da avaliação
     st.markdown("---")
     st.markdown("### 📊 Resultado da Avaliação Física (Jackson & Pollock)")
 
@@ -1458,6 +2120,20 @@ if usar_avaliacao:
     """
     )
 
+    st.markdown("### 📊 Método de Cálculo do GET Selecionado")
+    st.markdown(
+        f"""
+    | Item | Informação |
+    |------|-------------|
+    | **Método Utilizado** | {metodo_atual_nome} |
+    | **TMB Calculada** | {tmb_atual:.0f} kcal/dia |
+    | **GET Calculado** | {get_atual:.0f} kcal/dia |
+    | **Fator de Atividade** | {naf_label} ({naf_val}) |
+    
+    **Sobre o método:** {'Baseado no PESO TOTAL (Harris-Benedict, 1919)' if 'Harris' in metodo_atual_nome else 'Baseado na MASSA MAGRA (Katch-McArdle) - MAIS PRECISO!'}
+    """
+    )
+
     # Botão para baixar Laudo da Avaliação Física em CSV
     st.markdown("---")
     st.markdown("#### 📥 Baixar Laudo da Avaliação Física")
@@ -1470,7 +2146,7 @@ if usar_avaliacao:
             "Peso",
             "Altura",
             "IMC",
-            "Protocolo Utilizado",
+            "Protocolo de Dobras",
             "Soma das Dobras (mm)",
             "Densidade Corporal (g/cm³)",
             "% Gordura (Adipômetro)",
@@ -1490,6 +2166,10 @@ if usar_avaliacao:
             "Nível de Força",
             "Flexibilidade Banco de Wells (cm)",
             "Nível de Flexibilidade",
+            "Método GET Selecionado",
+            "TMB Calculada (kcal/dia)",
+            "GET Calculado (kcal/dia)",
+            "Fator de Atividade Física",
         ],
         "Valor": [
             pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
@@ -1500,7 +2180,7 @@ if usar_avaliacao:
             f"{imc:.1f} ({classificacao_imc_laudo})",
             f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
             f"{soma_dobras:.1f} mm",
-            f"{densidade:.3f}",
+            f"{densidade:.3f} g/cm³",
             f"{percentual_gordura_jp:.1f}%",
             classif_gordura,
             risco_saude,
@@ -1518,6 +2198,10 @@ if usar_avaliacao:
             nivel_forca,
             f"{wells:.1f} cm",
             nivel_flex,
+            metodo_atual_nome,
+            f"{tmb_atual:.0f} kcal/dia",
+            f"{get_atual:.0f} kcal/dia",
+            f"{naf_label} ({naf_val})",
         ],
     }
 
@@ -1542,266 +2226,206 @@ else:
     )
 
 # ============================================
-# 20. MONTAGEM DO PLANO ALIMENTAR
+# 25. MONTAGEM DO PLANO ALIMENTAR (CORRIGIDO)
 # ============================================
 st.markdown("## 🍏 Montagem do Plano Alimentar")
-st.info(
-    "💡 **Dica de precisão:** Utilize 'Peso Real (g/ml)' com balança para maior exatidão!"
-)
 
-# ========== AVISO PARA SEGUIR RECEITA DA NUTRI ==========
-st.markdown(
-    """
-<div class='aviso-cientifico' style='margin-bottom: 15px;'>
-    <strong>📋 Para seguir sua receita da nutri:</strong>
-    <br><br>
-    1️⃣ Identifique os alimentos da sua receita na tabela TACO (busque pelo nome)
-    <br>
-    2️⃣ Adicione um a um nos campos abaixo com as quantidades prescritas
-    <br>
-    3️⃣ O sistema calcula automaticamente calorias e nutrientes com base em dados científicos (UNICAMP)
-    <br>
-    4️⃣ Use o resumo para impressão e acompanhamento
-    <br><br>
-    <strong>⚠️ Importante:</strong> Todos os alimentos possuem valores nutricionais baseados na Tabela TACO.
-    Consulte seu nutricionista ou médico para ajustes personalizados.
-    <br><br>
-    <strong>⚠️ Atenção:</strong> Alguns alimentos na Tabela TACO podem ter dados incompletos (valores não informados).
-    Nesses casos, o sistema considera o valor como 0 (zero) para não prejudicar os cálculos totais.
-    Verifique a composição completa do alimento em fontes complementares.
+# AVISO CORRIGIDO - CORES QUE FUNCIONAM EM MODO CLARO E ESCURO
+st.markdown("""
+<div class='aviso-peso-real' style='background: linear-gradient(135deg, #fef3c7, #fffbeb); border-left: 8px solid #f59e0b; border-radius: 12px; padding: 20px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+    <div style='display: flex; align-items: center; gap: 15px; flex-wrap: wrap;'>
+        <span style='font-size: 40px;'>⚠️</span>
+        <div style='flex: 1;'>
+            <h3 style='color: #92400e !important; margin: 0 0 8px 0;'>📌 REGRA DE OURO PARA PRECISÃO!</h3>
+            <p style='color: #78350f !important; margin: 0; font-size: 15px;'>
+                Para alimentos em <strong style='color: #b45309;'>"unidades"</strong> (biscoitos, frutas, ovos, pães, etc.), 
+                <strong style='color: #b45309;'>sempre informe o peso real de UMA unidade</strong> no campo <strong style='color: #b45309;'>"Peso Real (g/ml)"</strong>.
+            </p>
+        </div>
+    </div>
+    <hr style='margin: 15px 0; border-color: #fcd34d;'>
+    <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 15px 0;'>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🍪 Biscoito maisena</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 5g → informe 5g</span>
+        </div>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🍞 Pão francês</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 50g → informe 50g</span>
+        </div>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🍎 Maçã</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 150g → informe 150g</span>
+        </div>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🥚 Ovo</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 50g → informe 50g</span>
+        </div>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🍌 Banana</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 100g → informe 100g</span>
+        </div>
+        <div style='background: #ffffff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #fde68a;'>
+            <strong style='color: #d97706;'>🍊 Laranja</strong><br>
+            <span style='color: #1e293b;'>1 unidade = 120g → informe 120g</span>
+        </div>
+    </div>
+    <div style='margin-top: 12px; font-size: 13px; color: #92400e; background: #fffbeb; padding: 8px; border-radius: 6px; border: 1px solid #fde68a;'>
+        💡 <strong>Não sabe o peso?</strong> Use a tabela de referência acima ou consulte a embalagem do produto.
+        Quanto mais preciso o peso, mais exato será seu planejamento!
+    </div>
 </div>
-""",
-    unsafe_allow_html=True,
-)
-# ========== FIM DO AVISO ==========
+""", unsafe_allow_html=True)
 
+# TEXTO DE INSTRUÇÃO CIENTÍFICA (CORRIGIDO - INCLUI AMBAS AS TABELAS)
+st.markdown(f"""
+<div class='instrucao-cientifica'>
+    <h4>📋 Para seguir sua receita da nutri:</h4>
+    <ol>
+        <li>🔍 Identifique os alimentos da sua receita na tabela <strong>{st.session_state.fonte_dados}</strong> (busque pelo nome)</li>
+        <li>➕ Adicione um a um nos campos abaixo com as quantidades prescritas</li>
+        <li>⚡ O sistema calcula automaticamente calorias e nutrientes com base em dados científicos {'(UNICAMP)' if st.session_state.fonte_dados == 'TACO (UNICAMP)' else '(IBGE - POF 2008-2009)'}</li>
+        <li>📊 Use o resumo para impressão e acompanhamento</li>
+    </ol>
+    <p>⚠️ <strong>Importante:</strong> Todos os alimentos possuem valores nutricionais baseados na {'Tabela TACO (UNICAMP)' if st.session_state.fonte_dados == 'TACO (UNICAMP)' else 'Tabela IBGE (POF 2008-2009)'}. 
+    Consulte seu nutricionista ou médico para ajustes personalizados.</p>
+    <p>⚠️ <strong>Atenção:</strong> Alguns alimentos podem ter dados incompletos (valores não informados - NA, *, Tr). 
+    Nesses casos, o sistema considera o valor como <strong>0 (zero)</strong> para não prejudicar os cálculos totais. 
+    Verifique a composição completa do alimento em fontes complementares.</p>
+    <p>🔗 <strong>Fontes científicas:</strong> TACO/UNICAMP (https://www.tbca.net.br/) | IBGE (https://www.ibge.gov.br/) | FAO/WHO (https://www.fao.org/)</p>
+</div>
+""", unsafe_allow_html=True)
 
-# ========== FUNÇÃO PARA DETERMINAR UNIDADE PADRÃO POR CATEGORIA ==========
-def obter_unidade_padrao(categoria, descricao_alimento):
-    """
-    Retorna a unidade padrão e o peso base baseado na categoria e descrição do alimento
-    """
-    categoria_lower = categoria.lower() if categoria else ""
-    descricao_lower = descricao_alimento.lower() if descricao_alimento else ""
-
-    # ========== PALAVRAS QUE INDICAM SÓLIDO (mesmo em categorias líquidas) ==========
-    palavras_solidas = [
-        "canjica",
-        "mingau",
-        "arroz",
-        "feijão",
-        "carne",
-        "frango",
-        "peixe",
-        "ovo",
-        "queijo",
-        "pão",
-        "bolo",
-        "biscoito",
-        "pastel",
-        "macarrão",
-        "batata",
-        "mandioca",
-        "farinha",
-        "polenta",
-        "cuscuz",
-        "tapioca",
-        "sopa",
-        "caldo",
-        "purê",
-        "creme",
-        "farofa",
-        "torrada",
-        "omelete",
-    ]
-
-    # ========== CATEGORIAS E PALAVRAS PARA LÍQUIDOS ==========
-    categorias_liquidas = ["bebidas"]
-    palavras_liquidas = [
-        "suco",
-        "leite",
-        "café",
-        "bebida",
-        "água",
-        "chá",
-        "refrigerante",
-        "cerveja",
-        "vinho",
-        "aguardente",
-        "caldo",
-    ]
-
-    # ========== CATEGORIAS E PALAVRAS PARA UNIDADES (ovos, etc) ==========
-    palavras_unidade = ["ovo", "unidade", "codorna", "ovos"]
-
-    # ========== PRIORIDADE 1: VERIFICAR SE É SÓLIDO (sobrescreve categoria) ==========
-    is_solido = False
-    for palavra in palavras_solidas:
-        if palavra in descricao_lower:
-            is_solido = True
-            break
-
-    # ========== PRIORIDADE 2: VERIFICAR SE É LÍQUIDO ==========
-    is_liquido = False
-    if not is_solido:
-        for cat in categorias_liquidas:
-            if cat in categoria_lower:
-                is_liquido = True
-                break
-        if not is_liquido:
-            for palavra in palavras_liquidas:
-                if palavra in descricao_lower:
-                    is_liquido = True
-                    break
-
-    # ========== PRIORIDADE 3: VERIFICAR SE USA UNIDADES ==========
-    usa_unidade = False
-    for palavra in palavras_unidade:
-        if palavra in descricao_lower:
-            usa_unidade = True
-            break
-
-    # ========== DEFINE PESO BASE E UNIDADE ==========
-    if usa_unidade:
-        peso_base = 1
-        unidade_simbolo = "un"
-    elif is_liquido:
-        peso_base = 200
-        unidade_simbolo = "ml"
+# ========== SELECIONAR A TABELA CORRETA COM BASE NA FONTE ==========
+if st.session_state.fonte_dados == "TACO (UNICAMP)":
+    df_atual = df_taco
+    if not df_atual.empty and "Descrição dos alimentos" in df_atual.columns:
+        campo_busca = "Descrição dos alimentos"
+        campo_descricao = "Descrição dos alimentos"
     else:
-        peso_base = 50
-        unidade_simbolo = "g"
+        campo_busca = None
+        campo_descricao = None
+        st.warning("Tabela TACO carregada mas não encontrou a coluna 'Descrição dos alimentos'. Verifique o formato do arquivo.")
+else:
+    df_atual = df_ibge
+    if not df_atual.empty:
+        if "descricao_completa" in df_atual.columns:
+            campo_busca = "descricao_completa"
+            campo_descricao = "descricao_completa"
+        elif "descricao" in df_atual.columns:
+            campo_busca = "descricao"
+            campo_descricao = "descricao"
+        else:
+            campo_busca = None
+            campo_descricao = None
+            st.warning("Tabela IBGE carregada mas não encontrou coluna de descrição. Verifique o formato do arquivo.")
+    else:
+        campo_busca = None
+        campo_descricao = None
 
-    return is_liquido, usa_unidade, peso_base, unidade_simbolo
+# Verificar se a tabela está vazia
+if df_atual.empty or campo_busca is None:
+    st.error(f"⚠️ Tabela {st.session_state.fonte_dados} não encontrada ou vazia. Verifique o arquivo CSV.")
+    st.info("""
+    **Solução:**
+    - Para TACO: Certifique-se de que o arquivo `alimentos.csv` está na mesma pasta do app
+    - Para IBGE: Certifique-se de que o arquivo `tabela_ibge.csv` está na mesma pasta do app
+    - O arquivo IBGE deve ter cabeçalho com "CÓDIGO DO ALIMENTO" e "DESCRIÇÃO DO ALIMENTO"
+    """)
+    st.stop()
 
+# Lista de alimentos para o selectbox
+lista_alimentos = df_atual[campo_busca].dropna().unique().tolist()
+lista_alimentos.sort()
 
-# ========== FUNÇÃO PARA TRATAR VALORES NAN/NA ==========
-def tratar_valor(valor):
-    if pd.isna(valor) or valor == "NA" or valor is None:
-        return 0.0
-    try:
-        return float(valor)
-    except (ValueError, TypeError):
-        return 0.0
-
-
-if st.session_state.planejamento_tipo == "Semanal":
-    st.markdown("### 📅 Selecione o dia")
-    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
-    cols = st.columns(7)
-    for i, dia in enumerate(dias_semana):
-        with cols[i]:
-            if st.session_state.dia_atual == dia:
-                st.markdown(
-                    f"<div class='dia-btn-selected'>{dia} ✅</div>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                if st.button(dia, key=f"dia_{dia}", use_container_width=True):
-                    st.session_state.dia_atual = dia
-                    st.rerun()
-    st.markdown(
-        f"<div style='text-align: center; margin: 15px 0;'><div style='background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 10px 20px; border-radius: 50px; display: inline-block; font-weight: bold;'>📌 Editando: {st.session_state.dia_atual}</div></div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-
-if not st.session_state.modo_impressao and not df_taco.empty:
+if not st.session_state.modo_impressao:
     with st.container():
-        col1, col2, col3, col4 = st.columns([1.5, 3, 1, 1])
+        col1, col2, col3, col4, col5 = st.columns([1.5, 3, 1, 1, 1])
         with col1:
             refeicao_sel = st.selectbox(
                 "Refeição", ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
             )
         with col2:
             alimento_sel = st.selectbox(
-                "Alimento", df_taco["Descrição dos alimentos"].unique()
+                "Alimento", lista_alimentos
             )
         with col3:
-            qtd_unidade = st.number_input("Unidades", 0.0, 50.0, 1.0)
+            qtd_unidade = st.number_input("Quantidade", 0.0, 50.0, 1.0, step=0.5)
         with col4:
-            peso_real = st.number_input("Peso Real (g/ml)", 0.0, 2000.0, 0.0)
+            peso_real = st.number_input("Peso Real (g/ml)", 0.0, 2000.0, 0.0, step=1.0, help="Informe o peso de UMA unidade para cálculo preciso. Ex: 1 biscoito = 5g")
+        with col5:
+            unidade_tipo = st.selectbox("Unidade", ["g", "ml", "un"])
 
     if st.button("➕ Adicionar ao Plano", use_container_width=True):
-        item = df_taco[df_taco["Descrição dos alimentos"] == alimento_sel].iloc[0]
-
-        categoria_alimento = (
-            item["Categoria do alimento"]
-            if "Categoria do alimento" in item.index
-            else ""
-        )
-
-        is_liquido, usa_unidade, peso_base, unidade_simbolo = obter_unidade_padrao(
-            categoria_alimento, alimento_sel
-        )
-
+        # Buscar o item selecionado
+        item = df_atual[df_atual[campo_busca] == alimento_sel].iloc[0]
+        
+        # ========== CÁLCULO CORRIGIDO DO PESO FINAL ==========
         if peso_real > 0:
-            if qtd_unidade > 0:
-                peso_final = peso_real * qtd_unidade
+            # USUÁRIO INFORMOU PESO REAL: ✅ MAIS PRECISO
+            peso_final = peso_real * qtd_unidade
+            
+            if unidade_tipo == "ml":
+                label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} ml)"
             else:
-                peso_final = peso_real
-
-            if qtd_unidade > 0:
-                if is_liquido:
-                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} ml)"
-                elif usa_unidade:
-                    label_qtd = (
-                        f"{qtd_unidade:g} {unidade_simbolo} ({peso_final:.0f} g)"
-                    )
-                else:
-                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} g)"
-            else:
-                if is_liquido:
-                    label_qtd = f"{peso_final:.0f} ml"
-                else:
-                    label_qtd = f"{peso_final:.0f} g"
+                label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} g)"
         else:
-            if usa_unidade:
-                peso_final = qtd_unidade * peso_base
-                label_qtd = f"{qtd_unidade:g} {unidade_simbolo}"
-            else:
-                peso_final = qtd_unidade * peso_base
-                label_qtd = f"{qtd_unidade:g} un (~{peso_final:.0f}{unidade_simbolo})"
-
-        fator_calc = peso_final / 100
+            # USUÁRIO NÃO INFORMOU PESO REAL: usar estimativa
+            if unidade_tipo == "un":
+                # CORREÇÃO: usar peso realista por tipo de alimento
+                peso_por_unidade = obter_peso_por_unidade(alimento_sel)
+                if peso_por_unidade > 0:
+                    peso_final = peso_por_unidade * qtd_unidade
+                    label_qtd = f"{qtd_unidade:g} un (~{peso_final:.0f} g)"
+                else:
+                    # Fallback: alertar o usuário
+                    st.warning(f"⚠️ Não temos estimativa de peso para '{alimento_sel}'. Informe o Peso Real para cálculo preciso!")
+                    peso_final = 0
+                    label_qtd = f"{qtd_unidade:g} un (peso não informado)"
+            elif unidade_tipo == "ml":
+                peso_final = 200 * qtd_unidade  # Padrão para copo
+                label_qtd = f"{qtd_unidade:g} un (~{peso_final:.0f} ml)"
+            else:  # gramas
+                peso_final = qtd_unidade
+                label_qtd = f"{qtd_unidade:g} g"
+        
+        # Calcular fator de escala
+        if peso_final > 0:
+            fator_calc = peso_final / 100
+        else:
+            fator_calc = 0
+        
+        # Verificar risco OMS
         risco_oms = verificar_risco_oms(alimento_sel)
-
-        kcal_raw = item["Energia..kcal."]
-        prot_raw = item["Proteína..g."]
-        carb_raw = item["Carboidrato..g."]
-        gord_raw = item["Lipídeos..g."]
-
-        kcal_val = tratar_valor(kcal_raw)
-        prot_val = tratar_valor(prot_raw)
-        carb_val = tratar_valor(carb_raw)
-        gord_val = tratar_valor(gord_raw)
-
-        kcal_final = round(kcal_val * fator_calc, 1)
-        prot_final = round(prot_val * fator_calc, 1)
-        carb_final = round(carb_val * fator_calc, 1)
-        gord_final = round(gord_val * fator_calc, 1)
-
+        
+        # Obter valores nutricionais conforme a fonte
+        if st.session_state.fonte_dados == "TACO (UNICAMP)":
+            valores = obter_valor_nutricional_taco(item, fator_calc)
+        else:
+            valores = obter_valor_nutricional_ibge(item, fator_calc)
+        
         novo_item = {
             "Ali": alimento_sel,
             "Qtd": label_qtd,
-            "Kcal": kcal_final,
-            "P": prot_final,
-            "C": carb_final,
-            "G": gord_final,
+            "Kcal": valores["kcal"],
+            "P": valores["prot"],
+            "C": valores["carb"],
+            "G": valores["gord"],
             "Risco": risco_oms,
         }
-
+        
+        # Adicionar ao cardápio
         if st.session_state.planejamento_tipo == "Diário":
             st.session_state.cardapio[refeicao_sel].append(novo_item)
         else:
-            st.session_state.cardapio_semanal[st.session_state.dia_atual][
-                refeicao_sel
-            ].append(novo_item)
+            st.session_state.cardapio_semanal[st.session_state.dia_atual][refeicao_sel].append(novo_item)
         st.rerun()
 
 st.markdown("---")
 
-# 21. EXIBIÇÃO DO PLANO
+# ============================================
+# 26. EXIBIÇÃO DO PLANO
+# ============================================
 if st.session_state.planejamento_tipo == "Diário":
     st.markdown("### 📋 Seu Cardápio de Hoje")
 
@@ -1900,6 +2524,17 @@ if st.session_state.planejamento_tipo == "Diário":
 else:
     st.markdown(f"### 📅 Planejamento Semanal - {st.session_state.dia_atual}")
 
+    # Botões para navegação entre dias
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    cols_dias = st.columns(7)
+    for i, dia in enumerate(dias_semana):
+        with cols_dias[i]:
+            if st.button(dia, key=f"dia_{dia}", use_container_width=True):
+                st.session_state.dia_atual = dia
+                st.rerun()
+    
+    st.markdown("---")
+    
     refeicoes = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
     headers = {
         "Café da Manhã": "header-cafe",
@@ -1949,7 +2584,9 @@ else:
 
 st.markdown("---")
 
-# 22. CÁLCULO DOS TOTAIS
+# ============================================
+# 27. CÁLCULO DOS TOTAIS (USANDO O GET SELECIONADO)
+# ============================================
 totais = calcular_totais_cardapio(
     st.session_state.cardapio,
     st.session_state.planejamento_tipo,
@@ -1962,11 +2599,13 @@ total_carb = totais["total_carb"]
 total_gord = totais["total_gord"]
 media_diaria = totais["media_diaria_kcal"]
 
-saldo_diario = get_total - media_diaria
+saldo_diario = get_atual - media_diaria
 variacao_semanal = abs((saldo_diario * 7) / 7700)
 variacao_30dias = abs((saldo_diario * 30) / 7700)
 
-# 23. GRÁFICOS
+# ============================================
+# 28. GRÁFICOS
+# ============================================
 if total_kcal > 0:
     st.markdown("## 📊 Análise Nutricional")
 
@@ -1994,7 +2633,7 @@ if total_kcal > 0:
         balanco_data = pd.DataFrame(
             {
                 "Categoria": ["Gasto Total (GET)", "Consumo Médio", "Diferença"],
-                "Valor (kcal)": [get_total, media_diaria, abs(saldo_diario)],
+                "Valor (kcal)": [get_atual, media_diaria, abs(saldo_diario)],
             }
         )
         fig_balanco = px.bar(
@@ -2028,7 +2667,9 @@ if total_kcal > 0:
 
     st.markdown("---")
 
-# 24. LAUDO TÉCNICO COMPLETO
+# ============================================
+# 29. LAUDO TÉCNICO COMPLETO
+# ============================================
 st.markdown("## 📋 LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR")
 
 if st.session_state.planejamento_tipo == "Diário":
@@ -2051,7 +2692,7 @@ with col1:
         ),
     )
 with col2:
-    st.metric("⚡ Gasto Estimado (GET)", f"{get_total:.0f} kcal")
+    st.metric("⚡ Gasto Estimado (GET)", f"{get_atual:.0f} kcal")
 with col3:
     delta_texto = "Déficit" if saldo_diario > 0 else "Superávit"
     st.metric(
@@ -2158,7 +2799,9 @@ with col_result3:
     else:
         st.info("✅ **Manutenção!** Você está consumindo exatamente o que gasta.")
 
-# 25. RESUMO COMPLETO PARA IMPRESSÃO
+# ============================================
+# 30. RESUMO COMPLETO PARA IMPRESSÃO
+# ============================================
 st.markdown("---")
 st.markdown("## 🖨️ RESUMO COMPLETO PARA IMPRESSÃO")
 st.markdown(
@@ -2209,12 +2852,9 @@ else:
                 )
 
 if todos_alimentos:
-    # Tabela para exibição na tela (sem categoria)
     df_resumo = pd.DataFrame(todos_alimentos)
     st.dataframe(df_resumo, use_container_width=True, hide_index=True)
 
-    # CSV para download (pode incluir mais informações, como categoria)
-    # Se quiser incluir categoria no CSV, precisa buscar da tabela original
     csv = df_resumo.to_csv(index=False, encoding="utf-8-sig")
     st.download_button(
         "📥 Baixar Resumo em CSV",
@@ -2227,7 +2867,9 @@ else:
         "ℹ️ Nenhum alimento adicionado ainda. Adicione alimentos para gerar o resumo."
     )
 
-# 26. RESUMO DO LAUDO TÉCNICO
+# ============================================
+# 31. RESUMO DO LAUDO TÉCNICO
+# ============================================
 st.markdown("---")
 st.markdown("## 📋 RESUMO DO LAUDO TÉCNICO")
 
@@ -2254,7 +2896,7 @@ st.markdown(
     <p><strong>📅 Período analisado:</strong> {'Hoje (1 dia)' if st.session_state.planejamento_tipo == "Diário" else 'Semana completa (7 dias)'}</p>
     <p><strong>🥗 Consumo total:</strong> {total_kcal:.1f} kcal</p>
     <p><strong>📊 Média diária:</strong> {media_diaria:.1f} kcal</p>
-    <p><strong>⚡ Gasto diário (GET):</strong> {get_total:.0f} kcal</p>
+    <p><strong>⚡ Gasto diário (GET):</strong> {get_atual:.0f} kcal</p>
     <p><strong>💪 Saldo diário:</strong> {abs(saldo_diario):.1f} kcal <strong style='color: {"#fbbf24" if saldo_diario > 0 else "#f87171"};'>{"Déficit" if saldo_diario > 0 else "Superávit"}</strong></p>
     <p><strong>📉 Projeção de variação em 30 dias:</strong> {variacao_30dias:.2f} kg</p>
     <p><strong>⏱️ Tempo estimado para meta:</strong> {texto_tempo}</p>
@@ -2263,7 +2905,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 27. BOTÃO PARA BAIXAR LAUDO COMPLETO EM CSV
+# ============================================
+# 32. BOTÃO PARA BAIXAR LAUDO COMPLETO EM CSV
+# ============================================
 st.markdown("---")
 st.markdown("### 📥 Exportar Dados Completos")
 
@@ -2297,9 +2941,9 @@ dados_laudo = {
         "IMC Atual",
         "Classificação IMC",
         "Peso Ideal Estimado (kg)",
-        "Percentual de Gordura (%)",
-        "Massa de Gordura (kg)",
-        "Massa Magra (kg)",
+        "Percentual de Gordura (Estimativa IMC)",
+        "Massa de Gordura (Estimativa IMC)",
+        "Massa Magra (Estimativa IMC)",
         "Consumo Total do Período (kcal)",
         "Média Diária de Consumo (kcal)",
         "Saldo Energético Diário (kcal)",
@@ -2309,6 +2953,8 @@ dados_laudo = {
         "Macronutrientes - Proteínas (g)",
         "Macronutrientes - Carboidratos (g)",
         "Macronutrientes - Gorduras (g)",
+        "Fonte de Dados Nutricionais",
+        "Método de Cálculo do GET",
     ],
     "Valor": [
         pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
@@ -2325,8 +2971,8 @@ dados_laudo = {
         sexo,
         p_alvo,
         naf_label,
-        get_total,
-        tmb,
+        get_atual,
+        tmb_atual,
         composicao["imc"],
         classificacao_imc,
         composicao["peso_ideal"],
@@ -2342,6 +2988,8 @@ dados_laudo = {
         total_prot,
         total_carb,
         total_gord,
+        st.session_state.fonte_dados,
+        metodo_atual_nome,
     ],
 }
 
@@ -2373,7 +3021,9 @@ st.caption(
     "Os arquivos CSV podem ser abertos no Excel, Google Sheets ou qualquer editor de planilhas"
 )
 
-# 28. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA
+# ============================================
+# 33. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA (ATUALIZADA)
+# ============================================
 with st.expander("📋 Informações OMS e Documentação Técnica", expanded=False):
     st.markdown(
         """
@@ -2403,33 +3053,33 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     |---------|---------|-------|
     | **TMB (Homens)** | 66.47 + (13.75 × peso) + (5.0 × altura) - (6.75 × idade) | Harris-Benedict (1919) |
     | **TMB (Mulheres)** | 655.1 + (9.56 × peso) + (1.85 × altura) - (4.67 × idade) | Harris-Benedict (1919) |
+    | **TMB Katch-McArdle** | 370 + (21.6 × Massa Magra) | Katch-McArdle (1975) |
     | **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × idade) - (16.2 ou 5.4) | Deurenberg et al. |
     | **% Gordura (Dobras)** | Protocolo Jackson & Pollock + Fórmula de Siri | ACSM |
     
-    ### 📊 Sobre as Tabelas Nutricionais (TACO)
+    ---
     
-    O BioGestão 360 utiliza a **Tabela Brasileira de Composição de Alimentos** desenvolvida pela UNICAMP.
+    ### 📊 Sobre as Tabelas Nutricionais
     
-    | Arquivo | Conteúdo | Importância |
-    |---------|----------|-------------|
-    | **alimentos.csv** | Calorias, proteínas, carboidratos, gorduras | Base para cálculo nutricional diário |
-    | **acidos-graxos.csv** | Perfil de ácidos graxos (saturados, insaturados, trans) | ⚠️ Gorduras saturadas em excesso aumentam colesterol. Gorduras insaturadas (ômega 3) são anti-inflamatórias |
-    | **aminoacidos.csv** | Perfil de aminoácidos essenciais e não essenciais | ⚠️ Essenciais para construção muscular. Deficiência pode prejudicar ganho de massa magra |
+    O BioGestão 360 oferece duas opções de tabelas nutricionais:
     
-    **Por que esses detalhes importam?**
+    | Tabela | Fonte | Características |
+    |--------|-------|-----------------|
+    | **TACO (UNICAMP)** | Universidade Estadual de Campinas | Mais completa para alimentos industrializados e preparações comuns |
+    | **IBGE (POF 2008-2009)** | Pesquisa de Orçamentos Familiares | Mais alimentos in natura e preparações regionais brasileiras |
     
-    - **Ácidos graxos**: Consumir mais gorduras boas (peixes, azeite) e menos gorduras ruins (frituras, processados) ajuda no controle do colesterol e inflamação.
-    - **Aminoácidos**: São os blocos de construção dos músculos. Quem quer **ganhar massa muscular** precisa de proteínas completas (que contêm todos os aminoácidos essenciais).
+    🔗 **Fontes oficiais:**
+    - **TACO/UNICAMP:** https://www.tbca.net.br/
+    - **IBGE - POF 2008-2009:** https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html
+    - **FAO/WHO:** https://www.fao.org/
     
-    > 🔗 Fonte oficial: [github.com/machine-learning-mocha/taco](https://github.com/machine-learning-mocha/taco)
-    
-    📄 [📥 Baixar Documentação Técnica Completa](https://raw.githubusercontent.com/adilsonximenes/biogestao-360/main/DOCUMENTO_TECNICO.md)
-    
-    🔗 [🌐 Ver no GitHub](https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md)
+    > Este sistema é um **agregador de dados públicos** e não substitui a consulta a um profissional de saúde.
     """
     )
 
-# 29. BOTÃO DE LIMPAR
+# ============================================
+# 34. BOTÃO DE LIMPAR
+# ============================================
 if st.session_state.planejamento_tipo == "Diário":
     col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
     with col_btn2:
@@ -2438,7 +3088,9 @@ if st.session_state.planejamento_tipo == "Diário":
             if st.button("🗑️ LIMPAR CARDÁPIO COMPLETO", use_container_width=True):
                 limpar_cardapio()
 
-# 30. SAIR DO MODO IMPRESSÃO
+# ============================================
+# 35. SAIR DO MODO IMPRESSÃO
+# ============================================
 if st.session_state.modo_impressao:
     st.divider()
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -2447,7 +3099,9 @@ if st.session_state.modo_impressao:
             st.session_state.modo_impressao = False
             st.rerun()
 
-# 31. DICAS DE IMPRESSÃO (antes do rodapé)
+# ============================================
+# 36. DICAS DE IMPRESSÃO (antes do rodapé)
+# ============================================
 with st.expander("🖨️ Dicas para melhor impressão", expanded=False):
     st.markdown(
         """
@@ -2459,16 +3113,23 @@ with st.expander("🖨️ Dicas para melhor impressão", expanded=False):
     **1. Extensão GoFullPage (Chrome/Edge) - Gratuita**
     - Capture a página inteira sem cortes
     - Salve como PDF com um clique
+    
+    **2. Ajuste manual no navegador:**
+    - Margens: 5mm cada lado
+    - Escala: 80-90%
+    - Cabeçalho e rodapé: desativar
     """
     )
 
-# 32. RODAPÉ
+# ============================================
+# 37. RODAPÉ
+# ============================================
 st.markdown(
-    """
+    f"""
 <div style='text-align: center; font-size: 11px; color: #666; padding: 15px;'>
-    <b>BioGestão 360 v3.0</b> | Tabela TACO (UNICAMP) | Equações Harris-Benedict<br>
+    <b>BioGestão 360 v3.2</b> | Fonte: {st.session_state.fonte_dados} | Método GET: {metodo_atual_nome}<br>
     <b>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</b><br>
-    📚 <a href='https://github.com/adilsonximenes/biogestao-360/blob/main/DOCUMENTO_TECNICO.md' target='_blank'>Documentação Técnica</a> | 
+    🔗 <b>Fontes científicas:</b> TACO/UNICAMP | IBGE (POF 2008-2009) | FAO/WHO<br>
     💻 <a href='https://github.com/adilsonximenes/biogestao-360' target='_blank'>Código Fonte</a>
 </div>
 """,
