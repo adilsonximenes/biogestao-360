@@ -1457,11 +1457,58 @@ with st.expander("📝 Dados do Paciente e Profissional", expanded=True):
 st.markdown("---")
 
 # ============================================
-# 25. AVALIAÇÃO FÍSICA PROFISSIONAL (MANTIDA)
+# 25. AVALIAÇÃO FÍSICA PROFISSIONAL
 # ============================================
 st.markdown("---")
 st.markdown("## 📏 Avaliação Física Profissional")
 st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
+
+# ========== INICIALIZAÇÃO DAS VARIÁVEIS (FORA DO BLOCO) ==========
+# Isso evita NameError quando o checkbox não está marcado
+nome_avaliado = ""
+frequencia_cardiaca = 0
+pressao_sistolica = 0
+pressao_diastolica = 0
+classif_pressao = "-"
+triceps_media = 0
+biceps_media = 0
+peitoral = 0
+subescapular = 0
+abdominal = 0
+axilar = 0
+suprailiaca = 0
+coxa_media = 0
+panturrilha_media = 0
+braco_media_cm = 0
+peitoral_cm = 0
+cintura = 0
+quadril = 0
+coxa_media_cm = 0
+panturrilha_media_cm = 0
+rcq = 0
+risco_rcq = "-"
+handgrip_media = 0
+wells = 0
+nivel_forca = ""
+nivel_flex = ""
+percentual_gordura_jp = 0
+massa_gordura_jp = 0
+massa_magra_jp = 0
+classif_gordura = ""
+grau_obesidade = ""
+risco_saude = ""
+biotipo = ""
+desc_biotipo = ""
+recomendacao_biotipo = ""
+soma_dobras = 0
+densidade = 0
+usar_7_dobras = False
+referencia_saudavel = 17
+referencia_atleta = 12
+referencia_obesidade = 25
+referencia_essencial = 5
+sexo_avaliacao = "Masculino"
+# ============================================
 
 with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     st.markdown(
@@ -1824,9 +1871,6 @@ if usar_avaliacao:
             "Circunferência do Quadril (cm)", 0.0, 150.0, 0.0, step=0.5, key="quadril"
         )
 
-        # CORREÇÃO DO ERRO rcq - DEFINIR VARIÁVEIS MESMO SE NÃO HOUVER DADOS
-        rcq = 0
-        risco_rcq = "-"
         if quadril > 0 and cintura > 0:
             rcq = cintura / quadril
             if sexo_avaliacao == "Masculino":
@@ -2384,7 +2428,6 @@ if usar_avaliacao:
                 )
 
                 st.markdown("### 📏 Resultados das Circunferências (Fita Métrica)")
-                # CORREÇÃO: Usar rcq_valor seguro
                 rcq_valor = f"{rcq:.2f}" if rcq > 0 else "-"
                 risco_rcq_valor = risco_rcq if risco_rcq != "-" else "-"
                 st.markdown(
@@ -2448,243 +2491,344 @@ if usar_avaliacao:
                 """
                 )
 
-                # Botão para baixar Laudo da Avaliação Física em CSV e PDF
-st.markdown("---")
-st.markdown("#### 📥 Exportar Laudo da Avaliação Física")
+                # ========== BOTÕES DE DOWNLOAD DA AVALIAÇÃO FÍSICA ==========
+                st.markdown("---")
+                st.markdown("#### 📥 Exportar Laudo da Avaliação Física")
 
-col_avaliacao1, col_avaliacao2 = st.columns(2)
+                col_avaliacao1, col_avaliacao2 = st.columns(2)
 
-with col_avaliacao1:
-    dados_laudo_avaliacao = {
-        "Categoria": [
-            "Data da Avaliação",
-            "Nome do Avaliado",
-            "Sexo",
-            "Idade",
-            "Peso",
-            "Altura",
-            "IMC",
-            "Frequência Cardíaca",
-            "Pressão Sistólica",
-            "Pressão Diastólica",
-            "Classificação Pressão",
-            "Protocolo de Dobras",
-            "Soma das Dobras (mm)",
-            "Densidade Corporal (g/cm³)",
-            "% Gordura (Adipômetro)",
-            "Classificação % Gordura",
-            "Risco à Saúde",
-            "Massa de Gordura (kg)",
-            "Massa Magra (kg)",
-            "Biotipo",
-            "Circunferência do Braço (média cm)",
-            "Circunferência do Peitoral (cm)",
-            "Circunferência da Coxa (média cm)",
-            "Circunferência da Panturrilha (média cm)",
-            "Circunferência da Cintura (cm)",
-            "Circunferência do Quadril (cm)",
-            "Relação Cintura-Quadril (RCQ)",
-            "Força Handgrip (média kg/f)",
-            "Flexibilidade Banco de Wells (cm)",
-            "Método GET Selecionado",
-            "TMB Calculada (kcal/dia)",
-            "GET Calculado (kcal/dia)",
-            "Fator de Atividade Física",
-        ],
-        "Valor": [
-            pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
-            nome_avaliado if nome_avaliado else "-",
-            sexo_avaliacao,
-            idade,
-            f"{peso_at:.1f} kg",
-            f"{alt_cm} cm",
-            f"{imc:.1f}",
-            (f"{frequencia_cardiaca} bpm" if frequencia_cardiaca > 0 else "-"),
-            f"{pressao_sistolica} mmHg" if pressao_sistolica > 0 else "-",
-            f"{pressao_diastolica} mmHg" if pressao_diastolica > 0 else "-",
-            classif_pressao if "classif_pressao" in locals() else "-",
-            f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
-            f"{soma_dobras:.1f} mm" if soma_dobras > 0 else "-",
-            f"{densidade:.3f}" if densidade > 0 else "-",
-            f"{percentual_gordura_jp:.1f}%",
-            classif_gordura,
-            risco_saude,
-            f"{massa_gordura_jp:.1f} kg",
-            f"{massa_magra_jp:.1f} kg",
-            biotipo,
-            f"{braco_media_cm:.1f} cm" if braco_media_cm > 0 else "-",
-            f"{peitoral_cm:.1f} cm" if peitoral_cm > 0 else "-",
-            f"{coxa_media_cm:.1f} cm" if coxa_media_cm > 0 else "-",
-            (f"{panturrilha_media_cm:.1f} cm" if panturrilha_media_cm > 0 else "-"),
-            f"{cintura:.1f} cm" if cintura > 0 else "-",
-            f"{quadril:.1f} cm" if quadril > 0 else "-",
-            f"{rcq:.2f}" if rcq > 0 else "-",
-            f"{handgrip_media:.1f} kg/f" if handgrip_media > 0 else "-",
-            f"{wells:.1f} cm" if wells != 0 else "-",
-            metodo_atual_nome,
-            f"{tmb_atual:.0f} kcal/dia",
-            f"{get_atual:.0f} kcal/dia",
-            f"{naf_label} ({naf_val})",
-        ],
-    }
-    df_laudo_avaliacao = pd.DataFrame(dados_laudo_avaliacao)
-    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(index=False, encoding="utf-8-sig")
-    st.download_button(
-        "📊 Baixar CSV",
-        data=csv_laudo_avaliacao,
-        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
+                with col_avaliacao1:
+                    dados_laudo_avaliacao = {
+                        "Categoria": [
+                            "Data da Avaliação",
+                            "Nome do Avaliado",
+                            "Sexo",
+                            "Idade",
+                            "Peso",
+                            "Altura",
+                            "IMC",
+                            "Frequência Cardíaca",
+                            "Pressão Sistólica",
+                            "Pressão Diastólica",
+                            "Classificação Pressão",
+                            "Protocolo de Dobras",
+                            "Soma das Dobras (mm)",
+                            "Densidade Corporal (g/cm³)",
+                            "% Gordura (Adipômetro)",
+                            "Classificação % Gordura",
+                            "Risco à Saúde",
+                            "Massa de Gordura (kg)",
+                            "Massa Magra (kg)",
+                            "Biotipo",
+                            "Circunferência do Braço (média cm)",
+                            "Circunferência do Peitoral (cm)",
+                            "Circunferência da Coxa (média cm)",
+                            "Circunferência da Panturrilha (média cm)",
+                            "Circunferência da Cintura (cm)",
+                            "Circunferência do Quadril (cm)",
+                            "Relação Cintura-Quadril (RCQ)",
+                            "Força Handgrip (média kg/f)",
+                            "Flexibilidade Banco de Wells (cm)",
+                            "Método GET Selecionado",
+                            "TMB Calculada (kcal/dia)",
+                            "GET Calculado (kcal/dia)",
+                            "Fator de Atividade Física",
+                        ],
+                        "Valor": [
+                            pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
+                            nome_avaliado if nome_avaliado else "-",
+                            sexo_avaliacao,
+                            idade,
+                            f"{peso_at:.1f} kg",
+                            f"{alt_cm} cm",
+                            f"{imc:.1f}",
+                            (
+                                f"{frequencia_cardiaca} bpm"
+                                if frequencia_cardiaca > 0
+                                else "-"
+                            ),
+                            (
+                                f"{pressao_sistolica} mmHg"
+                                if pressao_sistolica > 0
+                                else "-"
+                            ),
+                            (
+                                f"{pressao_diastolica} mmHg"
+                                if pressao_diastolica > 0
+                                else "-"
+                            ),
+                            classif_pressao,
+                            f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
+                            f"{soma_dobras:.1f} mm" if soma_dobras > 0 else "-",
+                            f"{densidade:.3f}" if densidade > 0 else "-",
+                            f"{percentual_gordura_jp:.1f}%",
+                            classif_gordura,
+                            risco_saude,
+                            f"{massa_gordura_jp:.1f} kg",
+                            f"{massa_magra_jp:.1f} kg",
+                            biotipo,
+                            f"{braco_media_cm:.1f} cm" if braco_media_cm > 0 else "-",
+                            f"{peitoral_cm:.1f} cm" if peitoral_cm > 0 else "-",
+                            f"{coxa_media_cm:.1f} cm" if coxa_media_cm > 0 else "-",
+                            (
+                                f"{panturrilha_media_cm:.1f} cm"
+                                if panturrilha_media_cm > 0
+                                else "-"
+                            ),
+                            f"{cintura:.1f} cm" if cintura > 0 else "-",
+                            f"{quadril:.1f} cm" if quadril > 0 else "-",
+                            f"{rcq:.2f}" if rcq > 0 else "-",
+                            f"{handgrip_media:.1f} kg/f" if handgrip_media > 0 else "-",
+                            f"{wells:.1f} cm" if wells != 0 else "-",
+                            metodo_atual_nome,
+                            f"{tmb_atual:.0f} kcal/dia",
+                            f"{get_atual:.0f} kcal/dia",
+                            f"{naf_label} ({naf_val})",
+                        ],
+                    }
+                    df_laudo_avaliacao = pd.DataFrame(dados_laudo_avaliacao)
+                    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(
+                        index=False, encoding="utf-8-sig"
+                    )
+                    st.download_button(
+                        "📊 Baixar CSV",
+                        data=csv_laudo_avaliacao,
+                        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
 
-with col_avaliacao2:
-    # Coletar todas as medidas
-    medidas_dobras = []
-    if triceps_media > 0:
-        medidas_dobras.append(f"Tríceps: {triceps_media:.1f} mm")
-    if biceps_media > 0:
-        medidas_dobras.append(f"Bíceps: {biceps_media:.1f} mm")
-    if peitoral > 0:
-        medidas_dobras.append(f"Peitoral: {peitoral:.1f} mm")
-    if subescapular > 0:
-        medidas_dobras.append(f"Subescapular: {subescapular:.1f} mm")
-    if abdominal > 0:
-        medidas_dobras.append(f"Abdome: {abdominal:.1f} mm")
-    if axilar > 0:
-        medidas_dobras.append(f"Axilar: {axilar:.1f} mm")
-    if suprailiaca > 0:
-        medidas_dobras.append(f"Supra-ilíaca: {suprailiaca:.1f} mm")
-    if coxa_media > 0:
-        medidas_dobras.append(f"Coxa: {coxa_media:.1f} mm")
-    if panturrilha_media > 0:
-        medidas_dobras.append(f"Panturrilha: {panturrilha_media:.1f} mm")
+                with col_avaliacao2:
+                    # Coletar todas as medidas
+                    medidas_dobras = []
+                    if triceps_media > 0:
+                        medidas_dobras.append(f"Tríceps: {triceps_media:.1f} mm")
+                    if biceps_media > 0:
+                        medidas_dobras.append(f"Bíceps: {biceps_media:.1f} mm")
+                    if peitoral > 0:
+                        medidas_dobras.append(f"Peitoral: {peitoral:.1f} mm")
+                    if subescapular > 0:
+                        medidas_dobras.append(f"Subescapular: {subescapular:.1f} mm")
+                    if abdominal > 0:
+                        medidas_dobras.append(f"Abdome: {abdominal:.1f} mm")
+                    if axilar > 0:
+                        medidas_dobras.append(f"Axilar: {axilar:.1f} mm")
+                    if suprailiaca > 0:
+                        medidas_dobras.append(f"Supra-ilíaca: {suprailiaca:.1f} mm")
+                    if coxa_media > 0:
+                        medidas_dobras.append(f"Coxa: {coxa_media:.1f} mm")
+                    if panturrilha_media > 0:
+                        medidas_dobras.append(
+                            f"Panturrilha: {panturrilha_media:.1f} mm"
+                        )
 
-    medidas_circunferencias = []
-    if braco_media_cm > 0:
-        medidas_circunferencias.append(f"Braço: {braco_media_cm:.1f} cm")
-    if peitoral_cm > 0:
-        medidas_circunferencias.append(f"Peitoral: {peitoral_cm:.1f} cm")
-    if cintura > 0:
-        medidas_circunferencias.append(f"Cintura: {cintura:.1f} cm")
-    if quadril > 0:
-        medidas_circunferencias.append(f"Quadril: {quadril:.1f} cm")
-    if coxa_media_cm > 0:
-        medidas_circunferencias.append(f"Coxa: {coxa_media_cm:.1f} cm")
-    if panturrilha_media_cm > 0:
-        medidas_circunferencias.append(f"Panturrilha: {panturrilha_media_cm:.1f} cm")
+                    medidas_circunferencias = []
+                    if braco_media_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Braço: {braco_media_cm:.1f} cm"
+                        )
+                    if peitoral_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Peitoral: {peitoral_cm:.1f} cm"
+                        )
+                    if cintura > 0:
+                        medidas_circunferencias.append(f"Cintura: {cintura:.1f} cm")
+                    if quadril > 0:
+                        medidas_circunferencias.append(f"Quadril: {quadril:.1f} cm")
+                    if coxa_media_cm > 0:
+                        medidas_circunferencias.append(f"Coxa: {coxa_media_cm:.1f} cm")
+                    if panturrilha_media_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Panturrilha: {panturrilha_media_cm:.1f} cm"
+                        )
 
-    # Criar gráficos
-    import matplotlib.pyplot as plt
-    import io
+                    # Criar gráficos
+                    import matplotlib.pyplot as plt
+                    import io
 
-    # Gráfico 1: Composição Corporal
-    fig1, ax1 = plt.subplots(figsize=(5, 4))
-    sizes1 = [percentual_gordura_jp, 100 - percentual_gordura_jp]
-    ax1.pie(
-        sizes1,
-        labels=["Massa Gorda", "Massa Magra"],
-        colors=["#ef4444", "#3b82f6"],
-        autopct="%1.1f%%",
-        startangle=90,
-    )
-    ax1.set_title("Composição Corporal", fontsize=12, fontweight="bold")
-    plt.tight_layout()
-    buf1 = io.BytesIO()
-    plt.savefig(buf1, format="png", dpi=150, bbox_inches="tight", facecolor="white")
-    buf1.seek(0)
-    grafico_composicao_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
-    plt.close()
+                    # Gráfico 1: Composição Corporal
+                    fig1, ax1 = plt.subplots(figsize=(5, 4))
+                    sizes1 = [percentual_gordura_jp, 100 - percentual_gordura_jp]
+                    ax1.pie(
+                        sizes1,
+                        labels=["Massa Gorda", "Massa Magra"],
+                        colors=["#ef4444", "#3b82f6"],
+                        autopct="%1.1f%%",
+                        startangle=90,
+                    )
+                    ax1.set_title("Composição Corporal", fontsize=12, fontweight="bold")
+                    plt.tight_layout()
+                    buf1 = io.BytesIO()
+                    plt.savefig(
+                        buf1,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf1.seek(0)
+                    grafico_composicao_b64 = base64.b64encode(buf1.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
 
-    # Gráfico 2: Comparativo
-    fig2, ax2 = plt.subplots(figsize=(7, 4))
-    categorias = ["Seu %", "Essencial", "Atleta", "Saudável", "Obesidade"]
-    valores = [
-        percentual_gordura_jp,
-        referencia_essencial,
-        referencia_atleta,
-        referencia_saudavel,
-        referencia_obesidade,
-    ]
-    cores = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"]
-    ax2.bar(categorias, valores, color=cores)
-    ax2.axhline(y=percentual_gordura_jp, color="red", linestyle="--", linewidth=2)
-    ax2.set_title("Comparação do % de Gordura", fontsize=12, fontweight="bold")
-    ax2.set_ylabel("Percentual (%)")
-    plt.tight_layout()
-    buf2 = io.BytesIO()
-    plt.savefig(buf2, format="png", dpi=150, bbox_inches="tight", facecolor="white")
-    buf2.seek(0)
-    grafico_comparativo_b64 = base64.b64encode(buf2.getvalue()).decode("utf-8")
-    plt.close()
+                    # Gráfico 2: Comparativo
+                    fig2, ax2 = plt.subplots(figsize=(7, 4))
+                    categorias = [
+                        "Seu %",
+                        "Essencial",
+                        "Atleta",
+                        "Saudável",
+                        "Obesidade",
+                    ]
+                    valores = [
+                        percentual_gordura_jp,
+                        referencia_essencial,
+                        referencia_atleta,
+                        referencia_saudavel,
+                        referencia_obesidade,
+                    ]
+                    cores = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"]
+                    ax2.bar(categorias, valores, color=cores)
+                    ax2.axhline(
+                        y=percentual_gordura_jp,
+                        color="red",
+                        linestyle="--",
+                        linewidth=2,
+                    )
+                    ax2.set_title(
+                        "Comparação do % de Gordura", fontsize=12, fontweight="bold"
+                    )
+                    ax2.set_ylabel("Percentual (%)")
+                    plt.tight_layout()
+                    buf2 = io.BytesIO()
+                    plt.savefig(
+                        buf2,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf2.seek(0)
+                    grafico_comparativo_b64 = base64.b64encode(buf2.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
 
-    # Gráfico 3: Por Idade
-    fig3, ax3 = plt.subplots(figsize=(7, 4))
-    idades_grafico = list(range(20, 71, 5))
-    if sexo_avaliacao == "Masculino":
-        percentuais_referencia = [18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29]
-    else:
-        percentuais_referencia = [25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36]
-    ax3.plot(
-        idades_grafico,
-        percentuais_referencia,
-        "o-",
-        color="#f59e0b",
-        linewidth=2,
-        markersize=6,
-        label="Referência ACSM",
-    )
-    ax3.axhline(
-        y=percentual_gordura_jp,
-        color="#ef4444",
-        linestyle="--",
-        linewidth=2,
-        label=f"Seu valor: {percentual_gordura_jp:.1f}%",
-    )
-    ax3.set_title("Percentual de Gordura por Idade", fontsize=12, fontweight="bold")
-    ax3.set_xlabel("Idade (anos)")
-    ax3.set_ylabel("Percentual (%)")
-    ax3.legend()
-    ax3.grid(True, alpha=0.3)
-    plt.tight_layout()
-    buf3 = io.BytesIO()
-    plt.savefig(buf3, format="png", dpi=150, bbox_inches="tight", facecolor="white")
-    buf3.seek(0)
-    grafico_idade_b64 = base64.b64encode(buf3.getvalue()).decode("utf-8")
-    plt.close()
+                    # Gráfico 3: Por Idade
+                    fig3, ax3 = plt.subplots(figsize=(7, 4))
+                    idades_grafico = list(range(20, 71, 5))
+                    if sexo_avaliacao == "Masculino":
+                        percentuais_referencia_idade = [
+                            18,
+                            19,
+                            20,
+                            22,
+                            23,
+                            24,
+                            25,
+                            26,
+                            27,
+                            28,
+                            29,
+                        ]
+                    else:
+                        percentuais_referencia_idade = [
+                            25,
+                            26,
+                            27,
+                            29,
+                            30,
+                            31,
+                            32,
+                            33,
+                            34,
+                            35,
+                            36,
+                        ]
+                    ax3.plot(
+                        idades_grafico,
+                        percentuais_referencia_idade,
+                        "o-",
+                        color="#f59e0b",
+                        linewidth=2,
+                        markersize=6,
+                        label="Referência ACSM",
+                    )
+                    ax3.axhline(
+                        y=percentual_gordura_jp,
+                        color="#ef4444",
+                        linestyle="--",
+                        linewidth=2,
+                        label=f"Seu valor: {percentual_gordura_jp:.1f}%",
+                    )
+                    ax3.set_title(
+                        "Percentual de Gordura por Idade",
+                        fontsize=12,
+                        fontweight="bold",
+                    )
+                    ax3.set_xlabel("Idade (anos)")
+                    ax3.set_ylabel("Percentual (%)")
+                    ax3.legend()
+                    ax3.grid(True, alpha=0.3)
+                    plt.tight_layout()
+                    buf3 = io.BytesIO()
+                    plt.savefig(
+                        buf3,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf3.seek(0)
+                    grafico_idade_b64 = base64.b64encode(buf3.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
 
-    # Classificação IMC
-    if imc < 18.5:
-        classificacao_imc_texto = "Abaixo do peso"
-    elif imc < 25:
-        classificacao_imc_texto = "Peso normal"
-    elif imc < 30:
-        classificacao_imc_texto = "Sobrepeso"
-    elif imc < 35:
-        classificacao_imc_texto = "Obesidade Grau I"
-    elif imc < 40:
-        classificacao_imc_texto = "Obesidade Grau II"
-    else:
-        classificacao_imc_texto = "Obesidade Grau III"
+                    # Classificação IMC
+                    if imc < 18.5:
+                        classificacao_imc_texto = "Abaixo do peso"
+                    elif imc < 25:
+                        classificacao_imc_texto = "Peso normal"
+                    elif imc < 30:
+                        classificacao_imc_texto = "Sobrepeso"
+                    elif imc < 35:
+                        classificacao_imc_texto = "Obesidade Grau I"
+                    elif imc < 40:
+                        classificacao_imc_texto = "Obesidade Grau II"
+                    else:
+                        classificacao_imc_texto = "Obesidade Grau III"
 
-    data_atual_avaliacao = datetime.now().strftime("%d/%m/%Y às %H:%M")
+                    data_atual_avaliacao = datetime.now().strftime("%d/%m/%Y às %H:%M")
 
-    # Construir HTML das medidas
-    dobras_html = ""
-    for medida in medidas_dobras:
-        partes = medida.split(": ")
-        dobras_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
+                    # Construir HTML das medidas
+                    dobras_html = ""
+                    for medida in medidas_dobras:
+                        partes = medida.split(": ")
+                        dobras_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
 
-    circunferencias_html = ""
-    for medida in medidas_circunferencias:
-        partes = medida.split(": ")
-        circunferencias_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
+                    circunferencias_html = ""
+                    for medida in medidas_circunferencias:
+                        partes = medida.split(": ")
+                        circunferencias_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
 
-    if not dobras_html:
-        dobras_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
-    if not circunferencias_html:
-        circunferencias_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
+                    if not dobras_html:
+                        dobras_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
+                    if not circunferencias_html:
+                        circunferencias_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
 
-    html_avaliacao = f"""<!DOCTYPE html>
+                    # Determinar idade para comparação
+                    idx_idade = (
+                        min(
+                            len(percentuais_referencia_idade) - 1,
+                            max(0, int((idade - 20) / 5)),
+                        )
+                        if idade >= 20
+                        else 0
+                    )
+
+                    html_avaliacao = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -2724,7 +2868,6 @@ with col_avaliacao2:
         <h1>🏋️ BioGestão 360 - Laudo de Avaliação Física</h1>
         <div class="subheader">Gerado em {data_atual_avaliacao}</div>
         
-        <!-- DADOS DO AVALIADO -->
         <h2>📋 DADOS DO AVALIADO</h2>
         <div class="grid-2">
             <div class="card"><div class="card-title">👤 Nome</div><div class="card-value">{nome_avaliado if nome_avaliado else '-'}</div></div>
@@ -2737,7 +2880,6 @@ with col_avaliacao2:
             <div class="card"><div class="card-title">🫀 Pressão</div><div class="card-value">{pressao_sistolica if pressao_sistolica > 0 else '-'}/{pressao_diastolica if pressao_diastolica > 0 else '-'} mmHg</div></div>
         </div>
         
-        <!-- RESULTADOS PRINCIPAIS -->
         <h2>📊 RESULTADOS DA AVALIAÇÃO</h2>
         <div class="grid-3">
             <div class="metric-card"><div class="metric-icon">🎯</div><div class="metric-value">{percentual_gordura_jp:.1f}%</div><div class="metric-label">% Gordura</div></div>
@@ -2756,7 +2898,6 @@ with col_avaliacao2:
             Seu percentual está na faixa {classif_gordura.lower()}, o que indica {risco_saude.lower()} risco para doenças cardiovasculares e metabólicas.
         </div>
         
-        <!-- CIRCUNFERÊNCIAS -->
         <h2>📏 CIRCUNFERÊNCIAS CORPORAIS</h2>
         <div class="grid-2">
             <div class="card"><div class="card-title">💪 Braço</div><div class="card-value">{braco_media_cm:.1f} cm</div></div>
@@ -2773,7 +2914,6 @@ with col_avaliacao2:
             {f'Seu valor de {rcq:.2f} está acima do recomendado (0.95 para homens, 0.85 para mulheres), indicando maior risco cardiovascular.' if rcq > (0.95 if sexo_avaliacao == 'Masculino' else 0.85) else f'Seu valor de {rcq:.2f} está dentro do recomendado, indicando baixo risco cardiovascular.'}
         </div>
         
-        <!-- AVALIAÇÕES COMPLEMENTARES -->
         <h2>💪 AVALIAÇÕES COMPLEMENTARES</h2>
         <div class="grid-2">
             <div class="card"><div class="card-title">🤝 Handgrip</div><div class="card-value">{handgrip_media:.1f} kg/f - {nivel_forca if handgrip_media > 0 else '-'}</div></div>
@@ -2786,7 +2926,6 @@ with col_avaliacao2:
             A flexibilidade ({wells:.1f} cm) indica a mobilidade da região lombar e posterior da coxa.
         </div>
         
-        <!-- BIOTIPO -->
         <h2>🧬 BIOTIPO CORPORAL</h2>
         <div class="grid-3">
             <div class="metric-card"><div class="metric-icon">🏃</div><div class="metric-value">{biotipo}</div><div class="metric-label">Biotipo</div></div>
@@ -2794,7 +2933,6 @@ with col_avaliacao2:
             <div class="card"><div class="card-title">💡 Recomendação</div><div class="card-value">{recomendacao_biotipo}</div></div>
         </div>
         
-        <!-- PROTOCOLO E GET -->
         <h2>📋 PROTOCOLO UTILIZADO</h2>
         <div class="grid-2">
             <div class="card"><div class="card-title">🔬 Protocolo de Dobras</div><div class="card-value">Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'}</div></div>
@@ -2817,7 +2955,6 @@ with col_avaliacao2:
             Para perda de peso, consuma 300-500 kcal a menos; para ganho de massa muscular, consuma 300-500 kcal a mais.
         </div>
         
-        <!-- MEDIDAS DETALHADAS -->
         <h2>📏 MEDIDAS DETALHADAS</h2>
         <h3>Dobras Cutâneas (mm)</h3>
         <div class="grid-3">{dobras_html}</div>
@@ -2825,7 +2962,6 @@ with col_avaliacao2:
         <h3>Circunferências (cm)</h3>
         <div class="grid-3">{circunferencias_html}</div>
         
-        <!-- GRÁFICOS -->
         <h2>📊 GRÁFICOS DA AVALIAÇÃO</h2>
         <div class="graficos-container">
             <img src="data:image/png;base64,{grafico_composicao_b64}" alt="Composição Corporal">
@@ -2845,7 +2981,7 @@ with col_avaliacao2:
             <div class="explicacao">
                 <strong>📌 Tendência por Idade:</strong> O percentual de gordura tende a aumentar naturalmente com o envelhecimento. 
                 A linha laranja mostra a média esperada para a população brasileira segundo o ACSM.
-                {f'Seu valor está abaixo da média para sua idade, o que é positivo!' if percentual_gordura_jp < percentuais_referencia[min(len(percentuais_referencia)-1, max(0, int((idade-20)/5)))] else 'Seu valor está acima da média para sua idade, indicando necessidade de atenção.'}
+                {f'Seu valor está abaixo da média para sua idade, o que é positivo!' if percentual_gordura_jp < percentuais_referencia_idade[idx_idade] else 'Seu valor está acima da média para sua idade, indicando necessidade de atenção.'}
             </div>
         </div>
         
@@ -2857,23 +2993,35 @@ with col_avaliacao2:
 </body>
 </html>"""
 
-    b64_avaliacao = base64.b64encode(html_avaliacao.encode()).decode()
-    st.markdown(
-        f"""
-        <a href="data:text/html;base64,{b64_avaliacao}" download="laudo_avaliacao_fisica_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html" 
-           style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; 
-           text-decoration: none; border-radius: 8px; display: inline-block; width: 100%; text-align: center; 
-           font-weight: bold; font-size: 14px;">
-           📄 Baixar PDF
-        </a>
-    """,
-        unsafe_allow_html=True,
-    )
-    st.caption("💡 Abra o arquivo HTML → Ctrl+P → Salvar como PDF")
+                    b64_avaliacao = base64.b64encode(html_avaliacao.encode()).decode()
+                    st.markdown(
+                        f"""
+                        <a href="data:text/html;base64,{b64_avaliacao}" download="laudo_avaliacao_fisica_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html" 
+                           style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; 
+                           text-decoration: none; border-radius: 8px; display: inline-block; width: 100%; text-align: center; 
+                           font-weight: bold; font-size: 14px;">
+                           📄 Baixar PDF
+                        </a>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+                    st.caption("💡 Abra o arquivo HTML → Ctrl+P → Salvar como PDF")
 
-st.markdown(
-    "*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*"
-)
+                st.markdown(
+                    "*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*"
+                )
+            else:
+                st.warning(
+                    "⚠️ Insira as medidas das dobras cutâneas para calcular o percentual de gordura."
+                )
+        else:
+            st.info(
+                "📝 Insira as medidas das dobras cutâneas para começar a avaliação."
+            )
+else:
+    st.info(
+        "💡 **Dica:** Ative a opção acima para realizar uma avaliação física completa com dobras cutâneas (adipômetro), circunferências (fita métrica), handgrip e banco de wells."
+    )
 
 # ============================================
 # 26. MONTAGEM DO PLANO ALIMENTAR (MANTIDO)
