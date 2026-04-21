@@ -214,6 +214,25 @@ Saldo negativo = Superavit (ganho peso)
 | GET x NAF | WHO/FAO/UNU | 1985 |
 
 ---
+## 9. DEPENDÊNCIAS E BIBLIOTECAS UTILIZADAS
+
+| Biblioteca | Versão | Finalidade |
+|------------|--------|------------|
+| streamlit | ≥1.35.0 | Framework web para interface do usuário |
+| pandas | ≥2.0.0 | Manipulação e análise de dados |
+| plotly | ≥5.24.0 | Gráficos interativos na tela |
+| matplotlib | ≥3.7.0 | Geração de gráficos estáticos para PDF |
+| qrcode | ≥7.0.0 | Geração de QR Code PIX para doações |
+| pillow | ≥10.0.0 | Manipulação de imagens |
+| openpyxl | ≥3.1.0 | Leitura de arquivos Excel (tabelas originais) |
+| numpy | ≥1.24.0 | Operações matemáticas e arrays |
+
+### Instalação
+
+```bash
+pip install -r requirements.txt
+```
+---
 
 **Documento gerado em:** Abril/2026  
 **Status:** COMPLETO E CORRIGIDO
