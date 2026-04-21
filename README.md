@@ -170,16 +170,66 @@ Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial
 
 - Python 3.10 ou superior
 - Pip (gerenciador de pacotes)
+- Git (para clonar o repositório)
+
+### Dependências principais
+
+| Biblioteca | Versão | Finalidade |
+|------------|--------|------------|
+| streamlit | ≥1.35.0 | Interface web |
+| pandas | ≥2.0.0 | Manipulação de dados |
+| plotly | ≥5.24.0 | Gráficos interativos |
+| matplotlib | ≥3.7.0 | Gráficos para PDF |
+| qrcode | ≥7.0.0 | QR Code PIX |
+| pillow | ≥10.0.0 | Manipulação de imagens |
+| openpyxl | ≥3.1.0 | Leitura de Excel |
+| numpy | ≥1.24.0 | Operações matemáticas |
 
 ### Passo a passo
 
 ```bash
+# 1. Clonar o repositório
 git clone https://github.com/adilsonximenes/biogestao-360.git
 cd biogestao-360
+
+# 2. Criar ambiente virtual (recomendado)
 python -m venv venv
+
+# 3. Ativar ambiente virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
 source venv/bin/activate
+
+# 4. Instalar dependências
 pip install -r requirements.txt
+
+# 5. Executar o aplicativo
 streamlit run app.py
+```
+## Verificação da instalação
+
+```bash
+python -c "import streamlit, pandas, plotly, matplotlib, qrcode, PIL, openpyxl, numpy; print('✅ Ambiente configurado com sucesso!')"
+```
+
+## 4. Resumo das bibliotecas instaladas (por pip):
+
+| Biblioteca | Comando de instalação | Finalidade |
+|------------|----------------------|------------|
+| streamlit | `pip install streamlit` | Interface web |
+| pandas | `pip install pandas` | Manipulação de dados |
+| plotly | `pip install plotly` | Gráficos interativos |
+| matplotlib | `pip install matplotlib` | Gráficos para PDF |
+| qrcode | `pip install qrcode` | QR Code PIX |
+| pillow | `pip install pillow` | Manipulação de imagens |
+| openpyxl | `pip install openpyxl` | Leitura de Excel |
+| numpy | `pip install numpy` | Operações matemáticas |
+
+**Comando único para instalar tudo:**
+
+```bash
+pip install streamlit pandas plotly matplotlib qrcode pillow openpyxl numpy
 ```
 
 ## 📁 Estrutura do Projeto
