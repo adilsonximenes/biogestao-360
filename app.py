@@ -10,6 +10,7 @@ import unicodedata
 from PIL import Image
 import base64
 from datetime import datetime, timedelta
+import re
 
 # ============================================
 # 1. CONFIGURAÇÃO DE PÁGINA
@@ -124,7 +125,9 @@ def gerar_html_laudo():
         <div class="section">
             <h2>🍽️ CARDÁPIO - {st.session_state.planejamento_tipo}</h2>
             <table>
-                <thead><tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>Kcal</th><th>P</th><th>C</th><th>G</th></tr></thead>
+                <thead>
+                    <tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>Kcal</th><th>P</th><th>C</th><th>G</th></tr>
+                </thead>
                 <tbody>
     """
 
@@ -202,7 +205,167 @@ def get_paypal_html():
 
 
 # ============================================
-# 5. ALIMENTOS DE RISCO (Grupo OMS)
+# 4.5. FUNÇÕES PARA NORMALIZAÇÃO DE TEXTO (NOVO - RESTRIÇÕES ALIMENTARES)
+# ============================================
+
+
+def normalizar_texto(texto):
+    """
+    Normaliza texto para comparação segura:
+    - Remove acentos
+    - Converte para minúsculas
+    - Remove caracteres especiais
+    - Remove espaços extras
+    """
+    if not texto or not isinstance(texto, str):
+        return ""
+
+    texto = texto.lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ASCII", "ignore").decode("ASCII")
+    texto = re.sub(r"[^a-z0-9\s]", "", texto)
+    texto = " ".join(texto.split())
+    return texto.strip()
+
+
+def extrair_palavras_chave_restricao(observacoes):
+    """
+    Extrai palavras-chave de restrição da observação.
+    Retorna lista vazia se não houver observações ou nenhuma palavra encontrada.
+    """
+    if not observacoes or not isinstance(observacoes, str):
+        return []
+
+    obs_norm = normalizar_texto(observacoes)
+    if not obs_norm:
+        return []
+
+    termos_indicadores = [
+        "alergia",
+        "restricao",
+        "intolerancia",
+        "nao como",
+        "evito",
+        "nao posso",
+        "proibido",
+        "sensivel",
+        "reacao",
+        "alergico",
+        "alergica",
+        "intolerante",
+    ]
+
+    # Lista expandida de alimentos/ingredientes que causam restrição
+    alimentos_base = [
+        "leite",
+        "lactose",
+        "caseina",
+        "derivados do leite",
+        "queijo",
+        "iogurte",
+        "manteiga",
+        "camarao",
+        "camarão",
+        "frutos do mar",
+        "crustaceos",
+        "crustáceos",
+        "siri",
+        "caranguejo",
+        "peixe",
+        "peixes",
+        "sardinha",
+        "atum",
+        "bacalhau",
+        "salmao",
+        "salmão",
+        "marisco",
+        "salsicha",
+        "linguiça",
+        "linguica",
+        "presunto",
+        "mortadela",
+        "salame",
+        "bacon",
+        "gluten",
+        "glúten",
+        "trigo",
+        "centeio",
+        "cevada",
+        "aveia",
+        "pao",
+        "pão",
+        "macarrao",
+        "ovo",
+        "ovos",
+        "amendoim",
+        "castanha",
+        "noz",
+        "nozes",
+        "soja",
+        "tofu",
+        "carne bovina",
+        "carne de porco",
+        "frango",
+        "galinha",
+        "peru",
+        "morango",
+        "kiwi",
+        "abacaxi",
+        "maracuja",
+        "aspartame",
+    ]
+
+    alimentos_norm = {}
+    for alimento in alimentos_base:
+        norm = normalizar_texto(alimento)
+        alimentos_norm[norm] = alimento
+
+    palavras = re.findall(r"\b[a-z0-9]+\b", obs_norm)
+    bigrams = []
+    for i in range(len(palavras) - 1):
+        bigram = f"{palavras[i]} {palavras[i+1]}"
+        bigrams.append(bigram)
+
+    termos_candidatos = set(palavras + bigrams)
+    restricoes_encontradas = set()
+
+    for i, palavra in enumerate(palavras):
+        if palavra in termos_indicadores:
+            if i + 1 < len(palavras):
+                alimento_candidato = palavras[i + 1]
+                if alimento_candidato in alimentos_norm:
+                    restricoes_encontradas.add(alimento_candidato)
+
+    for termo in termos_candidatos:
+        if termo in alimentos_norm:
+            restricoes_encontradas.add(termo)
+
+    return list(restricoes_encontradas)
+
+
+def verificar_restricao_alimento(nome_alimento, palavras_restritas):
+    """
+    Verifica se um alimento tem restrição baseado nas palavras-chave
+    """
+    if not nome_alimento or not palavras_restritas:
+        return None
+
+    nome_alimento_norm = normalizar_texto(nome_alimento)
+    if not nome_alimento_norm:
+        return None
+
+    for palavra_restrita in palavras_restritas:
+        if not palavra_restrita:
+            continue
+        if palavra_restrita in nome_alimento_norm:
+            padrao = r"\b" + re.escape(palavra_restrita) + r"\b"
+            if re.search(padrao, nome_alimento_norm):
+                return f"⚠️ **ALERTA DE RESTRIÇÃO ALIMENTAR:** O alimento '{nome_alimento}' contém '{palavra_restrita}', que foi mencionado como restrição. Verifique se o paciente pode consumir este item."
+    return None
+
+
+# ============================================
+# 5. ALIMENTOS DE RISCO (Grupo OMS) - CORRIGIDO COM NORMALIZAÇÃO
 # ============================================
 def carregar_alimentos_risco():
     return {
@@ -211,11 +374,14 @@ def carregar_alimentos_risco():
                 "salsicha",
                 "presunto",
                 "linguiça",
+                "linguiça",
                 "bacon",
                 "salame",
                 "mortadela",
                 "nuggets",
                 "peixe salgado",
+                "salame",
+                "apresuntado",
             ],
             "mensagem": "⚠️ GRUPO 1: CANCERÍGENO PARA HUMANOS! Consumo diário de 50g aumenta em 18% o risco de câncer colorretal.",
         },
@@ -226,6 +392,12 @@ def carregar_alimentos_risco():
                 "carneiro",
                 "cordeiro",
                 "vitela",
+                "carne",
+                "bovina",
+                "porco",
+                "picanha",
+                "contrafile",
+                "alcatra",
             ],
             "mensagem": "⚠️ GRUPO 2A: PROVAVELMENTE CANCERÍGENO! Limite a 500g por semana.",
         },
@@ -235,6 +407,8 @@ def carregar_alimentos_risco():
                 "bebida adoçada",
                 "refrigerante diet",
                 "adoçante artificial",
+                "refrigerante light",
+                "diet",
             ],
             "mensagem": "⚠️ GRUPO 2B: POSSIVELMENTE CANCERÍGENO! Ingestão diária aceitável: 40mg/kg.",
         },
@@ -245,16 +419,34 @@ ALIMENTOS_RISCO = carregar_alimentos_risco()
 
 
 def verificar_risco_oms(nome_alimento):
-    nome_lower = nome_alimento.lower()
+    """Versão CORRIGIDA com normalização de texto"""
+    if not nome_alimento:
+        return None
+
+    # Normaliza o nome do alimento (remove acentos, converte para minúsculas)
+    nome_norm = normalizar_texto(nome_alimento)
+
+    if not nome_norm:
+        return None
+
+    # Verifica grupo 1
     for item in ALIMENTOS_RISCO["grupo1"]["alimentos"]:
-        if item in nome_lower:
+        item_norm = normalizar_texto(item)
+        if item_norm in nome_norm:
             return ALIMENTOS_RISCO["grupo1"]["mensagem"]
+
+    # Verifica grupo 2a
     for item in ALIMENTOS_RISCO["grupo2a"]["alimentos"]:
-        if item in nome_lower:
+        item_norm = normalizar_texto(item)
+        if item_norm in nome_norm:
             return ALIMENTOS_RISCO["grupo2a"]["mensagem"]
+
+    # Verifica grupo 2b
     for item in ALIMENTOS_RISCO["grupo2b"]["alimentos"]:
-        if item in nome_lower:
+        item_norm = normalizar_texto(item)
+        if item_norm in nome_norm:
             return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
+
     return None
 
 
@@ -1431,6 +1623,7 @@ with st.expander("📝 Dados do Paciente e Profissional", expanded=True):
         value=st.session_state.dados_consulta.get("observacoes", ""),
         key="observacoes_consulta_novo",
         height=80,
+        help="💡 Informe aqui restrições alimentares, alergias, intolerâncias (ex: 'alergia a camarão', 'intolerância a leite', 'não pode glúten')",
     )
 
     # Salvar no session_state
@@ -3024,7 +3217,7 @@ else:
     )
 
 # ============================================
-# 26. MONTAGEM DO PLANO ALIMENTAR (MANTIDO)
+# 26. MONTAGEM DO PLANO ALIMENTAR (MANTIDO E MODIFICADO)
 # ============================================
 st.markdown("## 🍏 Montagem do Plano Alimentar")
 
@@ -3065,6 +3258,7 @@ st.markdown(
         <li>📊 Use o resumo para impressão e acompanhamento</li>
     </ol>
     <p>⚠️ <strong>Atenção:</strong> Alguns alimentos podem ter dados incompletos (valores NA, *, Tr). Nesses casos, o sistema considera 0 (zero).</p>
+    <p>⚠️ <strong>ALERTA DE RESTRIÇÕES ALIMENTARES:</strong> Caso você ou seu paciente tenha alguma restrição (alergia, intolerância), <strong>informe nas Observações da Consulta</strong> (seção "Identificação da Consulta"). O sistema irá <strong>automaticamente</strong> verificar os alimentos adicionados e exibirá um alerta se algum item contiver o ingrediente restrito.</p>
     <p>🔗 <strong>Fontes científicas:</strong> TACO/UNICAMP | IBGE | FAO/WHO</p>
 </div>
 """,
@@ -3123,6 +3317,16 @@ if not st.session_state.modo_impressao:
     if st.button("➕ Adicionar ao Plano", use_container_width=True):
         item = df_atual[df_atual[campo_busca] == alimento_sel].iloc[0]
 
+        # ========== VERIFICAÇÃO DE RESTRIÇÕES ALIMENTARES ==========
+        observacoes_consulta = st.session_state.dados_consulta.get("observacoes", "")
+        palavras_restritas = extrair_palavras_chave_restricao(observacoes_consulta)
+        alerta_restricao = verificar_restricao_alimento(
+            alimento_sel, palavras_restritas
+        )
+
+        if alerta_restricao:
+            st.warning(alerta_restricao)
+
         if peso_real > 0:
             peso_final = peso_real * qtd_unidade
             label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} {'ml' if unidade_tipo == 'ml' else 'g'})"
@@ -3161,6 +3365,7 @@ if not st.session_state.modo_impressao:
             "C": valores["carb"],
             "G": valores["gord"],
             "Risco": risco_oms,
+            "AlertaRestricao": alerta_restricao if alerta_restricao else None,
         }
 
         if st.session_state.planejamento_tipo == "Diário":
@@ -3174,7 +3379,7 @@ if not st.session_state.modo_impressao:
 st.markdown("---")
 
 # ============================================
-# 27. EXIBIÇÃO DO PLANO
+# 27. EXIBIÇÃO DO PLANO (MODIFICADO COM ALERTA DE RESTRIÇÃO)
 # ============================================
 if st.session_state.planejamento_tipo == "Diário":
     st.markdown("### 📋 Seu Cardápio de Hoje")
@@ -3208,6 +3413,8 @@ if st.session_state.planejamento_tipo == "Diário":
                         f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
                         unsafe_allow_html=True,
                     )
+                if item.get("AlertaRestricao"):
+                    st.error(item["AlertaRestricao"])
                 st.divider()
 else:
     # Título com o dia da semana
@@ -3218,10 +3425,7 @@ else:
 
     for i, dia in enumerate(dias_semana):
         with cols_dias[i]:
-            # Usar o próprio botão do Streamlit, sem CSS complicado
-            # Apenas muda a cor de fundo quando selecionado via markdown
             if st.session_state.dia_atual == dia:
-                # Botão com cor laranja (selecionado)
                 st.markdown(
                     f"""
                 <div style="
@@ -3240,7 +3444,6 @@ else:
                     unsafe_allow_html=True,
                 )
             else:
-                # Botão normal (clicável)
                 if st.button(dia, key=f"dia_{dia}", use_container_width=True):
                     st.session_state.dia_atual = dia
                     st.rerun()
@@ -3279,6 +3482,8 @@ else:
                         f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
                         unsafe_allow_html=True,
                     )
+                if item.get("AlertaRestricao"):
+                    st.error(item["AlertaRestricao"])
                 st.divider()
 
     col_btn1, col_btn2 = st.columns(2)
@@ -3538,7 +3743,7 @@ else:
     st.info("📝 Preencha seus dados na barra lateral para gerar o laudo técnico.")
 
 # ============================================
-# 31. RESUMO COMPLETO PARA IMPRESSÃO
+# 31. RESUMO COMPLETO PARA IMPRESSÃO (MANTIDO)
 # ============================================
 st.markdown("---")
 st.markdown("## 🖨️ RESUMO COMPLETO PARA IMPRESSÃO")
@@ -3606,7 +3811,7 @@ else:
     )
 
 # ============================================
-# 32. EXPORTAÇÃO LAUDO TÉCNICO (CSV + PDF COM GRÁFICOS)
+# 32. EXPORTAÇÃO LAUDO TÉCNICO (CSV + PDF COM GRÁFICOS) (MANTIDO)
 # ============================================
 st.markdown("---")
 st.markdown("### 📥 Exportar Laudo Técnico")
