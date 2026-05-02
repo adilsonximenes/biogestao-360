@@ -140,7 +140,7 @@ streamlit run app.py
 ---
 
 ## 📁 Estrutura do Projeto
-
+```bash
 biogestao-360/
 ├── app.py # Aplicação principal
 ├── auth.py # Autenticação e controle de acesso
@@ -159,7 +159,7 @@ biogestao-360/
 ├── .gitignore # Arquivos ignorados pelo Git
 └── .streamlit/
 └── config.toml # Configurações do Streamlit
-
+```
 > ⚠️ O arquivo `.streamlit/secrets.toml` **nunca** é enviado ao GitHub.
 > Contém credenciais do banco de dados.
 
