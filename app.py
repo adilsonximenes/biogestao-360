@@ -1431,23 +1431,123 @@ st.markdown(
 )
 
 # ============================================
-# 17. DOAÇÕES E DICAS DE IMPRESSÃO
+# 17. APOIE ESTE PROJETO
 # ============================================
 with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded=False):
+
+    st.markdown("""
+    ### 🙏 Por que apoiar?
+    O **BioGestão 360** é gratuito e sempre será. Seu apoio voluntário permite:
+    - 🖥️ Manter o servidor sempre no ar
+    - 📊 Ampliar as tabelas nutricionais
+    - 🚀 Desenvolver novas funcionalidades
+    - 📚 Criar tutoriais e materiais educativos
+    """)
+
+    st.markdown("---")
+    st.markdown("### 🎯 Planos de Apoio")
+    st.info(
+        "💡 Após o PIX, envie o comprovante no WhatsApp **(21) 97948-6731**. "
+        "Ativação em até 72 horas. Cada plano é individual."
+    )
+
+    # Linha 1 — Importador
+    st.markdown("#### 📋 Importador Automático de Cardápio")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("""
+        **☕ Café**
+        - Importador por 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 5,00**
+        """)
+    with col2:
+        st.markdown("""
+        **🥗 Básico**
+        - Importador por 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 15,00**
+        """)
+    with col3:
+        st.markdown("""
+        **♾️ Vitalício**
+        - Importador para sempre
+        - 1 acesso simultâneo
+        
+        **R$ 49,00**
+        """)
+
+    st.markdown("---")
+
+    # Linha 2 — Avaliação
+    st.markdown("#### 📏 Avaliação Física *(para profissionais habilitados)*")
+    col4, col5 = st.columns(2)
+    with col4:
+        st.markdown("""
+        **💪 Pro**
+        - Avaliação Física por 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 10,00**
+        """)
+    with col5:
+        st.markdown("""
+        **💪 Pro Anual**
+        - Avaliação Física por 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 20,00**
+        """)
+
+    st.markdown("---")
+
+    # Linha 3 — Combo
+    st.markdown("#### 🏆 Combo — Importador + Avaliação Física")
+    col6, col7, col8 = st.columns(3)
+    with col6:
+        st.markdown("""
+        **🏆 Combo Mensal**
+        - Importador + Avaliação 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 12,00**
+        """)
+    with col7:
+        st.markdown("""
+        **🌟 Combo Anual**
+        - Importador + Avaliação 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 25,00**
+        """)
+    with col8:
+        st.markdown("""
+        **🏅 Combo Vitalício**
+        - Importador + Avaliação para sempre
+        - 1 acesso simultâneo
+        
+        **R$ 79,00**
+        """)
+
+    st.markdown("---")
+    st.markdown("### 💳 Como apoiar")
+
     col_pix, col_paypal = st.columns(2)
     with col_pix:
-        st.markdown("### 📱 PIX")
+        st.markdown("#### 📱 PIX")
         st.image(gerar_qr_code_pix(), width=150)
         st.markdown("**Chave PIX (Aleatória):**")
         st.code("f3e890da-fb72-4e8c-a0cd-d88177457a30", language="text")
         st.caption("ADILSON GONCALVES XIMENES")
     with col_paypal:
-        st.markdown("### 💳 PayPal")
-        st.iframe(get_paypal_html(), height=100)
+        st.markdown("#### 💳 PayPal")
+        st.components.v1.html(get_paypal_html(), height=100)
         st.caption(
             "Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG"
         )
-    st.caption("Sua contribuição ajuda a manter o projeto gratuito!")
+
     st.markdown("---")
     st.markdown("### 🖨️ Dica de Impressão")
     st.info("""
@@ -1462,12 +1562,16 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
 st.markdown(
     """
 <div class='privacidade-box'>
-    <b>🔒 POLÍTICA DE PRIVACIDADE (ZERO-FOOTPRINT):</b><br>
-    ✅ Nenhum dado é enviado para servidores externos<br>
-    ✅ Processamento 100% local no seu navegador<br>
-    ✅ Ao fechar a aba, todas as informações são permanentemente deletadas<br>
-    🔐 <b>Cadastro:</b> Nome, e-mail e senha (hash) são armazenados localmente apenas para controle de acesso às seções exclusivas<br>
-    📱 <b>Suporte:</b> Tutoriais no Telegram: <b>t.me/biogestao360</b>
+    <b>🔒 POLÍTICA DE PRIVACIDADE:</b><br>
+    ✅ Cálculos e dados nutricionais processados localmente no seu navegador<br>
+    ✅ Ao fechar a aba, seus dados de saúde são permanentemente deletados<br>
+    🔐 <b>Cadastro opcional:</b> Apenas nome de usuário, e-mail e senha (criptografada) 
+    são armazenados para controle de acesso às seções exclusivas<br>
+    🏦 <b>Banco de dados:</b> Hospedado com segurança na nuvem (Supabase/PostgreSQL com SSL)<br>
+    💳 <b>Pagamentos:</b> Realizados via PIX ou PayPal — o app não armazena dados bancários<br>
+    📱 <b>Suporte e tutoriais:</b> <b>t.me/biogestao360</b><br>
+    📋 <b>Seus direitos:</b> Solicite exclusão da sua conta a qualquer momento pelo WhatsApp 
+    <b>(21) 97948-6731</b>
 </div>
 """,
     unsafe_allow_html=True,
@@ -1479,9 +1583,13 @@ st.markdown(
 st.markdown(
     """
 <div class='aviso-cientifico'>
-    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP), Tabela IBGE (POF 2008-2009) e equações Harris-Benedict.<br>
-    <strong>⚠️ Importador de Cardápio:</strong> Os valores nutricionais são estimativas baseadas nas tabelas TACO/IBGE. Sempre confira com o profissional responsável.<br>
-    <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</strong>
+    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP), 
+    Tabela IBGE (POF 2008-2009) e equações Harris-Benedict/Mifflin-St Jeor.<br>
+    <strong>⚠️ Importador de Cardápio:</strong> Ferramenta de preenchimento automático. 
+    Os valores nutricionais são referências das tabelas TACO/IBGE. 
+    Não substitui orientação de nutricionista habilitado.<br>
+    <strong>⚠️ Avaliação Física:</strong> Exclusiva para profissionais de Educação Física habilitados.<br>
+    <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERROS</strong>
 </div>
 """,
     unsafe_allow_html=True,
