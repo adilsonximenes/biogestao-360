@@ -1,19 +1,13 @@
 # ia_gemini.py - VERSÃO HÍBRIDA (IA extrai + Busca nas tabelas)
 import json
 import re
-from google import genai
 import pandas as pd
 import unicodedata
 
 
 def configurar_gemini(api_key):
-    """Configura o Gemini com a chave API"""
-    if not api_key or api_key == "SUA_API_KEY_AQUI":
-        raise ValueError(
-            "Chave API do Gemini não configurada. Configure em .streamlit/secrets.toml"
-        )
-    client = genai.Client(api_key=api_key)
-    return client
+    """Mantido para compatibilidade - retorna None pois IA externa foi removida"""
+    return None
 
 
 def normalizar_texto_busca(texto):
