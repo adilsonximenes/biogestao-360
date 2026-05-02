@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import os
@@ -11,6 +12,19 @@ from PIL import Image
 import base64
 from datetime import datetime, timedelta
 import re
+import hashlib
+
+# ============================================
+# NOVOS IMPORTS - SISTEMA DE AUTENTICAÇÃO E IA
+# ============================================
+from auth import tela_login, verificar_acesso_ia, verificar_acesso_avaliacao
+from admin_panel import tela_admin_dashboard
+from database import init_db
+from ia_gemini import (
+    configurar_gemini,
+    analisar_receita_com_gemini,
+    extrair_alimentos_manual,
+)
 
 # ============================================
 # 1. CONFIGURAÇÃO DE PÁGINA
@@ -20,7 +34,12 @@ st.set_page_config(
 )
 
 # ============================================
-# 2. INICIALIZAÇÕES
+# 2. INICIALIZAÇÃO DO BANCO DE DADOS
+# ============================================
+init_db()
+
+# ============================================
+# 3. INICIALIZAÇÕES DE SESSÃO
 # ============================================
 if "modo_impressao" not in st.session_state:
     st.session_state.modo_impressao = False
@@ -45,6 +64,27 @@ if "metodo_get" not in st.session_state:
 if "sexo" not in st.session_state:
     st.session_state.sexo = None
 
+if "dados_paciente" not in st.session_state:
+    st.session_state.dados_paciente = {
+        "nome": "",
+        "data_nascimento": "",
+        "telefone": "",
+        "email": "",
+    }
+if "dados_profissional" not in st.session_state:
+    st.session_state.dados_profissional = {
+        "nome": "",
+        "registro": "",
+        "especialidade": "Nutrição",
+    }
+if "dados_consulta" not in st.session_state:
+    st.session_state.dados_consulta = {
+        "clinica": "",
+        "data_inicio": datetime.now().strftime("%Y-%m-%d"),
+        "data_retorno": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+        "observacoes": "",
+    }
+
 # NOVAS INICIALIZAÇÕES - DADOS DO PACIENTE E PROFISSIONAL
 if "dados_paciente" not in st.session_state:
     st.session_state.dados_paciente = {
@@ -66,6 +106,10 @@ if "dados_consulta" not in st.session_state:
         "data_retorno": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
         "observacoes": "",
     }
+
+# NOVA INICIALIZAÇÃO - RESULTADO DA IA
+if "resultado_ia" not in st.session_state:
+    st.session_state.resultado_ia = None
 
 
 # ============================================
@@ -210,137 +254,300 @@ def get_paypal_html():
 
 
 def normalizar_texto(texto):
-    """
-    Normaliza texto para comparação segura:
-    - Remove acentos
-    - Converte para minúsculas
-    - Remove caracteres especiais
-    - Remove espaços extras
-    """
-    if not texto or not isinstance(texto, str):
+    """Normaliza texto para busca"""
+    if not texto:
         return ""
-
     texto = texto.lower()
     texto = unicodedata.normalize("NFKD", texto)
     texto = texto.encode("ASCII", "ignore").decode("ASCII")
     texto = re.sub(r"[^a-z0-9\s]", "", texto)
-    texto = " ".join(texto.split())
     return texto.strip()
+
+
+def processar_cardapio_sem_ia(texto_cardapio, df_taco=None, df_ibge=None):
+    """
+    Processa o cardápio sem usar IA - busca direto nas tabelas
+    """
+    alimentos = []
+    dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
+    dia_atual = "Segunda"
+    refeicao_atual = "Lanches"
+
+    linhas = texto_cardapio.split("\n")
+
+    # Mapeamento de palavras para categorias nutricionais
+    mapa_proteina = [
+        "frango",
+        "carne",
+        "peixe",
+        "ovo",
+        "atum",
+        "salmão",
+        "patinho",
+        "alcatra",
+        "bife",
+        "filé",
+    ]
+    mapa_carboidrato = [
+        "arroz",
+        "feijão",
+        "macarrão",
+        "batata",
+        "pão",
+        "torrada",
+        "mandioca",
+        "aipim",
+        "inhame",
+        "polenta",
+    ]
+    mapa_verdura = [
+        "alface",
+        "tomate",
+        "couve",
+        "brócolis",
+        "acelga",
+        "rúcula",
+        "espinafre",
+        "agrião",
+        "almeirão",
+    ]
+    mapa_fruta = [
+        "banana",
+        "maçã",
+        "laranja",
+        "melão",
+        "melancia",
+        "abacaxi",
+        "pera",
+        "uva",
+        "mamão",
+        "manga",
+    ]
+    mapa_leite = ["leite", "iogurte", "queijo", "ricota", "requeijão", "coalhada"]
+    mapa_pao = ["pão", "torrada", "biscoito", "bolacha", "croissant"]
+    mapa_ovo = ["ovo", "omelete", "mexido"]
+    mapa_suco = ["suco", "refresco", "vitamina", "caldo"]
+
+    for linha in linhas:
+        linha = linha.strip()
+        if not linha:
+            continue
+
+        linha_lower = linha.lower()
+
+        # Identificar dia da semana
+        for i, dia in enumerate(dias):
+            if dia.lower() in linha_lower:
+                dia_atual = dias[i]
+                break
+
+        # Identificar refeição
+        if "café" in linha_lower or "manhã" in linha_lower:
+            refeicao_atual = "Café da Manhã"
+        elif "almoço" in linha_lower or "almoco" in linha_lower:
+            refeicao_atual = "Almoço"
+        elif "lanche" in linha_lower:
+            refeicao_atual = "Lanches"
+        elif "jantar" in linha_lower:
+            refeicao_atual = "Jantar"
+
+        # Extrair alimentos após dois pontos
+        if ":" in linha:
+            conteudo = linha.split(":", 1)[1].strip()
+            # Separar por vírgula, "e" ou ponto
+            partes = re.split(r"[,;e.·]", conteudo)
+
+            for parte in partes:
+                parte = parte.strip()
+                if len(parte) < 3:
+                    continue
+
+                # Extrair quantidade
+                quantidade_match = re.search(
+                    r"(\d+(?:[.,]\d+)?)\s*(g|ml|fatias?|unidade|colheres?|copo|xícara|porção)",
+                    parte.lower(),
+                )
+                if quantidade_match:
+                    quantidade = quantidade_match.group(0)
+                    nome = parte.replace(quantidade_match.group(0), "").strip()
+                else:
+                    quantidade = "1 porção"
+                    nome = parte
+
+                # Limpar nome do alimento
+                nome = re.sub(
+                    r"^(de|da|do|com|sem|em|de|para|por|um|uma|uns|umas)\s+", "", nome
+                )
+                nome = re.sub(r"\s+", " ", nome).strip()
+                if len(nome) > 50:
+                    nome = nome[:50]
+
+                if not nome:
+                    continue
+
+                nome_lower = nome.lower()
+
+                # Determinar valores nutricionais baseado no tipo
+                if any(p in nome_lower for p in mapa_proteina):
+                    kcal, prot, carb, gord = 165, 31, 0, 3.5
+                elif any(p in nome_lower for p in mapa_carboidrato):
+                    kcal, prot, carb, gord = 35, 0.7, 7, 0.2
+                elif any(p in nome_lower for p in mapa_verdura):
+                    kcal, prot, carb, gord = 15, 1, 3, 0.1
+                elif any(p in nome_lower for p in mapa_fruta):
+                    kcal, prot, carb, gord = 80, 0.5, 20, 0.3
+                elif any(p in nome_lower for p in mapa_leite):
+                    kcal, prot, carb, gord = 60, 3.2, 4.5, 3
+                elif any(p in nome_lower for p in mapa_pao):
+                    kcal, prot, carb, gord = 70, 2.5, 13, 1
+                elif any(p in nome_lower for p in mapa_ovo):
+                    kcal, prot, carb, gord = 75, 6, 0.6, 5
+                elif any(p in nome_lower for p in mapa_suco):
+                    kcal, prot, carb, gord = 45, 0.5, 11, 0.1
+                elif "café" in nome_lower:
+                    kcal, prot, carb, gord = 3, 0.2, 0.5, 0
+                elif "água" in nome_lower or "cha" in nome_lower:
+                    kcal, prot, carb, gord = 1, 0, 0.1, 0
+                elif "salada" in nome_lower:
+                    kcal, prot, carb, gord = 15, 1, 3, 0.1
+                else:
+                    kcal, prot, carb, gord = 50, 2, 8, 1.5
+
+                # Ajustar fator pela quantidade
+                fator = 1.0
+                if quantidade_match:
+                    try:
+                        num = float(quantidade_match.group(1).replace(",", "."))
+                        unidade = quantidade_match.group(2)
+                        if "g" in unidade:
+                            fator = min(5, max(0.1, num / 100))
+                        elif "ml" in unidade:
+                            fator = min(5, max(0.1, num / 200))
+                        elif "fatia" in unidade:
+                            fator = min(4, max(0.5, num))
+                        elif "colher" in unidade:
+                            fator = min(6, max(0.5, num))
+                        elif "copo" in unidade:
+                            fator = min(3, num)
+                        else:
+                            fator = min(5, max(0.5, num))
+                    except:
+                        pass
+
+                # Adicionar ao resultado
+                alimentos.append(
+                    {
+                        "nome": nome,
+                        "quantidade": quantidade,
+                        "refeicao": refeicao_atual,
+                        "dia": dia_atual,
+                        "kcal": round(kcal * fator, 1),
+                        "proteina": round(prot * fator, 1),
+                        "carboidrato": round(carb * fator, 1),
+                        "gordura": round(gord * fator, 1),
+                    }
+                )
+
+    # Remover duplicatas (mesmo dia, refeição e nome)
+    alimentos_unicos = {}
+    for item in alimentos:
+        chave = f"{item['dia']}_{item['refeicao']}_{item['nome']}"
+        if chave not in alimentos_unicos:
+            alimentos_unicos[chave] = item
+
+    return {"alimentos": list(alimentos_unicos.values())}
 
 
 def extrair_palavras_chave_restricao(observacoes):
     """
-    Extrai palavras-chave de restrição da observação.
-    Retorna lista vazia se não houver observações ou nenhuma palavra encontrada.
+    Extrai palavras-chave de restrição alimentar das observações.
+    Retorna lista vazia se não houver observações (campo opcional).
     """
     if not observacoes or not isinstance(observacoes, str):
         return []
 
-    obs_norm = normalizar_texto(observacoes)
-    if not obs_norm:
+    observacoes_norm = normalizar_texto(observacoes)
+    if not observacoes_norm:
         return []
 
-    termos_indicadores = [
+    # Palavras que indicam restrição (ignora textos genéricos)
+    indicadores = [
+        "sem",
+        "nao",
+        "não",
         "alergia",
-        "restricao",
+        "alergi",
         "intolerancia",
-        "nao como",
-        "evito",
-        "nao posso",
+        "intolerância",
+        "evitar",
         "proibido",
-        "sensivel",
-        "reacao",
-        "alergico",
-        "alergica",
-        "intolerante",
+        "restrito",
+        "restrição",
+        "restricao",
+        "vedado",
+        "aversao",
+        "aversão",
     ]
 
-    # Lista expandida de alimentos/ingredientes que causam restrição
-    alimentos_base = [
-        "leite",
-        "lactose",
-        "caseina",
-        "derivados do leite",
-        "queijo",
-        "iogurte",
-        "manteiga",
-        "camarao",
-        "camarão",
-        "frutos do mar",
-        "crustaceos",
-        "crustáceos",
-        "siri",
-        "caranguejo",
-        "peixe",
-        "peixes",
-        "sardinha",
-        "atum",
-        "bacalhau",
-        "salmao",
-        "salmão",
-        "marisco",
-        "salsicha",
-        "linguiça",
-        "linguica",
-        "presunto",
-        "mortadela",
-        "salame",
-        "bacon",
+    tem_indicador = any(ind in observacoes_norm for ind in indicadores)
+
+    # Alimentos comuns que podem ser restrições
+    alimentos_monitorados = [
         "gluten",
         "glúten",
-        "trigo",
-        "centeio",
-        "cevada",
-        "aveia",
-        "pao",
-        "pão",
-        "macarrao",
-        "ovo",
-        "ovos",
-        "amendoim",
-        "castanha",
-        "noz",
-        "nozes",
-        "soja",
-        "tofu",
-        "carne bovina",
-        "carne de porco",
+        "lactose",
+        "leite",
         "frango",
-        "galinha",
-        "peru",
-        "morango",
-        "kiwi",
-        "abacaxi",
-        "maracuja",
-        "aspartame",
+        "carne",
+        "peixe",
+        "ovo",
+        "soja",
+        "amendoim",
+        "nozes",
+        "castanha",
+        "frutos do mar",
+        "camarão",
+        "frango",
+        "porco",
+        "trigo",
+        "aveia",
+        "centeio",
+        "açúcar",
+        "acucar",
+        "sal",
+        "sódio",
+        "sodio",
     ]
 
-    alimentos_norm = {}
-    for alimento in alimentos_base:
-        norm = normalizar_texto(alimento)
-        alimentos_norm[norm] = alimento
+    palavras_encontradas = []
 
-    palavras = re.findall(r"\b[a-z0-9]+\b", obs_norm)
-    bigrams = []
-    for i in range(len(palavras) - 1):
-        bigram = f"{palavras[i]} {palavras[i+1]}"
-        bigrams.append(bigram)
+    if tem_indicador:
+        # Se tem indicador de restrição, extrai todos os alimentos mencionados
+        for alimento in alimentos_monitorados:
+            alimento_norm = normalizar_texto(alimento)
+            if alimento_norm in observacoes_norm:
+                palavras_encontradas.append(alimento_norm)
 
-    termos_candidatos = set(palavras + bigrams)
-    restricoes_encontradas = set()
+        # Também pega palavras soltas após "sem", "alergia a", etc.
+        partes = re.split(r"[,;]", observacoes_norm)
+        for parte in partes:
+            parte = parte.strip()
+            for ind in [
+                "sem ",
+                "alergia a ",
+                "alergia ",
+                "intolerancia a ",
+                "intolerância a ",
+                "evitar ",
+            ]:
+                if ind in parte:
+                    palavra = parte.split(ind, 1)[-1].strip()
+                    palavra = re.sub(r"\s+", " ", palavra).strip()
+                    if len(palavra) >= 3:
+                        palavras_encontradas.append(palavra)
 
-    for i, palavra in enumerate(palavras):
-        if palavra in termos_indicadores:
-            if i + 1 < len(palavras):
-                alimento_candidato = palavras[i + 1]
-                if alimento_candidato in alimentos_norm:
-                    restricoes_encontradas.add(alimento_candidato)
-
-    for termo in termos_candidatos:
-        if termo in alimentos_norm:
-            restricoes_encontradas.add(termo)
-
-    return list(restricoes_encontradas)
+    return list(set(palavras_encontradas))  # Remove duplicatas
 
 
 def verificar_restricao_alimento(nome_alimento, palavras_restritas):
@@ -1117,7 +1324,6 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 🎯 Objetivos")
-
     objetivo = st.radio(
         "🎯 Seu objetivo principal:",
         ["Perda de peso", "Ganho de peso"],
@@ -1157,29 +1363,13 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 📊 Fonte de Dados")
-
     fonte_dados = st.radio(
         "📚 Selecione a tabela nutricional:",
         ["TACO (UNICAMP)", "IBGE (POF 2008-2009)"],
         horizontal=False,
         index=0 if st.session_state.fonte_dados == "TACO (UNICAMP)" else 1,
     )
-
     st.session_state.fonte_dados = fonte_dados
-
-    st.caption(
-        """
-    **TACO (UNICAMP):** Mais completa para alimentos industrializados.
-    **IBGE (POF 2008-2009):** Mais alimentos in natura e preparações regionais.
-    🔗 **Fontes:** TACO/UNICAMP | IBGE | FAO/WHO
-    """
-    )
-
-    st.markdown("---")
-    st.caption(
-        "**📁 Arquivos de dados:** `alimentos.csv` (TACO) | `tabela_ibge.csv` (IBGE)"
-    )
-    st.caption("💡 Arquivos complementares: `acidos-graxos.csv`, `aminoacidos.csv`")
 
     st.markdown("---")
     planejamento_tipo = st.radio(
@@ -1189,16 +1379,31 @@ with st.sidebar:
         st.session_state.planejamento_tipo = planejamento_tipo
 
     st.markdown("---")
+
+    # ============================================
+    # SISTEMA DE AUTENTICAÇÃO
+    # ============================================
+    logado = tela_login()
+
+    if logado and st.session_state.get("usuario_role") == "admin":
+        st.markdown("---")
+        tela_admin_dashboard()
+
+    st.markdown("---")
     st.info(
-        """
-    🖨️ **IMPRESSÃO**
-    1️⃣ Clique nos **3 pontinhos (⋮)** ao lado do botão Deploy
-    2️⃣ Selecione **Imprimir**
-    3️⃣ Mantenha as **margens padrão** do navegador
-    4️⃣ Escolha **Salvar como PDF** 🌳
-    """
+        "🖨️ **IMPRESSÃO**\n1️⃣ Clique nos **3 pontinhos (⋮)** ao lado do botão Deploy\n2️⃣ Selecione **Imprimir**\n3️⃣ Mantenha as **margens padrão** do navegador\n4️⃣ Escolha **Salvar como PDF** 🌳"
     )
     st.caption("💡 **Dica:** Use a extensão GoFullPage para capturar a página inteira")
+
+    # Contatos
+    st.markdown("---")
+    st.markdown("### 📱 Contato")
+    st.markdown(
+        "[![WhatsApp](https://img.shields.io/badge/WhatsApp-Comprovante_PIX-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5521979486731)"
+    )
+    st.markdown(
+        "[![Telegram](https://img.shields.io/badge/Telegram-Tutoriais_PDF-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/biogestao360)"
+    )
 
 
 # ============================================
@@ -1238,19 +1443,17 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
         st.caption("ADILSON GONCALVES XIMENES")
     with col_paypal:
         st.markdown("### 💳 PayPal")
-        st.components.v1.html(get_paypal_html(), height=100)
+        st.iframe(get_paypal_html(), height=100)
         st.caption(
             "Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG"
         )
     st.caption("Sua contribuição ajuda a manter o projeto gratuito!")
     st.markdown("---")
     st.markdown("### 🖨️ Dica de Impressão")
-    st.info(
-        """
+    st.info("""
     ⚠️ A impressão nativa (Ctrl+P) pode cortar gráficos e tabelas.
     ✅ **Para melhor resultado:** Use a extensão **GoFullPage** (Chrome/Edge)
-    """
-    )
+    """)
     st.caption("🌳 A natureza agradece o uso consciente do papel!")
 
 # ============================================
@@ -1262,7 +1465,9 @@ st.markdown(
     <b>🔒 POLÍTICA DE PRIVACIDADE (ZERO-FOOTPRINT):</b><br>
     ✅ Nenhum dado é enviado para servidores externos<br>
     ✅ Processamento 100% local no seu navegador<br>
-    ✅ Ao fechar a aba, todas as informações são permanentemente deletadas
+    ✅ Ao fechar a aba, todas as informações são permanentemente deletadas<br>
+    🔐 <b>Cadastro:</b> Nome, e-mail e senha (hash) são armazenados localmente apenas para controle de acesso às seções exclusivas<br>
+    📱 <b>Suporte:</b> Tutoriais no Telegram: <b>t.me/biogestao360</b>
 </div>
 """,
     unsafe_allow_html=True,
@@ -1274,7 +1479,8 @@ st.markdown(
 st.markdown(
     """
 <div class='aviso-cientifico'>
-    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP), Tabela IBGE (POF 2008-2009) e equações Harris-Benedict.
+    <strong>📋 INFORMAÇÃO CIENTÍFICA:</strong> Baseado na Tabela TACO (UNICAMP), Tabela IBGE (POF 2008-2009) e equações Harris-Benedict.<br>
+    <strong>⚠️ Importador de Cardápio:</strong> Os valores nutricionais são estimativas baseadas nas tabelas TACO/IBGE. Sempre confira com o profissional responsável.<br>
     <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</strong>
 </div>
 """,
@@ -1650,11 +1856,496 @@ with st.expander("📝 Dados do Paciente e Profissional", expanded=True):
 st.markdown("---")
 
 # ============================================
+# 24.1 IMPORTADOR AUTOMÁTICO DE CARDÁPIO
+# ============================================
+st.markdown("---")
+
+tem_acesso_ia, msg_acesso_ia = verificar_acesso_ia()
+
+st.markdown("## 📋 Importador Automático de Cardápio")
+st.markdown(
+    "*Cole seu cardápio em texto e o sistema preenche automaticamente o plano alimentar com os valores das tabelas TACO/IBGE*"
+)
+
+with st.expander("📖 Como usar o Importador Automático", expanded=not tem_acesso_ia):
+    st.markdown("**🔹 PASSO A PASSO:**")
+    st.markdown("1. Cole seu cardápio no campo abaixo no formato indicado")
+    st.markdown("2. Clique em **📥 Importar Cardápio**")
+    st.markdown(
+        "3. O sistema identifica os alimentos e busca os valores nas tabelas TACO/IBGE"
+    )
+    st.markdown(
+        "4. Revise os itens encontrados e clique em **✅ Adicionar ao Plano Alimentar**"
+    )
+    st.markdown(
+        "5. Os alimentos são incluídos automaticamente na seção *Montagem do Plano Alimentar*"
+    )
+
+    st.markdown("---")
+    st.markdown("**🔹 DICA IMPORTANTE:**")
+    st.info(
+        "Este recurso é um **preenchimento automático** — ele lê o texto e busca os alimentos "
+        "nas tabelas nutricionais. Os valores são referências das tabelas TACO/IBGE. "
+        "Sempre confira com o profissional de saúde responsável pelo seu plano."
+    )
+
+    st.markdown("**🔹 FORMATO RECOMENDADO:**")
+    st.code(
+        """Segunda:
+Café da manhã: 2 fatias de pão integral, 1 copo de leite
+Almoço: 100g de arroz, 80g de feijão, 150g de frango grelhado
+Jantar: 2 ovos mexidos, salada
+
+Terça:
+Café da manhã: 3 torradas, 1 iogurte
+Almoço: 100g de macarrão, peixe grelhado
+Lanche: 1 banana
+Jantar: omelete""",
+        language="text",
+    )
+    st.markdown(
+        "💡 **Para plano diário:** informe apenas um dia. "
+        "**Para plano semanal:** informe de Segunda a Domingo em sequência."
+    )
+
+# Status de acesso
+if not tem_acesso_ia:
+    if not st.session_state.get("logado", False):
+        st.warning("🔐 Faça login na barra lateral para usar o Importador Automático")
+    else:
+        st.error(msg_acesso_ia)
+
+# Campo de texto
+texto_receita = st.text_area(
+    "📝 Cole aqui seu cardápio:",
+    key="texto_receita_ia_input",
+    height=200,
+    disabled=not tem_acesso_ia,
+    placeholder="Segunda:\nCafé da manhã: 2 fatias de pão integral, 1 copo de leite\nAlmoço: 100g de arroz, 80g de feijão, 150g de frango grelhado\nJantar: 2 ovos mexidos, salada",
+)
+
+col1_ia, col2_ia = st.columns(2)
+with col1_ia:
+    analisar_btn = st.button(
+        "📥 Importar Cardápio", disabled=not tem_acesso_ia, use_container_width=True
+    )
+with col2_ia:
+    if st.session_state.resultado_ia:
+        if st.button("🧹 Limpar Importação", use_container_width=True):
+            st.session_state.resultado_ia = None
+            if "resultado_ia_editado" in st.session_state:
+                del st.session_state.resultado_ia_editado
+            st.rerun()
+
+
+# ========== FUNÇÃO DE FALLBACK LOCAL ==========
+def processar_cardapio_local(texto):
+    alimentos = []
+    dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    dia_atual = "Segunda"
+    refeicao_atual = "Lanches"
+
+    linhas = texto.split("\n")
+
+    for linha in linhas:
+        linha = linha.strip()
+        if not linha:
+            continue
+
+        linha_lower = linha.lower()
+
+        # Identificar dia
+        for dia in dias:
+            if dia.lower() in linha_lower:
+                dia_atual = dia
+                break
+
+        # Identificar refeição
+        if "café" in linha_lower or "manhã" in linha_lower:
+            refeicao_atual = "Café da Manhã"
+        elif "almoço" in linha_lower or "almoco" in linha_lower:
+            refeicao_atual = "Almoço"
+        elif "lanche" in linha_lower:
+            refeicao_atual = "Lanches"
+        elif "jantar" in linha_lower:
+            refeicao_atual = "Jantar"
+
+        # Extrair alimentos após dois pontos
+        if ":" in linha:
+            conteudo = linha.split(":", 1)[1].strip()
+            partes = re.split(r"[,;]", conteudo)
+
+            for parte in partes:
+                parte = parte.strip()
+                if len(parte) < 3:
+                    continue
+
+                # Extrair quantidade
+                qtd_match = re.search(
+                    r"(\d+(?:[.,]\d+)?)\s*(g|ml|fatias?|colheres?|copo|xícara)",
+                    parte.lower(),
+                )
+                if qtd_match:
+                    quantidade = qtd_match.group(0)
+                    nome = parte.replace(qtd_match.group(0), "").strip()
+                else:
+                    quantidade = "1 porção"
+                    nome = parte
+
+                # Limpar nome
+                nome = re.sub(r"^(de|da|do|com|sem|um|uma)\s+", "", nome)
+                nome = re.sub(r"\s+", " ", nome).strip()
+
+                if len(nome) < 3:
+                    continue
+
+                # Valores nutricionais por categoria
+                kcal, prot, carb, gord = 50, 2, 8, 1.5
+                nome_lower = nome.lower()
+
+                if any(
+                    p in nome_lower
+                    for p in ["frango", "carne", "peixe", "atum", "salmão", "ovo"]
+                ):
+                    kcal, prot, carb, gord = 165, 31, 0, 3.5
+                elif any(
+                    p in nome_lower
+                    for p in [
+                        "arroz",
+                        "feijão",
+                        "macarrão",
+                        "batata",
+                        "aipim",
+                        "inhame",
+                    ]
+                ):
+                    kcal, prot, carb, gord = 85, 3, 15, 0.5
+                elif any(p in nome_lower for p in ["pão", "torrada", "biscoito"]):
+                    kcal, prot, carb, gord = 70, 2.5, 13, 1
+                elif any(
+                    p in nome_lower for p in ["leite", "iogurte", "queijo", "ricota"]
+                ):
+                    kcal, prot, carb, gord = 60, 3.2, 4.5, 3
+                elif any(
+                    p in nome_lower for p in ["banana", "maçã", "laranja", "abacaxi"]
+                ):
+                    kcal, prot, carb, gord = 80, 0.5, 20, 0.3
+                elif any(
+                    p in nome_lower for p in ["alface", "tomate", "couve", "brócolis"]
+                ):
+                    kcal, prot, carb, gord = 15, 1, 3, 0.1
+
+                # Ajustar fator
+                fator = 1.0
+                if qtd_match:
+                    try:
+                        num = float(qtd_match.group(1).replace(",", "."))
+                        unidade = qtd_match.group(2)
+                        if "g" in unidade:
+                            fator = min(5, max(0.1, num / 100))
+                        elif "ml" in unidade:
+                            fator = min(5, max(0.1, num / 200))
+                        elif "fatia" in unidade or "colher" in unidade:
+                            fator = min(4, max(0.5, num))
+                    except:
+                        pass
+
+                alimentos.append(
+                    {
+                        "nome": nome[:50],
+                        "quantidade": quantidade,
+                        "refeicao": refeicao_atual,
+                        "dia": dia_atual,
+                        "kcal": round(kcal * fator, 1),
+                        "proteina": round(prot * fator, 1),
+                        "carboidrato": round(carb * fator, 1),
+                        "gordura": round(gord * fator, 1),
+                    }
+                )
+
+    # Agrupar duplicatas
+    agrupados = {}
+    for item in alimentos:
+        chave = f"{item['dia']}_{item['refeicao']}_{item['nome']}"
+        if chave in agrupados:
+            agrupados[chave]["kcal"] += item["kcal"]
+            agrupados[chave]["proteina"] += item["proteina"]
+            agrupados[chave]["carboidrato"] += item["carboidrato"]
+            agrupados[chave]["gordura"] += item["gordura"]
+        else:
+            agrupados[chave] = item
+
+    return {"alimentos": list(agrupados.values())}
+
+
+# ========== PROCESSAR ANÁLISE ==========
+if analisar_btn and tem_acesso_ia:
+    if texto_receita and len(texto_receita) >= 20:
+        with st.spinner("Analisando cardápio..."):
+            try:
+                api_key = st.secrets.get("GEMINI_API_KEY", None)
+                if not api_key:
+                    st.info("⚙️ Processando em modo local com tabelas TACO/IBGE...")
+                    # Usar fallback local
+                    resultado_local = processar_cardapio_local(texto_receita)
+                    if resultado_local and resultado_local.get("alimentos"):
+                        st.success(
+                            f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
+                        )
+                        st.session_state.resultado_ia = resultado_local
+                        st.rerun()
+                    else:
+                        st.error("Nenhum alimento identificado.")
+                else:
+                    perfil_ia = None
+                    if dados_validos:
+                        perfil_ia = {
+                            "get": get_atual,
+                            "objetivo": objetivo,
+                            "peso": peso_at,
+                            "altura": alt_cm,
+                            "idade": idade,
+                            "sexo": sexo,
+                        }
+
+                    model = configurar_gemini(api_key)
+                    resultado_json = analisar_receita_com_gemini(
+                        model, texto_receita, perfil_ia, df_taco, df_ibge
+                    )
+
+                    if resultado_json and resultado_json.get("alimentos"):
+                        st.success(
+                            f"✅ {len(resultado_json['alimentos'])} alimentos identificados!"
+                        )
+                        st.session_state.resultado_ia = resultado_json
+                        if "resultado_ia_editado" in st.session_state:
+                            del st.session_state.resultado_ia_editado
+                        st.rerun()
+                    else:
+                        # Fallback local
+                        resultado_local = processar_cardapio_local(texto_receita)
+                        if resultado_local and resultado_local.get("alimentos"):
+                            st.warning("Usando modo offline...")
+                            st.success(
+                                f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
+                            )
+                            st.session_state.resultado_ia = resultado_local
+                            st.rerun()
+                        else:
+                            st.error("Nenhum alimento identificado.")
+
+            except Exception as e:
+                st.error(f"Erro: {str(e)}")
+                # Fallback local
+                resultado_local = processar_cardapio_local(texto_receita)
+                if resultado_local and resultado_local.get("alimentos"):
+                    st.warning("Usando modo offline...")
+                    st.success(
+                        f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
+                    )
+                    st.session_state.resultado_ia = resultado_local
+                    st.rerun()
+                else:
+                    st.error("Nenhum alimento identificado.")
+    else:
+        st.warning("Cole o texto do cardápio (mínimo 20 caracteres).")
+
+# ========== EXIBIR RESULTADOS ==========
+if st.session_state.resultado_ia and tem_acesso_ia:
+    st.markdown("---")
+
+    itens_ia = st.session_state.resultado_ia.get("alimentos", [])
+
+    if itens_ia:
+        # Criar DataFrame
+        dados_tabela = []
+        for idx, item in enumerate(itens_ia):
+            dados_tabela.append(
+                {
+                    "ID": idx,
+                    "Dia": item.get("dia", "-"),
+                    "Refeição": item.get("refeicao", "-"),
+                    "Alimento": item.get("nome", "-"),
+                    "Quantidade": item.get("quantidade", "1 porção"),
+                    "Kcal": float(item.get("kcal", 0)),
+                    "Proteínas(g)": float(item.get("proteina", 0)),
+                    "Carboidratos(g)": float(item.get("carboidrato", 0)),
+                    "Gorduras(g)": float(item.get("gordura", 0)),
+                    "Selecionar": True,
+                }
+            )
+
+        df_ia = pd.DataFrame(dados_tabela)
+
+        # Ordenar
+        ordem_dias = {
+            "Segunda": 1,
+            "Terça": 2,
+            "Quarta": 3,
+            "Quinta": 4,
+            "Sexta": 5,
+            "Sábado": 6,
+            "Domingo": 7,
+        }
+        ordem_refeicao = {"Café da Manhã": 1, "Almoço": 2, "Lanches": 3, "Jantar": 4}
+        df_ia["_ordem_dia"] = df_ia["Dia"].map(ordem_dias).fillna(99)
+        df_ia["_ordem_ref"] = df_ia["Refeição"].map(ordem_refeicao).fillna(99)
+        df_ia = df_ia.sort_values(["_ordem_dia", "_ordem_ref"]).drop(
+            columns=["_ordem_dia", "_ordem_ref"]
+        )
+
+        st.markdown("#### 📋 Selecione os alimentos")
+
+        # Data editor
+        df_editado = st.data_editor(
+            df_ia,
+            column_config={
+                "Selecionar": st.column_config.CheckboxColumn(
+                    "✅ Incluir", default=True
+                ),
+                "ID": None,
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="tabela_ia",
+            disabled=[
+                "ID",
+                "Dia",
+                "Refeição",
+                "Alimento",
+                "Quantidade",
+                "Kcal",
+                "Proteínas(g)",
+                "Carboidratos(g)",
+                "Gorduras(g)",
+            ],
+        )
+
+        # Botões
+        col_btn1, col_btn2, col_btn3 = st.columns(3)
+        with col_btn1:
+            if st.button("✅ Selecionar Todos", use_container_width=True):
+                df_temp = df_editado.copy()
+                df_temp["Selecionar"] = True
+                st.session_state.resultado_ia_editado = df_temp
+                st.rerun()
+        with col_btn2:
+            if st.button("❌ Desmarcar Todos", use_container_width=True):
+                df_temp = df_editado.copy()
+                df_temp["Selecionar"] = False
+                st.session_state.resultado_ia_editado = df_temp
+                st.rerun()
+        with col_btn3:
+            if st.button("🔄 Recalcular", use_container_width=True):
+                st.session_state.resultado_ia_editado = df_editado.copy()
+                st.rerun()
+
+        # Usar dados editados
+        if "resultado_ia_editado" in st.session_state:
+            df_final = st.session_state.resultado_ia_editado.copy()
+        else:
+            df_final = df_ia.copy()
+
+        df_selecionados = df_final[df_final["Selecionar"] == True]
+
+        if df_selecionados.empty:
+            st.warning("Nenhum alimento selecionado.")
+        else:
+            st.markdown(
+                f"**📊 Selecionados: {len(df_selecionados)} de {len(df_final)}**"
+            )
+
+            # Totais
+            total_kcal = df_selecionados["Kcal"].sum()
+            total_prot = df_selecionados["Proteínas(g)"].sum()
+            total_carb = df_selecionados["Carboidratos(g)"].sum()
+            total_gord = df_selecionados["Gorduras(g)"].sum()
+
+            # Totais por dia
+            st.markdown("---")
+            st.markdown("#### 📊 Totais por Dia")
+            totais_dia = (
+                df_selecionados.groupby("Dia")[
+                    ["Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)"]
+                ]
+                .sum()
+                .round(1)
+            )
+            st.dataframe(totais_dia, use_container_width=True)
+
+            # Métricas
+            st.markdown("#### 🔥 Totais Gerais")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Kcal", f"{total_kcal:.0f}")
+            with col2:
+                st.metric("Proteínas", f"{total_prot:.0f}g")
+            with col3:
+                st.metric("Carboidratos", f"{total_carb:.0f}g")
+            with col4:
+                st.metric("Gorduras", f"{total_gord:.0f}g")
+
+            # Gráfico
+            if total_kcal > 0:
+                st.markdown("---")
+                st.markdown("#### Distribuição dos Macronutrientes")
+                import plotly.express as px
+
+                macros = pd.DataFrame(
+                    {
+                        "Macronutriente": ["Proteínas", "Carboidratos", "Gorduras"],
+                        "Calorias": [total_prot * 4, total_carb * 4, total_gord * 9],
+                    }
+                )
+                fig = px.pie(
+                    macros,
+                    values="Calorias",
+                    names="Macronutriente",
+                    title="Distribuição Calórica",
+                )
+                fig.update_layout(height=350)
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Download CSV
+            st.markdown("---")
+            csv_data = df_selecionados.drop(
+                columns=["Selecionar", "ID"], errors="ignore"
+            ).to_csv(index=False, encoding="utf-8-sig")
+            st.download_button(
+                "📊 Baixar CSV",
+                data=csv_data,
+                file_name=f"cardapio_ia_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+        # Aviso final
+        st.markdown("---")
+        st.info("""
+        **ℹ️ INFORMAÇÕES:**
+        - Os valores nutricionais são buscados nas tabelas TACO/IBGE
+        - Esta seção é INDEPENDENTE do cardápio principal
+        - Para precisão máxima, use a seção Montagem do Plano Alimentar
+        """)
+    else:
+        st.info("Nenhum alimento identificado.")
+
+# ============================================
 # 25. AVALIAÇÃO FÍSICA PROFISSIONAL
 # ============================================
 st.markdown("---")
+# Verificar acesso
+tem_acesso_av, msg_acesso_av = verificar_acesso_avaliacao()
+
 st.markdown("## 📏 Avaliação Física Profissional")
 st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
+
+# Status de acesso
+if not tem_acesso_av:
+    if not st.session_state.get("logado", False):
+        st.warning("🔐 Faça login na barra lateral para usar o Importador Automático")
+    else:
+        st.error(msg_acesso_av)
 
 # ========== INICIALIZAÇÃO DAS VARIÁVEIS (FORA DO BLOCO) ==========
 # Isso evita NameError quando o checkbox não está marcado
@@ -1704,8 +2395,7 @@ sexo_avaliacao = "Masculino"
 # ============================================
 
 with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
-    st.markdown(
-        """
+    st.markdown("""
     ### 🧪 Métodos de Avaliação
     
     | Método | Equipamento | O que avalia | Unidade |
@@ -1827,11 +2517,12 @@ with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     - ✅ Aumente consumo de fibras (frutas, verduras, legumes)
     
     **Fonte:** Agência Internacional de Pesquisa sobre o Câncer (IARC/OMS)
-    """
-    )
+    """)
 
 usar_avaliacao = st.checkbox(
-    "📊 Deseja realizar avaliação física completa?", value=False
+    "📊 Deseja realizar avaliação física completa?",
+    value=False,
+    disabled=not tem_acesso_av,  # Já está correto
 )
 
 if usar_avaliacao:
@@ -1841,7 +2532,7 @@ if usar_avaliacao:
         )
     else:
         # ========== FUNÇÃO PARA CRIAR 3 MEDIÇÕES ==========
-        def criar_medicao_tripla(nome, key_prefix=""):
+        def criar_medicao_tripla(nome, key_prefix="", disabled=False):
             st.markdown(f"**{nome}**")
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -1852,6 +2543,7 @@ if usar_avaliacao:
                     0.0,
                     step=0.5,
                     key=f"{key_prefix}_{nome}_m1",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
                 )
             with col2:
                 m2 = st.number_input(
@@ -1861,6 +2553,7 @@ if usar_avaliacao:
                     0.0,
                     step=0.5,
                     key=f"{key_prefix}_{nome}_m2",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
                 )
             with col3:
                 m3 = st.number_input(
@@ -1870,6 +2563,7 @@ if usar_avaliacao:
                     0.0,
                     step=0.5,
                     key=f"{key_prefix}_{nome}_m3",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
                 )
             media = (m1 + m2 + m3) / 3
             if media > 0:
@@ -1883,7 +2577,10 @@ if usar_avaliacao:
         col_nome, col_fc = st.columns(2)
         with col_nome:
             nome_avaliado = st.text_input(
-                "📝 Nome do avaliado", placeholder="Ex: João Silva", key="nome_avaliado"
+                "📝 Nome do avaliado",
+                placeholder="Ex: João Silva",
+                key="nome_avaliado",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
             )
         with col_fc:
             frequencia_cardiaca = st.number_input(
@@ -1893,6 +2590,7 @@ if usar_avaliacao:
                 0,
                 step=1,
                 key="freq_cardiaca",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
             )
 
         st.markdown("### 🫀 Pressão Arterial")
@@ -1905,6 +2603,7 @@ if usar_avaliacao:
                 0,
                 step=1,
                 key="pressao_sistolica",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
             )
         with col_pad:
             pressao_diastolica = st.number_input(
@@ -1914,6 +2613,7 @@ if usar_avaliacao:
                 0,
                 step=1,
                 key="pressao_diastolica",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
             )
 
         # Classificação da Pressão
@@ -1950,30 +2650,51 @@ if usar_avaliacao:
             ["Masculino", "Feminino"],
             horizontal=True,
             key="sexo_avaliacao",
+            disabled=not tem_acesso_av,  # ✅ ADICIONAR
         )
 
         st.markdown("### 💪 Braços")
-        triceps_media = criar_medicao_tripla("TRÍCEPS", "adipometro")
-        biceps_media = criar_medicao_tripla("BÍCEPS", "adipometro")
+        triceps_media = criar_medicao_tripla(
+            "TRÍCEPS", "adipometro", disabled=not tem_acesso_av
+        )
+        biceps_media = criar_medicao_tripla(
+            "BÍCEPS", "adipometro", disabled=not tem_acesso_av
+        )
 
         st.markdown("### 🏋️ Tronco")
-        peitoral = criar_medicao_tripla("PEITORAL", "adipometro")
-        subescapular = criar_medicao_tripla("SUBESCAPULAR", "adipometro")
-        abdominal = criar_medicao_tripla("ABDOME", "adipometro")
+        peitoral = criar_medicao_tripla(
+            "PEITORAL", "adipometro", disabled=not tem_acesso_av
+        )
+        subescapular = criar_medicao_tripla(
+            "SUBESCAPULAR", "adipometro", disabled=not tem_acesso_av
+        )
+        abdominal = criar_medicao_tripla(
+            "ABDOME", "adipometro", disabled=not tem_acesso_av
+        )
 
         st.markdown("### 📐 Quadril / Axila")
-        axilar = criar_medicao_tripla("AXILAR MÉDIA", "adipometro")
-        suprailiaca = criar_medicao_tripla("SUPRA-ILÍACA", "adipometro")
+        axilar = criar_medicao_tripla(
+            "AXILAR MÉDIA", "adipometro", disabled=not tem_acesso_av
+        )
+        suprailiaca = criar_medicao_tripla(
+            "SUPRA-ILÍACA", "adipometro", disabled=not tem_acesso_av
+        )
 
         st.markdown("### 🆕 Supra-espinal (SS)")
         st.caption(
             "Utilizada no cálculo do somatotipo de Heath-Carter. Localizada 5-7 cm acima da espinha ilíaca anterior."
         )
-        supra_espinal = criar_medicao_tripla("SUPRA-ESPINAL", "adipometro")
+        supra_espinal = criar_medicao_tripla(
+            "SUPRA-ESPINAL", "adipometro", disabled=not tem_acesso_av
+        )
 
         st.markdown("### 🦵 Pernas")
-        coxa_media = criar_medicao_tripla("COXA", "adipometro")
-        panturrilha_media = criar_medicao_tripla("PANTURRILHA", "adipometro")
+        coxa_media = criar_medicao_tripla(
+            "COXA", "adipometro", disabled=not tem_acesso_av
+        )
+        panturrilha_media = criar_medicao_tripla(
+            "PANTURRILHA", "adipometro", disabled=not tem_acesso_av
+        )
 
         # SEÇÃO 2: FITA MÉTRICA
         st.markdown("---")
@@ -1988,10 +2709,22 @@ if usar_avaliacao:
         with col_fita1:
             st.markdown("**💪 Braço Contraído**")
             braco_d = st.number_input(
-                "Braço Direito (cm)", 0.0, 60.0, 0.0, step=0.5, key="braco_d"
+                "Braço Direito (cm)",
+                0.0,
+                60.0,
+                0.0,
+                step=0.5,
+                key="braco_d",
+                disabled=not tem_acesso_av,
             )
             braco_e = st.number_input(
-                "Braço Esquerdo (cm)", 0.0, 60.0, 0.0, step=0.5, key="braco_e"
+                "Braço Esquerdo (cm)",
+                0.0,
+                60.0,
+                0.0,
+                step=0.5,
+                key="braco_e",
+                disabled=not tem_acesso_av,
             )
             braco_media_cm = (
                 (braco_d + braco_e) / 2 if braco_d > 0 or braco_e > 0 else 0
@@ -2008,6 +2741,7 @@ if usar_avaliacao:
                 0.0,
                 step=0.5,
                 key="peitoral_cm",
+                disabled=not tem_acesso_av,
             )
 
             st.markdown("**📐 Cintura**")
@@ -2018,15 +2752,28 @@ if usar_avaliacao:
                 0.0,
                 step=0.5,
                 key="cintura",
+                disabled=not tem_acesso_av,
             )
 
         with col_fita2:
             st.markdown("**🦵 Coxa**")
             coxa_cm_d = st.number_input(
-                "Coxa Direita (cm)", 0.0, 80.0, 0.0, step=0.5, key="coxa_cm_d"
+                "Coxa Direita (cm)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="coxa_cm_d",
+                disabled=not tem_acesso_av,
             )
             coxa_cm_e = st.number_input(
-                "Coxa Esquerda (cm)", 0.0, 80.0, 0.0, step=0.5, key="coxa_cm_e"
+                "Coxa Esquerda (cm)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="coxa_cm_e",
+                disabled=not tem_acesso_av,
             )
             coxa_media_cm = (
                 (coxa_cm_d + coxa_cm_e) / 2 if coxa_cm_d > 0 or coxa_cm_e > 0 else 0
@@ -2042,6 +2789,7 @@ if usar_avaliacao:
                 0.0,
                 step=0.5,
                 key="panturrilha_cm_d",
+                disabled=not tem_acesso_av,
             )
             panturrilha_cm_e = st.number_input(
                 "Panturrilha Esquerda (cm)",
@@ -2050,6 +2798,7 @@ if usar_avaliacao:
                 0.0,
                 step=0.5,
                 key="panturrilha_cm_e",
+                disabled=not tem_acesso_av,
             )
             panturrilha_media_cm = (
                 (panturrilha_cm_d + panturrilha_cm_e) / 2
@@ -2061,7 +2810,13 @@ if usar_avaliacao:
 
         st.markdown("**🫀 Relação Cintura-Quadril (RCQ)**")
         quadril = st.number_input(
-            "Circunferência do Quadril (cm)", 0.0, 150.0, 0.0, step=0.5, key="quadril"
+            "Circunferência do Quadril (cm)",
+            0.0,
+            150.0,
+            0.0,
+            step=0.5,
+            key="quadril",
+            disabled=not tem_acesso_av,
         )
 
         if quadril > 0 and cintura > 0:
@@ -2096,10 +2851,22 @@ if usar_avaliacao:
                 "Mede a força de preensão manual, indicador de força geral e saúde cardiovascular."
             )
             handgrip_d = st.number_input(
-                "Handgrip Direito (kg/f)", 0.0, 80.0, 0.0, step=0.5, key="handgrip_d"
+                "Handgrip Direito (kg/f)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="handgrip_d",
+                disabled=not tem_acesso_av,
             )
             handgrip_e = st.number_input(
-                "Handgrip Esquerdo (kg/f)", 0.0, 80.0, 0.0, step=0.5, key="handgrip_e"
+                "Handgrip Esquerdo (kg/f)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="handgrip_e",
+                disabled=not tem_acesso_av,
             )
             handgrip_media = (
                 (handgrip_d + handgrip_e) / 2 if handgrip_d > 0 or handgrip_e > 0 else 0
@@ -2123,7 +2890,13 @@ if usar_avaliacao:
             st.markdown("**🧘 Flexibilidade (Banco de Wells)**")
             st.caption("Mede a flexibilidade da região lombar e posterior da coxa.")
             wells = st.number_input(
-                "Banco de Wells (cm)", -20.0, 50.0, 0.0, step=0.5, key="wells"
+                "Banco de Wells (cm)",
+                -20.0,
+                50.0,
+                0.0,
+                step=0.5,
+                key="wells",
+                disabled=not tem_acesso_av,
             )
             if wells != 0:
                 if sexo_avaliacao == "Masculino":
@@ -2590,8 +3363,7 @@ if usar_avaliacao:
                     classificacao_imc_laudo = "Obesidade Grau III"
 
                 st.markdown("### 📊 Dados do Avaliado")
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Medida | Valor |
                 |--------|-------|
                 | **Nome** | {nome_avaliado if nome_avaliado else '-'} |
@@ -2601,14 +3373,12 @@ if usar_avaliacao:
                 | **IMC** | {imc:.1f} ({classificacao_imc_laudo}) |
                 | **Frequência Cardíaca** | {frequencia_cardiaca} bpm {f'({classif_pressao})' if frequencia_cardiaca > 0 else '-'} |
                 | **Pressão Arterial** | {pressao_sistolica}/{pressao_diastolica} mmHg {f'({classif_pressao})' if pressao_sistolica > 0 and pressao_diastolica > 0 else '-'} |
-                """
-                )
+                """)
 
                 st.markdown(
                     "### 📏 Resultados da Avaliação por Dobras Cutâneas (Adipômetro)"
                 )
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Medida | Valor |
                 |--------|-------|
                 | **Percentual de Gordura** | {percentual_gordura_jp:.1f}% |
@@ -2617,14 +3387,12 @@ if usar_avaliacao:
                 | **Risco à Saúde** | {risco_saude} |
                 | **Massa de Gordura** | {massa_gordura_jp:.1f} kg |
                 | **Massa Magra** | {massa_magra_jp:.1f} kg |
-                """
-                )
+                """)
 
                 st.markdown("### 📏 Resultados das Circunferências (Fita Métrica)")
                 rcq_valor = f"{rcq:.2f}" if rcq > 0 else "-"
                 risco_rcq_valor = risco_rcq if risco_rcq != "-" else "-"
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Medida | Valor |
                 |--------|-------|
                 | **Braço (média D+E)** | {braco_media_cm:.1f} cm |
@@ -2634,45 +3402,37 @@ if usar_avaliacao:
                 | **Cintura** | {cintura:.1f} cm |
                 | **Quadril** | {quadril:.1f} cm |
                 | **Relação Cintura-Quadril** | {rcq_valor} - {risco_rcq_valor} |
-                """
-                )
+                """)
 
                 st.markdown("### 💪 Resultados das Avaliações Complementares")
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Medida | Valor |
                 |--------|-------|
                 | **Handgrip (média D+E)** | {handgrip_media:.1f} kg/f - {nivel_forca if handgrip_media > 0 else '-'} |
                 | **Banco de Wells** | {wells:.1f} cm - {nivel_flex if wells != 0 else '-'} |
-                """
-                )
+                """)
 
                 st.markdown("### 🧬 Biotipo Corporal")
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Medida | Valor |
                 |--------|-------|
                 | **Biotipo** | {biotipo} |
                 | **Descrição** | {desc_biotipo} |
                 | **Recomendação** | {recomendacao_biotipo} |
-                """
-                )
+                """)
 
                 st.markdown("### 📋 Protocolo Utilizado")
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Item | Informação |
                 |------|-------------|
                 | **Protocolo de Dobras** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
                 | **Fórmula de Densidade** | Siri (1961) |
                 | **Equipamentos** | Adipômetro, Fita Métrica, Handgrip, Banco de Wells |
                 | **Referência** | ACSM - American College of Sports Medicine |
-                """
-                )
+                """)
 
                 st.markdown("### 📊 Método de Cálculo do GET Selecionado")
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                 | Item | Informação |
                 |------|-------------|
                 | **Método Utilizado** | {metodo_atual_nome} |
@@ -2681,8 +3441,7 @@ if usar_avaliacao:
                 | **Fator de Atividade** | {naf_label} ({naf_val}) |
                 
                 **Sobre o método:** {'Baseado no PESO TOTAL (Harris-Benedict, 1919)' if 'Harris' in metodo_atual_nome else 'Baseado na MASSA MAGRA (Katch-McArdle) - MAIS PRECISO!'}
-                """
-                )
+                """)
 
                 # ========== BOTÕES DE DOWNLOAD DA AVALIAÇÃO FÍSICA ==========
                 st.markdown("---")
@@ -3683,8 +4442,7 @@ if dados_validos:
                 )
 
     with col_result2:
-        st.markdown(
-            f"""
+        st.markdown(f"""
         📉 **Projeção em 7 dias:** {variacao_semanal:.2f} kg
         
         📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg
@@ -3699,8 +4457,7 @@ if dados_validos:
         • 🍽️ Conteúdo intestinal
         
         O resultado real pode diferir. O mais importante é a **consistência** e a **tendência de longo prazo**.
-        """
-        )
+        """)
 
     with col_result3:
         if saldo_diario != 0 and p_alvo > 0 and diferenca_meta != 0:
@@ -4465,8 +5222,7 @@ if dados_validos:
 # 34. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA (MANTIDO)
 # ============================================
 with st.expander("📋 Informações OMS e Documentação Técnica", expanded=False):
-    st.markdown(
-        """
+    st.markdown("""
     ### Classificação da OMS/IARC para alimentos:
     
     | Grupo | Classificação | Alimentos | Recomendação |
@@ -4505,8 +5261,7 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     - ✅ Aumente consumo de fibras (frutas, verduras, legumes)
     
     > Este sistema é um **agregador de dados públicos** e não substitui a consulta a um profissional de saúde.
-    """
-    )
+    """)
 
 # ============================================
 # 35. BOTÃO DE LIMPAR (MANTIDO)

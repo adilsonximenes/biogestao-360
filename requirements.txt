@@ -1,4 +1,4 @@
-# BioGestão 360 - Dependências do projeto (versão 3.2)
+# BioGestão 360 - Dependências do projeto (versão 3.3)
 # Instalação: pip install -r requirements.txt
 
 streamlit>=1.35.0
@@ -8,6 +8,7 @@ matplotlib>=3.7.0
 qrcode>=7.0.0
 pillow>=10.0.0
 openpyxl>=3.1.0
+psycopg2-binary>=2.9.0
 numpy>=1.24.0
-google-generativeai>=0.7.0
 pyotp>=2.9.0
+qrcode[pil]>=7.0.0
