@@ -4871,7 +4871,7 @@ st.markdown(
             <strong>sempre informe o peso real de UMA unidade</strong> no campo <strong>"Peso Real (g/ml)"</strong>.</p>
         </div>
     </div>
-    <hr>
+        <hr>
     <div class='grid-referencia'>
         <div class='card-peso'><strong>🍪 Biscoito maisena</strong><br><span>1 unidade = 5g → informe 5g</span></div>
         <div class='card-peso'><strong>🍞 Pão francês</strong><br><span>1 unidade = 50g → informe 50g</span></div>
@@ -4880,8 +4880,16 @@ st.markdown(
         <div class='card-peso'><strong>🍌 Banana</strong><br><span>1 unidade = 100g → informe 100g</span></div>
         <div class='card-peso'><strong>🍊 Laranja</strong><br><span>1 unidade = 120g → informe 120g</span></div>
     </div>
+        <!-- NOVA EXPLICAÇÃO DOS MACROS (visível em modo claro e escuro) -->
+    <div style="background:#ffffff; border-radius:10px; padding:12px; margin-top:12px; border:1px solid #fde68a;">
+        <strong style="color:#d97706;">🔍 O que significam os ícones do cardápio?</strong><br>
+        <span style="display:inline-block; background:#ef4444; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🔥 Kcal</span> <span style="color:#1e293b;">= calorias do alimento</span><br>
+        <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥩 Proteínas</span> <span style="color:#1e293b;">= ajudam na construção muscular</span><br>
+        <span style="display:inline-block; background:#f59e0b; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍞 Carboidratos</span> <span style="color:#1e293b;">= principal fonte de energia</span><br>
+        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span>
+    </div>
+    <!-- FIM DA NOVA EXPLICAÇÃO -->
     <div class='obs'>💡 <strong>Não sabe o peso?</strong> Use a tabela de referência acima ou consulte a embalagem do produto.</div>
-</div>
 """,
     unsafe_allow_html=True,
 )
@@ -6141,6 +6149,14 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     | **Grupo 2A** | **Provavelmente cancerígeno** | Carne vermelha | Limitar a 500g/semana |
     | **Grupo 2B** | **Possivelmente cancerígeno** | Aspartame, bebidas >65°C | Consumo moderado |
     
+    🔗 **Fontes oficiais IARC/OMS:**
+    - [IARC Monographs on the Identification of Carcinogenic Hazards to Humans](https://monographs.iarc.who.int/)
+    - [IARC Publications Programme](https://www.iarc.who.int/cards_page/iarc-publications/)
+    - [Red Meat and Processed Meat – IARC Monographs (NCBI Bookshelf)](https://www.ncbi.nlm.nih.gov/books/NBK507971/)
+    - [AMSA – IARC Cancer Risk of Red and Processed Meats](https://meatscience.org/publications-resources/other-meat-science-resources/IARC)
+    
+    ---
+    
     ### 📚 Fórmulas Científicas:
     
     | Cálculo | Fórmula | Fonte |
@@ -6151,6 +6167,8 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     | **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × I) - (16.2 ou 5.4) | Deurenberg et al. |
     | **% Gordura (Dobras)** | Protocolo Jackson & Pollock + Fórmula de Siri | ACSM |
     
+    ---
+    
     ### 📊 Sobre as Tabelas Nutricionais
     
     | Tabela | Fonte | Características |
@@ -6158,10 +6176,13 @@ with st.expander("📋 Informações OMS e Documentação Técnica", expanded=Fa
     | **TACO (UNICAMP)** | Universidade Estadual de Campinas | Mais completa para alimentos industrializados |
     | **IBGE (POF 2008-2009)** | Pesquisa de Orçamentos Familiares | Mais alimentos in natura e preparações regionais |
     
-    🔗 **Fontes oficiais:**
-    - **TACO/UNICAMP:** https://www.tbca.net.br/
-    - **IBGE - POF 2008-2009:** https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html
-    - **FAO/WHO:** https://www.fao.org/
+    🔗 **Fontes oficiais das tabelas:**
+    - **TBCA (Tabela Brasileira de Composição de Alimentos – USP):** [https://www.tbca.net.br/](https://www.tbca.net.br/)
+    - **TACO/UNICAMP:** [https://www.nepa.unicamp.br/tabela-taco/](https://www.nepa.unicamp.br/tabela-taco/)
+    - **IBGE – POF 2008-2009:** [https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html](https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html)
+    - **FAO/WHO:** [https://www.fao.org/](https://www.fao.org/)
+    
+    ---
     
     ### 🥗 Recomendações práticas (OMS)
     
