@@ -24,6 +24,9 @@ from ia_gemini import (
     configurar_gemini,
     analisar_receita_com_gemini,
     extrair_alimentos_manual,
+    buscar_na_tabela_taco,
+    buscar_na_tabela_ibge,
+    estimativa_inteligente,
 )
 
 # ============================================
@@ -336,10 +339,15 @@ def processar_cardapio_sem_ia(texto_cardapio, df_taco=None, df_ibge=None):
 
         linha_lower = linha.lower()
 
-        # Identificar dia da semana
-        for i, dia in enumerate(dias):
-            if dia.lower() in linha_lower:
-                dia_atual = dias[i]
+        # ── Identificar dia da semana ──
+        # Aceita tanto "Segunda" quanto "Segunda:" ou "Segunda-feira:"
+        linha_norm_dia = normalizar_texto(
+            linha.replace(":", "").replace("-feira", "").strip()
+        )
+        for dia in dias:
+            dia_norm = normalizar_texto(dia)
+            if dia_norm == linha_norm_dia or linha_norm_dia.startswith(dia_norm):
+                dia_atual = dia
                 break
 
         # Identificar refeição
@@ -1616,7 +1624,7 @@ with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded
         st.caption("ADILSON GONCALVES XIMENES")
     with col_paypal:
         st.markdown("#### 💳 PayPal")
-        st.components.v1.html(get_paypal_html(), height=100)
+        st.iframe(get_paypal_html(), height=100)
         st.caption(
             "Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG"
         )
@@ -2053,21 +2061,32 @@ with st.expander("📖 Como usar o Importador Automático", expanded=not tem_ace
     st.markdown("1. Cole seu cardápio no campo abaixo no formato indicado")
     st.markdown("2. Clique em **📥 Importar Cardápio**")
     st.markdown(
-        "3. O sistema identifica os alimentos e busca os valores nas tabelas TACO/IBGE"
+        "3. O sistema identifica os alimentos e busca os valores nas tabelas **TACO/IBGE**"
     )
     st.markdown(
-        "4. Revise os itens encontrados e clique em **✅ Adicionar ao Plano Alimentar**"
+        "4. Revise os itens — a coluna **Fonte** mostra se o valor veio da TACO, IBGE ou estimativa"
     )
+    st.markdown("5. Marque ou desmarque itens conforme necessário")
     st.markdown(
-        "5. Os alimentos são incluídos automaticamente na seção *Montagem do Plano Alimentar*"
+        "6. Exporte em **CSV** (planilha) ou **HTML** (relatório completo com gráficos)"
     )
 
     st.markdown("---")
-    st.markdown("**🔹 DICA IMPORTANTE:**")
+    st.markdown("**🔹 ALERTAS AUTOMÁTICOS:**")
     st.info(
-        "Este recurso é um **preenchimento automático** — ele lê o texto e busca os alimentos "
-        "nas tabelas nutricionais. Os valores são referências das tabelas TACO/IBGE. "
-        "Sempre confira com o profissional de saúde responsável pelo seu plano."
+        "⚠️ **OMS/IARC:** O sistema sinaliza alimentos com classificação de risco "
+        "(Grupo 1 — cancerígeno confirmado, Grupo 2A/2B — possível risco). "
+        "O alerta é baseado na composição e processamento, não só no nome do alimento.\n\n"
+        "⚠️ **Restrições alimentares:** Se você informou restrições na seção "
+        "Identificação da Consulta, o sistema alerta automaticamente quando "
+        "o alimento contém o ingrediente restrito."
+    )
+
+    st.markdown("**🔹 SOBRE OS VALORES NUTRICIONAIS:**")
+    st.caption(
+        "Os valores são buscados primeiro na tabela TACO (UNICAMP), depois na IBGE (POF 2008-2009). "
+        "Se não encontrado em nenhuma, usa estimativa por categoria. "
+        "Sempre confira com o profissional responsável pelo seu plano alimentar."
     )
 
     st.markdown("**🔹 FORMATO RECOMENDADO:**")
@@ -2114,18 +2133,36 @@ with col2_ia:
     if st.session_state.resultado_ia:
         if st.button("🧹 Limpar Importação", use_container_width=True):
             st.session_state.resultado_ia = None
-            if "resultado_ia_editado" in st.session_state:
-                del st.session_state.resultado_ia_editado
+
             st.rerun()
 
 
-# ========== FUNÇÃO DE FALLBACK LOCAL ==========
+# ========== FUNÇÃO DE PROCESSAMENTO LOCAL COM TABELAS ==========
 def processar_cardapio_local(texto):
+    """
+    Processa o texto do cardápio buscando valores PRIMEIRO nas tabelas
+    TACO/IBGE e usando estimativas apenas como fallback.
+    Respeita o tipo de planejamento (diário ou semanal) da sidebar.
+    """
     alimentos = []
-    dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
-    dia_atual = "Segunda"
-    refeicao_atual = "Lanches"
+    dias_validos = [
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+    ]
+    refeicoes_validas = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
 
+    # Detectar tipo de planejamento da sidebar
+    tipo_plano = st.session_state.get("planejamento_tipo", "Diário")
+    if tipo_plano == "Diário":
+        dia_atual = "Hoje"
+    else:
+        dia_atual = "Segunda"
+    refeicao_atual = "Café da Manhã"
     linhas = texto.split("\n")
 
     for linha in linhas:
@@ -2135,25 +2172,32 @@ def processar_cardapio_local(texto):
 
         linha_lower = linha.lower()
 
-        # Identificar dia
-        for dia in dias:
-            if dia.lower() in linha_lower:
-                dia_atual = dia
-                break
+        # ── Identificar dia da semana ──
+        if tipo_plano == "Semanal":  # só tenta detectar dias no modo semanal
+            for dia in dias_validos:
+                dia_norm = normalizar_texto(dia)
+                linha_limpa = linha.rstrip(":").strip()
+                linha_limpa_norm = normalizar_texto(linha_limpa)
+                if linha_limpa_norm == dia_norm:
+                    dia_atual = dia
+                    break
 
-        # Identificar refeição
-        if "café" in linha_lower or "manhã" in linha_lower:
+        # ── Identificar refeição ──
+        if any(p in linha_lower for p in ["café", "cafe", "manhã", "manha"]):
             refeicao_atual = "Café da Manhã"
-        elif "almoço" in linha_lower or "almoco" in linha_lower:
+        elif any(p in linha_lower for p in ["almoço", "almoco"]):
             refeicao_atual = "Almoço"
-        elif "lanche" in linha_lower:
+        elif any(p in linha_lower for p in ["lanche", "tarde", "colação"]):
             refeicao_atual = "Lanches"
-        elif "jantar" in linha_lower:
+        elif "jantar" in linha_lower or "ceia" in linha_lower:
             refeicao_atual = "Jantar"
 
-        # Extrair alimentos após dois pontos
+        # ── Extrair alimentos após dois pontos ──
         if ":" in linha:
             conteudo = linha.split(":", 1)[1].strip()
+            if not conteudo:
+                continue
+
             partes = re.split(r"[,;]", conteudo)
 
             for parte in partes:
@@ -2163,91 +2207,108 @@ def processar_cardapio_local(texto):
 
                 # Extrair quantidade
                 qtd_match = re.search(
-                    r"(\d+(?:[.,]\d+)?)\s*(g|ml|fatias?|colheres?|copo|xícara)",
+                    r"(\d+(?:[.,]\d+)?)\s*"
+                    r"(g|ml|kg|fatia[s]?|colher(?:es)?(?:\s+(?:de\s+)?(?:sopa|chá|sobremesa))?|"
+                    r"copo[s]?|xícara[s]?|xicara[s]?|unidade[s]?|un|porção|porcao|"
+                    r"concha[s]?|filé[s]?|file[s]?|bife[s]?|pedaço[s]?|pedaco[s]?)",
                     parte.lower(),
                 )
+
                 if qtd_match:
                     quantidade = qtd_match.group(0)
                     nome = parte.replace(qtd_match.group(0), "").strip()
+                    # Remover preposições iniciais
+                    nome = re.sub(
+                        r"^(de|da|do|com|sem|um|uma|dois|duas|três|tres)\s+",
+                        "",
+                        nome,
+                        flags=re.IGNORECASE,
+                    )
                 else:
-                    quantidade = "1 porção"
-                    nome = parte
+                    # Tentar extrair número no início
+                    num_match = re.match(r"^(\d+)\s+(.+)", parte.strip())
+                    if num_match:
+                        quantidade = f"{num_match.group(1)} unidade(s)"
+                        nome = num_match.group(2).strip()
+                    else:
+                        quantidade = "1 porção"
+                        nome = parte
 
-                # Limpar nome
-                nome = re.sub(r"^(de|da|do|com|sem|um|uma)\s+", "", nome)
                 nome = re.sub(r"\s+", " ", nome).strip()
+                # Remover caracteres especiais do início
+                nome = re.sub(r"^[-–•*]\s*", "", nome).strip()
 
                 if len(nome) < 3:
                     continue
 
-                # Valores nutricionais por categoria
-                kcal, prot, carb, gord = 50, 2, 8, 1.5
-                nome_lower = nome.lower()
+                # ── Buscar nas tabelas TACO/IBGE ──
+                valores = None
+                fonte = "estimativa"
 
-                if any(
-                    p in nome_lower
-                    for p in ["frango", "carne", "peixe", "atum", "salmão", "ovo"]
-                ):
-                    kcal, prot, carb, gord = 165, 31, 0, 3.5
-                elif any(
-                    p in nome_lower
-                    for p in [
-                        "arroz",
-                        "feijão",
-                        "macarrão",
-                        "batata",
-                        "aipim",
-                        "inhame",
-                    ]
-                ):
-                    kcal, prot, carb, gord = 85, 3, 15, 0.5
-                elif any(p in nome_lower for p in ["pão", "torrada", "biscoito"]):
-                    kcal, prot, carb, gord = 70, 2.5, 13, 1
-                elif any(
-                    p in nome_lower for p in ["leite", "iogurte", "queijo", "ricota"]
-                ):
-                    kcal, prot, carb, gord = 60, 3.2, 4.5, 3
-                elif any(
-                    p in nome_lower for p in ["banana", "maçã", "laranja", "abacaxi"]
-                ):
-                    kcal, prot, carb, gord = 80, 0.5, 20, 0.3
-                elif any(
-                    p in nome_lower for p in ["alface", "tomate", "couve", "brócolis"]
-                ):
-                    kcal, prot, carb, gord = 15, 1, 3, 0.1
+                # Tentar TACO primeiro
+                if df_taco is not None and not df_taco.empty:
+                    valores = buscar_na_tabela_taco(nome, df_taco)
+                    if valores:
+                        fonte = "TACO"
 
-                # Ajustar fator
+                # Tentar IBGE se não encontrou na TACO
+                if valores is None and df_ibge is not None and not df_ibge.empty:
+                    valores = buscar_na_tabela_ibge(nome, df_ibge)
+                    if valores:
+                        fonte = "IBGE"
+
+                # Fallback por estimativa se não encontrou
+                if valores is None:
+                    valores = estimativa_inteligente(nome)
+                    fonte = "estimativa"
+
+                # ── Calcular fator de quantidade ──
                 fator = 1.0
                 if qtd_match:
                     try:
                         num = float(qtd_match.group(1).replace(",", "."))
-                        unidade = qtd_match.group(2)
-                        if "g" in unidade:
-                            fator = min(5, max(0.1, num / 100))
+                        unidade = qtd_match.group(2).lower()
+                        if "kg" in unidade:
+                            fator = num * 10
+                        elif "g" in unidade and "kg" not in unidade:
+                            fator = max(0.1, min(10, num / 100))
                         elif "ml" in unidade:
-                            fator = min(5, max(0.1, num / 200))
-                        elif "fatia" in unidade or "colher" in unidade:
-                            fator = min(4, max(0.5, num))
-                    except:
-                        pass
+                            fator = max(0.1, min(10, num / 100))
+                        elif any(p in unidade for p in ["fatia", "colher", "concha"]):
+                            fator = max(0.5, min(5, num))
+                        elif any(p in unidade for p in ["copo", "xícara", "xicara"]):
+                            fator = max(0.5, min(5, num * 2))
+                        else:
+                            fator = max(0.5, min(5, num))
+                    except Exception:
+                        fator = 1.0
+                else:
+                    # Tentar extrair número solto no início da quantidade
+                    num_solo = re.match(r"^(\d+)", quantidade)
+                    if num_solo:
+                        try:
+                            fator = max(0.5, min(5, float(num_solo.group(1))))
+                        except Exception:
+                            fator = 1.0
 
                 alimentos.append(
                     {
-                        "nome": nome[:50],
+                        "nome": nome[:60],
                         "quantidade": quantidade,
                         "refeicao": refeicao_atual,
                         "dia": dia_atual,
-                        "kcal": round(kcal * fator, 1),
-                        "proteina": round(prot * fator, 1),
-                        "carboidrato": round(carb * fator, 1),
-                        "gordura": round(gord * fator, 1),
+                        "kcal": round(valores["kcal"] * fator, 1),
+                        "proteina": round(valores["proteina"] * fator, 1),
+                        "carboidrato": round(valores["carboidrato"] * fator, 1),
+                        "gordura": round(valores["gordura"] * fator, 1),
+                        "fonte": fonte,
                     }
                 )
 
-    # Agrupar duplicatas
+    # ── Agrupar duplicatas do mesmo dia/refeição/alimento ──
     agrupados = {}
     for item in alimentos:
-        chave = f"{item['dia']}_{item['refeicao']}_{item['nome']}"
+        chave = f"{item['dia']}_{item['refeicao']}_{item['nome'].lower()}"
         if chave in agrupados:
             agrupados[chave]["kcal"] += item["kcal"]
             agrupados[chave]["proteina"] += item["proteina"]
@@ -2256,80 +2317,67 @@ def processar_cardapio_local(texto):
         else:
             agrupados[chave] = item
 
-    return {"alimentos": list(agrupados.values())}
+    resultado = list(agrupados.values())
+
+    # ── Ordenar por dia e refeição ──
+    ordem_dias = {
+        "Segunda": 1,
+        "Terça": 2,
+        "Quarta": 3,
+        "Quinta": 4,
+        "Sexta": 5,
+        "Sábado": 6,
+        "Domingo": 7,
+    }
+    ordem_ref = {"Café da Manhã": 1, "Almoço": 2, "Lanches": 3, "Jantar": 4}
+    resultado.sort(
+        key=lambda x: (ordem_dias.get(x["dia"], 99), ordem_ref.get(x["refeicao"], 99))
+    )
+
+    return {"alimentos": resultado}
 
 
-# ========== PROCESSAR ANÁLISE ==========
+# ========== PROCESSAR CLIQUE DO BOTÃO IMPORTAR ==========
 if analisar_btn and tem_acesso_ia:
     if texto_receita and len(texto_receita) >= 20:
-        with st.spinner("Analisando cardápio..."):
+        with st.spinner(
+            "🔍 Identificando alimentos e buscando nas tabelas TACO/IBGE..."
+        ):
             try:
-                api_key = st.secrets.get("GEMINI_API_KEY", None)
-                if not api_key:
-                    st.info("⚙️ Processando em modo local com tabelas TACO/IBGE...")
-                    # Usar fallback local
-                    resultado_local = processar_cardapio_local(texto_receita)
-                    if resultado_local and resultado_local.get("alimentos"):
-                        st.success(
-                            f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
-                        )
-                        st.session_state.resultado_ia = resultado_local
-                        st.rerun()
-                    else:
-                        st.error("Nenhum alimento identificado.")
-                else:
-                    perfil_ia = None
-                    if dados_validos:
-                        perfil_ia = {
-                            "get": get_atual,
-                            "objetivo": objetivo,
-                            "peso": peso_at,
-                            "altura": alt_cm,
-                            "idade": idade,
-                            "sexo": sexo,
-                        }
-
-                    model = configurar_gemini(api_key)
-                    resultado_json = analisar_receita_com_gemini(
-                        model, texto_receita, perfil_ia, df_taco, df_ibge
-                    )
-
-                    if resultado_json and resultado_json.get("alimentos"):
-                        st.success(
-                            f"✅ {len(resultado_json['alimentos'])} alimentos identificados!"
-                        )
-                        st.session_state.resultado_ia = resultado_json
-                        if "resultado_ia_editado" in st.session_state:
-                            del st.session_state.resultado_ia_editado
-                        st.rerun()
-                    else:
-                        # Fallback local
-                        resultado_local = processar_cardapio_local(texto_receita)
-                        if resultado_local and resultado_local.get("alimentos"):
-                            st.warning("Usando modo offline...")
-                            st.success(
-                                f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
-                            )
-                            st.session_state.resultado_ia = resultado_local
-                            st.rerun()
-                        else:
-                            st.error("Nenhum alimento identificado.")
-
-            except Exception as e:
-                st.error(f"Erro: {str(e)}")
-                # Fallback local
                 resultado_local = processar_cardapio_local(texto_receita)
                 if resultado_local and resultado_local.get("alimentos"):
-                    st.warning("Usando modo offline...")
+                    total = len(resultado_local["alimentos"])
+                    taco_count = sum(
+                        1
+                        for a in resultado_local["alimentos"]
+                        if a.get("fonte") == "TACO"
+                    )
+                    ibge_count = sum(
+                        1
+                        for a in resultado_local["alimentos"]
+                        if a.get("fonte") == "IBGE"
+                    )
+                    est_count = total - taco_count - ibge_count
                     st.success(
-                        f"✅ {len(resultado_local['alimentos'])} alimentos identificados!"
+                        f"✅ {total} alimentos identificados! "
+                        f"TACO: {taco_count} | IBGE: {ibge_count} | "
+                        f"Estimativa: {est_count}"
                     )
                     st.session_state.resultado_ia = resultado_local
+                    if "resultado_ia_editado" in st.session_state:
+                        del st.session_state.resultado_ia_editado
                     st.rerun()
                 else:
-                    st.error("Nenhum alimento identificado.")
+                    st.error(
+                        "❌ Nenhum alimento identificado. "
+                        "Verifique o formato do cardápio."
+                    )
+            except Exception as e:
+                st.error(f"❌ Erro ao processar: {str(e)}")
     else:
-        st.warning("Cole o texto do cardápio (mínimo 20 caracteres).")
+        st.warning("⚠️ Cole o cardápio no campo acima (mínimo 20 caracteres).")
+elif analisar_btn and not tem_acesso_ia:
+    st.error("🔒 Faça login e verifique seu acesso para usar o Importador.")
 
 # ========== EXIBIR RESULTADOS ==========
 if st.session_state.resultado_ia and tem_acesso_ia:
@@ -2338,59 +2386,142 @@ if st.session_state.resultado_ia and tem_acesso_ia:
     itens_ia = st.session_state.resultado_ia.get("alimentos", [])
 
     if itens_ia:
-        # Criar DataFrame
+        # ── Pegar restrições alimentares da consulta ──
+        palavras_restritas = []
+        observacoes_consulta = st.session_state.get("dados_consulta", {}).get(
+            "observacoes", ""
+        )
+        if observacoes_consulta:
+            palavras_restritas = extrair_palavras_chave_restricao(observacoes_consulta)
+
+        # ── Montar DataFrame com colunas iguais à seção 31 ──
         dados_tabela = []
         for idx, item in enumerate(itens_ia):
+            nome = item.get("nome", "-")
+            kcal = float(item.get("kcal", 0))
+            prot = float(item.get("proteina", 0))
+            carb = float(item.get("carboidrato", 0))
+            gord = float(item.get("gordura", 0))
+            fonte = item.get("fonte", "estimativa")
+
+            alerta_oms = verificar_risco_oms(nome) or ""
+            alerta_restricao = ""
+            if palavras_restritas:
+                if verificar_restricao_alimento(nome, palavras_restritas):
+                    alerta_restricao = "⚠️ RESTRIÇÃO"
+
+            # Determinar label OMS
+            if "GRUPO 1" in alerta_oms:
+                oms_label = "🔴 Grupo 1"
+            elif "GRUPO 2A" in alerta_oms:
+                oms_label = "🟠 Grupo 2A"
+            elif "GRUPO 2B" in alerta_oms:
+                oms_label = "🟣 Grupo 2B"
+            else:
+                oms_label = ""
+
+            # Combinar ambos os alertas quando existirem
+            if alerta_restricao and oms_label:
+                alerta_final = f"{alerta_restricao} | {oms_label}"
+            elif alerta_restricao:
+                alerta_final = alerta_restricao
+            elif oms_label:
+                alerta_final = oms_label
+            else:
+                alerta_final = "-"
+
             dados_tabela.append(
                 {
-                    "ID": idx,
+                    "✅": True,
                     "Dia": item.get("dia", "-"),
                     "Refeição": item.get("refeicao", "-"),
-                    "Alimento": item.get("nome", "-"),
+                    "Alimento": nome,
                     "Quantidade": item.get("quantidade", "1 porção"),
-                    "Kcal": float(item.get("kcal", 0)),
-                    "Proteínas(g)": float(item.get("proteina", 0)),
-                    "Carboidratos(g)": float(item.get("carboidrato", 0)),
-                    "Gorduras(g)": float(item.get("gordura", 0)),
-                    "Selecionar": True,
+                    "Kcal": kcal,
+                    "Proteínas(g)": prot,
+                    "Carboidratos(g)": carb,
+                    "Gorduras(g)": gord,
+                    "Fonte": fonte,
+                    "Alerta OMS": alerta_final,
                 }
             )
 
         df_ia = pd.DataFrame(dados_tabela)
 
-        # Ordenar
-        ordem_dias = {
-            "Segunda": 1,
-            "Terça": 2,
-            "Quarta": 3,
-            "Quinta": 4,
-            "Sexta": 5,
-            "Sábado": 6,
-            "Domingo": 7,
-        }
-        ordem_refeicao = {"Café da Manhã": 1, "Almoço": 2, "Lanches": 3, "Jantar": 4}
-        df_ia["_ordem_dia"] = df_ia["Dia"].map(ordem_dias).fillna(99)
-        df_ia["_ordem_ref"] = df_ia["Refeição"].map(ordem_refeicao).fillna(99)
-        df_ia = df_ia.sort_values(["_ordem_dia", "_ordem_ref"]).drop(
-            columns=["_ordem_dia", "_ordem_ref"]
+        # ── Alertas críticos no topo ──
+        alertas_restricao = [
+            d for d in dados_tabela if "RESTRIÇÃO" in d.get("Alerta OMS", "")
+        ]
+        alertas_g1 = [d for d in dados_tabela if "Grupo 1" in d.get("Alerta OMS", "")]
+        alertas_g2a = [d for d in dados_tabela if "Grupo 2A" in d.get("Alerta OMS", "")]
+        alertas_g2b = [d for d in dados_tabela if "Grupo 2B" in d.get("Alerta OMS", "")]
+        if alertas_restricao:
+            nomes = ", ".join([a["Alimento"] for a in alertas_restricao])
+            st.error(
+                f"🚨 **ALERTA DE RESTRIÇÃO ALIMENTAR:** {nomes}\n\n"
+                "Verifique com o profissional responsável!"
+            )
+        if alertas_g1:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g1])
+            st.error(
+                f"🔴 **ALERTA OMS GRUPO 1 — CANCERÍGENO CONFIRMADO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo1']['mensagem']}"
+            )
+        if alertas_g2a:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g2a])
+            st.warning(
+                f"🟠 **ALERTA OMS GRUPO 2A — PROVAVELMENTE CANCERÍGENO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo2a']['mensagem']}"
+            )
+        if alertas_g2b:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g2b])
+            st.warning(
+                f"🟣 **ALERTA OMS GRUPO 2B — POSSIVELMENTE CANCERÍGENO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo2b']['mensagem']}"
+            )
+
+        # ── Tabela editável com estado persistente ──
+        st.markdown("#### 📋 Cardápio identificado")
+        st.caption(
+            "Marque ou desmarque os itens. "
+            "Coluna **Fonte**: TACO = tabela UNICAMP | "
+            "IBGE = tabela POF 2008-2009 | estimativa = valor aproximado por categoria. "
+            "🔴 Grupo 1 = cancerígeno confirmado | 🟠 Grupo 2A = provável | 🟣 Grupo 2B = possível | ⚠️ RESTRIÇÃO = restrição informada na consulta."
         )
 
-        st.markdown("#### 📋 Selecione os alimentos")
+        # Chave única baseada no conteúdo para detectar novo cardápio importado
+        chave_cardapio = str(len(itens_ia)) + str(
+            itens_ia[0].get("nome", "") if itens_ia else ""
+        )
 
-        # Data editor
+        # Inicializar ou resetar o estado quando o cardápio muda
+        if st.session_state.get("_chave_cardapio_anterior") != chave_cardapio:
+            st.session_state._chave_cardapio_anterior = chave_cardapio
+            st.session_state._df_ia_estado = df_ia.copy()
+
+        # Usar sempre o DataFrame do estado persistente
+        df_estado = st.session_state._df_ia_estado.copy()
+
+        # Renderizar o editor com o DataFrame do estado
         df_editado = st.data_editor(
-            df_ia,
+            df_estado,
             column_config={
-                "Selecionar": st.column_config.CheckboxColumn(
-                    "✅ Incluir", default=True
+                "✅": st.column_config.CheckboxColumn(
+                    "✅", default=True, width="small"
                 ),
-                "ID": None,
+                "Kcal": st.column_config.NumberColumn(format="%.1f"),
+                "Proteínas(g)": st.column_config.NumberColumn(format="%.1f"),
+                "Carboidratos(g)": st.column_config.NumberColumn(format="%.1f"),
+                "Gorduras(g)": st.column_config.NumberColumn(format="%.1f"),
+                "Fonte": st.column_config.TextColumn(width="small"),
+                "Alerta OMS": st.column_config.TextColumn(
+                    label="Alerta OMS / Restrição", width="medium"
+                ),
             },
             hide_index=True,
             use_container_width=True,
-            key="tabela_ia",
+            key="tabela_ia_editor",
             disabled=[
-                "ID",
                 "Dia",
                 "Refeição",
                 "Alimento",
@@ -2399,62 +2530,86 @@ if st.session_state.resultado_ia and tem_acesso_ia:
                 "Proteínas(g)",
                 "Carboidratos(g)",
                 "Gorduras(g)",
+                "Fonte",
+                "Alerta OMS",
             ],
         )
 
-        # Botões
-        col_btn1, col_btn2, col_btn3 = st.columns(3)
-        with col_btn1:
-            if st.button("✅ Selecionar Todos", use_container_width=True):
-                df_temp = df_editado.copy()
-                df_temp["Selecionar"] = True
-                st.session_state.resultado_ia_editado = df_temp
+        # NÃO salvar automaticamente — deixa o data_editor gerenciar seu próprio estado
+        # O salvamento só ocorre ao clicar em Recalcular
+
+        # Persistir as edições manuais feitas pelo usuário na tabela
+        st.session_state._df_ia_estado = df_editado.copy()
+
+        # ── Botões de seleção ──
+        col_b1, col_b2, col_b3 = st.columns(3)
+        with col_b1:
+            if st.button(
+                "✅ Selecionar Todos", use_container_width=True, key="sel_todos_ia"
+            ):
+                novo_df = df_ia.copy()
+                novo_df["✅"] = True
+                st.session_state._df_ia_estado = novo_df
                 st.rerun()
-        with col_btn2:
-            if st.button("❌ Desmarcar Todos", use_container_width=True):
-                df_temp = df_editado.copy()
-                df_temp["Selecionar"] = False
-                st.session_state.resultado_ia_editado = df_temp
+        with col_b2:
+            if st.button(
+                "❌ Desmarcar Todos", use_container_width=True, key="desm_todos_ia"
+            ):
+                novo_df = df_ia.copy()
+                novo_df["✅"] = False
+                st.session_state._df_ia_estado = novo_df
                 st.rerun()
-        with col_btn3:
-            if st.button("🔄 Recalcular", use_container_width=True):
-                st.session_state.resultado_ia_editado = df_editado.copy()
+        with col_b3:
+            if st.button(
+                "🔄 Recalcular Totais", use_container_width=True, key="recalcular_ia"
+            ):
+                # Salva o estado atual do editor e recalcula
+                st.session_state._df_ia_estado = df_editado.copy()
                 st.rerun()
 
-        # Usar dados editados
-        if "resultado_ia_editado" in st.session_state:
-            df_final = st.session_state.resultado_ia_editado.copy()
-        else:
-            df_final = df_ia.copy()
+        # ── Filtrar selecionados do editor atual ──
+        df_sel = df_editado[df_editado["✅"] == True].copy()
 
-        df_selecionados = df_final[df_final["Selecionar"] == True]
-
-        if df_selecionados.empty:
+        if df_sel.empty:
             st.warning("Nenhum alimento selecionado.")
         else:
             st.markdown(
-                f"**📊 Selecionados: {len(df_selecionados)} de {len(df_final)}**"
+                f"**📊 Selecionados: {len(df_sel)} de {len(df_editado)} itens**"
             )
 
-            # Totais
-            total_kcal = df_selecionados["Kcal"].sum()
-            total_prot = df_selecionados["Proteínas(g)"].sum()
-            total_carb = df_selecionados["Carboidratos(g)"].sum()
-            total_gord = df_selecionados["Gorduras(g)"].sum()
-
-            # Totais por dia
+            # ── Totais por dia ──
             st.markdown("---")
-            st.markdown("#### 📊 Totais por Dia")
+            st.markdown("#### 📅 Totais por Dia")
+            ordem_dias = {
+                "Segunda": 1,
+                "Terça": 2,
+                "Quarta": 3,
+                "Quinta": 4,
+                "Sexta": 5,
+                "Sábado": 6,
+                "Domingo": 7,
+            }
             totais_dia = (
-                df_selecionados.groupby("Dia")[
+                df_sel.groupby("Dia")[
                     ["Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)"]
                 ]
                 .sum()
                 .round(1)
             )
+            totais_dia["_ord"] = [ordem_dias.get(d, 99) for d in totais_dia.index]
+            totais_dia = totais_dia.sort_values("_ord").drop(columns="_ord")
             st.dataframe(totais_dia, use_container_width=True)
 
-            # Métricas
+            # ── Totais gerais ──
+            total_kcal = df_sel["Kcal"].sum()
+            total_prot = df_sel["Proteínas(g)"].sum()
+            total_carb = df_sel["Carboidratos(g)"].sum()
+            total_gord = df_sel["Gorduras(g)"].sum()
+            dias_unicos = df_sel["Dia"].nunique()
+            media_kcal_dia = total_kcal / max(dias_unicos, 1)
+
+            tipo_planejamento = st.session_state.get("planejamento_tipo", "Diário")
+
             st.markdown("#### 🔥 Totais Gerais")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
@@ -2466,10 +2621,51 @@ if st.session_state.resultado_ia and tem_acesso_ia:
             with col4:
                 st.metric("Gorduras", f"{total_gord:.0f}g")
 
-            # Gráfico
+            # ── Análise energética ──
+            st.markdown("---")
+            st.markdown("#### ⚖️ Análise Energética")
+            saldo_dia = 0
+            variacao_30d = 0
+            if dados_validos and get_atual > 0:
+                saldo_dia = get_atual - media_kcal_dia
+                variacao_30d = abs(saldo_dia) * 30 / 7700
+                col_e1, col_e2, col_e3 = st.columns(3)
+                with col_e1:
+                    st.metric("GET (seu gasto)", f"{get_atual:.0f} kcal/dia")
+                with col_e2:
+                    st.metric("Média consumo/dia", f"{media_kcal_dia:.0f} kcal")
+                with col_e3:
+                    st.metric(
+                        "Saldo diário",
+                        f"{saldo_dia:+.0f} kcal",
+                        delta=(
+                            "Déficit ✅"
+                            if saldo_dia > 0
+                            else "Superávit 📈" if saldo_dia < 0 else "Manutenção ⚖️"
+                        ),
+                    )
+                if saldo_dia > 0:
+                    st.success(
+                        f"✅ **Déficit calórico:** você consome menos do que gasta. "
+                        f"Projeção: perda de ~{variacao_30d:.1f}kg em 30 dias."
+                    )
+                elif saldo_dia < 0:
+                    st.info(
+                        f"📈 **Superávit calórico:** você consome mais do que gasta. "
+                        f"Projeção: ganho de ~{variacao_30d:.1f}kg em 30 dias."
+                    )
+                else:
+                    st.info("⚖️ **Manutenção:** consumo igual ao gasto energético.")
+            else:
+                st.info(
+                    "💡 Preencha peso, altura, idade e nível de atividade na "
+                    "barra lateral para ver a análise de déficit/superávit."
+                )
+
+            # ── Gráfico de macros ──
             if total_kcal > 0:
                 st.markdown("---")
-                st.markdown("#### Distribuição dos Macronutrientes")
+                st.markdown("#### 🥧 Distribuição dos Macronutrientes")
                 import plotly.express as px
 
                 macros = pd.DataFrame(
@@ -2482,34 +2678,537 @@ if st.session_state.resultado_ia and tem_acesso_ia:
                     macros,
                     values="Calorias",
                     names="Macronutriente",
-                    title="Distribuição Calórica",
+                    title="Distribuição Calórica dos Macronutrientes",
+                    color_discrete_sequence=["#f59e0b", "#3b82f6", "#ef4444"],
                 )
                 fig.update_layout(height=350)
                 st.plotly_chart(fig, use_container_width=True)
 
-            # Download CSV
+            # ── Exportar ──
             st.markdown("---")
-            csv_data = df_selecionados.drop(
-                columns=["Selecionar", "ID"], errors="ignore"
-            ).to_csv(index=False, encoding="utf-8-sig")
-            st.download_button(
-                "📊 Baixar CSV",
-                data=csv_data,
-                file_name=f"cardapio_ia_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-                use_container_width=True,
+            st.markdown("#### 💾 Exportar Cardápio")
+
+            col_d1, col_d2 = st.columns(2)
+
+            # ── DADOS REAIS DA CONSULTA ──
+            nome_consulta = (
+                st.session_state.get("dados_paciente", {}).get("nome", "")
+                or "Não informado"
+            )
+            tel_consulta = st.session_state.get("dados_paciente", {}).get(
+                "telefone", "-"
+            )
+            prof_consulta = st.session_state.get("dados_profissional", {}).get(
+                "nome", "-"
+            )
+            reg_consulta = st.session_state.get("dados_profissional", {}).get(
+                "registro", "-"
+            )
+            clinica_consulta = st.session_state.get("dados_consulta", {}).get(
+                "clinica", "-"
+            )
+            data_ini_consulta = st.session_state.get("dados_consulta", {}).get(
+                "data_inicio", "-"
+            )
+            data_ret_consulta = st.session_state.get("dados_consulta", {}).get(
+                "data_retorno", "-"
+            )
+            obs_consulta = (
+                st.session_state.get("dados_consulta", {}).get("observacoes", "")
+                or "Nenhuma observação registrada"
             )
 
-        # Aviso final
-        st.markdown("---")
-        st.info("""
-        **ℹ️ INFORMAÇÕES:**
-        - Os valores nutricionais são buscados nas tabelas TACO/IBGE
-        - Esta seção é INDEPENDENTE do cardápio principal
-        - Para precisão máxima, use a seção Montagem do Plano Alimentar
-        """)
+            # Totais gerais
+            total_kcal = df_sel["Kcal"].sum()
+            total_prot = df_sel["Proteínas(g)"].sum()
+            total_carb = df_sel["Carboidratos(g)"].sum()
+            total_gord = df_sel["Gorduras(g)"].sum()
+            dias_unicos = df_sel["Dia"].nunique()
+            media_kcal_dia = total_kcal / max(dias_unicos, 1)
+
+            # Determinar tipo automaticamente
+            tipo_automatico = "Semanal" if dias_unicos > 1 else "Diário"
+
+            # Parâmetros do perfil (se disponíveis)
+            perfil_preenchido = False
+            if peso_at > 0 and alt_cm > 0 and idade > 0 and sexo:
+                perfil_preenchido = True
+                get_atual = get_harris
+                tmb_atual = tmb_harris
+                imc_val = imc
+                composicao_val = composicao
+                # Classificação IMC local
+                if imc_val < 18.5:
+                    class_imc = "Abaixo do peso"
+                elif imc_val < 25:
+                    class_imc = "Peso normal"
+                elif imc_val < 30:
+                    class_imc = "Sobrepeso"
+                elif imc_val < 35:
+                    class_imc = "Obesidade Grau I"
+                elif imc_val < 40:
+                    class_imc = "Obesidade Grau II"
+                else:
+                    class_imc = "Obesidade Grau III"
+                classificacao_imc_val = class_imc
+                peso_ideal_val = composicao_val["peso_ideal"]
+                perc_gordura_val = composicao_val["percentual_gordura"]
+                massa_gorda_val = composicao_val["massa_gordura"]
+                massa_magra_val = composicao_val["massa_magra"]
+                # Saldo e projeções
+                saldo_dia = get_atual - media_kcal_dia
+                if saldo_dia > 0:
+                    status_saldo = "Déficit (perda de peso)"
+                    saldo_msg = f"Déficit calórico - Consumindo {abs(saldo_dia):.1f} kcal a menos por dia"
+                elif saldo_dia < 0:
+                    status_saldo = "Superávit (ganho de peso)"
+                    saldo_msg = f"Superávit calórico - Consumindo {abs(saldo_dia):.1f} kcal a mais por dia"
+                else:
+                    status_saldo = "Manutenção"
+                    saldo_msg = "Manutenção - consumo igual ao gasto"
+                proj_7dias = abs(saldo_dia) * 7 / 7700
+                proj_30dias = abs(saldo_dia) * 30 / 7700
+                if p_alvo > 0 and diferenca_meta != 0:
+                    semanas_meta = (
+                        (abs(diferenca_meta) / (proj_30dias / 4.3))
+                        if proj_30dias > 0
+                        else 0
+                    )
+                    tempo_meta = (
+                        f"{max(1, int(semanas_meta))} semanas"
+                        if semanas_meta > 0
+                        else "Indeterminado"
+                    )
+                else:
+                    tempo_meta = "Defina meta"
+                # Mensagem da meta
+                if p_alvo > 0:
+                    if objetivo == "Perda de peso":
+                        if p_alvo < peso_at:
+                            msg_meta = f"Faltam {peso_at - p_alvo:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+                        else:
+                            msg_meta = f"Meta de {p_alvo:.1f} kg está acima do peso atual. Ajuste para perda de peso."
+                    else:
+                        if p_alvo > peso_at:
+                            msg_meta = f"Faltam {p_alvo - peso_at:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+                        else:
+                            msg_meta = f"Meta de {p_alvo:.1f} kg está abaixo do peso atual. Ajuste para ganho de peso."
+                else:
+                    msg_meta = "Defina sua meta de peso para acompanhamento"
+                aviso_cientifico = "⚠️ ATENÇÃO: Projeção de 7 dias é uma estimativa teórica. Variações diárias de peso são normais (retenção hídrica 1-2kg, horário da pesagem, conteúdo intestinal). O resultado real pode diferir. A consistência e a tendência de 30 dias são mais confiáveis."
+
+                # Macros
+                perc_prot = (total_prot * 4 / total_kcal * 100) if total_kcal else 0
+                perc_carb = (total_carb * 4 / total_kcal * 100) if total_kcal else 0
+                perc_gord = (total_gord * 9 / total_kcal * 100) if total_kcal else 0
+
+            # ──────────────────────────────
+            # CSV ESTRUTURADO
+            # ──────────────────────────────
+            linhas_csv = []
+
+            # ── Cabeçalho do relatório ──
+            linhas_csv.append("BIOGESTÃO 360 - RELATÓRIO DE CARDÁPIO IMPORTADO")
+            linhas_csv.append(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            linhas_csv.append("")
+
+            # ── Dados da consulta ──
+            linhas_csv.append("=== DADOS DA CONSULTA ===")
+            linhas_csv.append(f"Paciente: {nome_consulta}")
+            linhas_csv.append(f"Telefone: {tel_consulta}")
+            linhas_csv.append(f"Profissional: {prof_consulta}")
+            linhas_csv.append(f"Registro: {reg_consulta}")
+            linhas_csv.append(f"Clínica: {clinica_consulta}")
+            linhas_csv.append(f"Data Início: {data_ini_consulta}")
+            linhas_csv.append(f"Data Retorno: {data_ret_consulta}")
+            linhas_csv.append(f"Observações/Restrições: {obs_consulta}")
+            linhas_csv.append(f"Tipo de Planejamento: {tipo_automatico}")
+            linhas_csv.append("")
+
+            if perfil_preenchido:
+                linhas_csv.append("=== PERFIL DO AVALIADO ===")
+                linhas_csv.append(
+                    f"Peso: {peso_at:.1f} kg | Altura: {alt_cm} cm | Idade: {idade} anos | Sexo: {sexo}"
+                )
+                linhas_csv.append(f"Objetivo: {objetivo} | Meta: {p_alvo:.1f} kg")
+                linhas_csv.append(f"Status da Meta: {msg_meta}")
+                linhas_csv.append(f"Atividade Física: {naf_label}")
+                linhas_csv.append("")
+                linhas_csv.append("=== METABOLISMO ===")
+                linhas_csv.append(
+                    f"GET: {get_atual:.0f} kcal/dia | TMB: {tmb_atual:.0f} kcal/dia"
+                )
+                linhas_csv.append(
+                    f"IMC: {composicao_val['imc']} ({classificacao_imc_val}) | Peso Ideal: {peso_ideal_val:.1f} kg"
+                )
+                linhas_csv.append(
+                    f"% Gordura: {perc_gordura_val:.1f}% | Massa Gorda: {massa_gorda_val:.1f} kg | Massa Magra: {massa_magra_val:.1f} kg"
+                )
+                linhas_csv.append("")
+                linhas_csv.append("=== CONSUMO E SALDO ===")
+                linhas_csv.append(
+                    f"Total Kcal: {total_kcal:.0f} | Média/dia: {media_kcal_dia:.0f} kcal"
+                )
+                linhas_csv.append(
+                    f"Saldo Diário: {saldo_dia:+.0f} kcal ({status_saldo})"
+                )
+                linhas_csv.append(
+                    f"Proteínas: {total_prot:.0f}g ({perc_prot:.1f}%) | Carboidratos: {total_carb:.0f}g ({perc_carb:.1f}%) | Gorduras: {total_gord:.0f}g ({perc_gord:.1f}%)"
+                )
+                linhas_csv.append(
+                    f"Projeção 7 dias: {proj_7dias:.2f} kg | Projeção 30 dias: {proj_30dias:.2f} kg"
+                )
+                linhas_csv.append(f"Tempo para meta: {tempo_meta}")
+                linhas_csv.append("")
+
+            # ── Alertas ──
+            tem_alerta = False
+            alertas_csv = []
+            for d in dados_tabela:
+                a = d.get("Alerta OMS", "-")
+                if a != "-" and a:
+                    alertas_csv.append(f"  {d['Alimento']}: {a}")
+                    tem_alerta = True
+            if tem_alerta:
+                linhas_csv.append("=== ALERTAS IDENTIFICADOS ===")
+                for linha_alerta in alertas_csv:
+                    linhas_csv.append(linha_alerta)
+                linhas_csv.append("")
+
+            # ── Tabela de alimentos ──
+            linhas_csv.append("=== CARDÁPIO DETALHADO ===")
+            linhas_csv.append("")
+
+            # Cabeçalho da tabela com separador ;
+            cab = "Dia;Refeição;Alimento;Quantidade;Kcal;Proteínas(g);Carboidratos(g);Gorduras(g);Fonte;Alerta OMS/Restrição"
+            linhas_csv.append(cab)
+
+            dia_ant = ""
+            for _, row in df_sel.iterrows():
+                if row["Dia"] != dia_ant:
+                    dia_ant = row["Dia"]
+                linhas_csv.append(
+                    f"{row['Dia']};"
+                    f"{row['Refeição']};"
+                    f"{row['Alimento']};"
+                    f"{row['Quantidade']};"
+                    f"{row['Kcal']:.1f};"
+                    f"{row['Proteínas(g)']:.1f};"
+                    f"{row['Carboidratos(g)']:.1f};"
+                    f"{row['Gorduras(g)']:.1f};"
+                    f"{row.get('Fonte', '-')};"
+                    f"{row.get('Alerta OMS', '-')}"
+                )
+
+            csv_bytes = "\n".join(linhas_csv).encode("utf-8-sig")
+
+            with col_d1:
+                st.download_button(
+                    "📊 Baixar CSV",
+                    data=csv_bytes,
+                    file_name=f"cardapio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+            # ──────────────────────────────
+            # HTML (idêntico ao laudo, com gráficos)
+            # ──────────────────────────────
+            import matplotlib.pyplot as plt
+            import io
+            import base64
+
+            if perfil_preenchido:
+                fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+                axes[0].pie(
+                    [perc_gordura_val, 100 - perc_gordura_val],
+                    labels=["Massa Gorda", "Massa Magra"],
+                    colors=["#ef4444", "#3b82f6"],
+                    autopct="%1.1f%%",
+                    startangle=90,
+                )
+                axes[0].set_title("Composição Corporal", fontweight="bold")
+                axes[1].bar(
+                    ["GET", "Consumo", "Diferença"],
+                    [get_atual, media_kcal_dia, abs(saldo_dia)],
+                    color=["#ef4444", "#10b981", "#f59e0b"],
+                )
+                axes[1].set_title("Balanço Energético (kcal/dia)", fontweight="bold")
+                axes[2].pie(
+                    [total_prot * 4, total_carb * 4, total_gord * 9],
+                    labels=["Proteínas", "Carboidratos", "Gorduras"],
+                    colors=["#ef4444", "#3b82f6", "#f59e0b"],
+                    autopct="%1.1f%%",
+                    startangle=90,
+                )
+                axes[2].set_title("Distribuição dos Macronutrientes", fontweight="bold")
+                plt.tight_layout()
+                buf = io.BytesIO()
+                plt.savefig(
+                    buf, format="png", dpi=200, bbox_inches="tight", facecolor="white"
+                )
+                buf.seek(0)
+                graficos_b64 = base64.b64encode(buf.read()).decode()
+                plt.close()
+            else:
+                graficos_b64 = None
+
+            html_export = f"""<!DOCTYPE html>
+<html lang='pt-BR'>
+<head>
+<meta charset='UTF-8'>
+<title>Cardápio BioGestão 360</title>
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: 'Segoe UI', Arial, sans-serif; background: white; color: #1e293b; padding: 15px; font-size: 11pt; }}
+  .container {{ max-width: 1200px; margin: 0 auto; }}
+  h1 {{ color: #f59e0b; font-size: 20pt; text-align: center; border-bottom: 2px solid #f59e0b; padding-bottom: 8px; }}
+  h2 {{ background: linear-gradient(135deg, #1e3a5f, #0f172a); color: white; padding: 6px 10px; margin: 20px 0 12px 0; font-size: 14pt; border-radius: 6px; }}
+  .subheader {{ text-align: center; color: #64748b; font-size: 9pt; margin-top: 5px; }}
+  .grid-2 {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0; }}
+  .grid-3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }}
+  .grid-4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }}
+  .card {{ border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+  .card-title {{ font-size: 9pt; color: #64748b; }}
+  .card-value {{ font-size: 12pt; font-weight: bold; color: #1e293b; }}
+  .metric-card {{ text-align: center; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+  .metric-value {{ font-size: 15pt; font-weight: bold; color: #f59e0b; }}
+  .metric-label {{ font-size: 9pt; color: #64748b; }}
+  .success-box {{ background: #dcfce7; border-left: 4px solid #10b981; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+  .warning-box {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+  table {{ width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 8pt; }}
+  th, td {{ border: 1px solid #cbd5e1; padding: 5px 6px; text-align: left; }}
+  th {{ background: #f59e0b; color: white; }}
+  tr:nth-child(even) {{ background: #f8fafc; }}
+  .graficos-container {{ text-align: center; margin: 15px 0; }}
+  .graficos-container img {{ max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 12px; }}
+  .footer {{ text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; }}
+  @media print {{
+      body {{ padding: 0; margin: 0; }}
+      h2 {{ background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+      th {{ background: #666 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+  }}
+</style>
+</head>
+<body>
+<div class='container'>
+<h1>📋 BioGestão 360 — Cardápio Importado</h1>
+<div class='subheader'>Gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}</div>
+
+<h2>📋 DADOS DA CONSULTA</h2>
+<div class='grid-2'>
+  <div class='card'><div class='card-title'>👤 Paciente</div><div class='card-value'>{nome_consulta}</div></div>
+  <div class='card'><div class='card-title'>📞 Telefone</div><div class='card-value'>{tel_consulta}</div></div>
+  <div class='card'><div class='card-title'>👨‍⚕️ Profissional</div><div class='card-value'>{prof_consulta}</div></div>
+  <div class='card'><div class='card-title'>📜 Registro</div><div class='card-value'>{reg_consulta}</div></div>
+  <div class='card'><div class='card-title'>🏥 Clínica</div><div class='card-value'>{clinica_consulta}</div></div>
+  <div class='card'><div class='card-title'>📅 Data Início</div><div class='card-value'>{data_ini_consulta}</div></div>
+  <div class='card'><div class='card-title'>🔄 Data Retorno</div><div class='card-value'>{data_ret_consulta}</div></div>
+  <div class='card'><div class='card-title'>📝 Observações</div><div class='card-value'>{obs_consulta}</div></div>
+</div>
+"""
+
+            if perfil_preenchido:
+                html_export += f"""
+<h2>👤 PERFIL BIOLÓGICO</h2>
+<div class='grid-3'>
+  <div class='metric-card'><div class='metric-value'>{peso_at:.1f} kg</div><div class='metric-label'>Peso</div></div>
+  <div class='metric-card'><div class='metric-value'>{alt_cm} cm</div><div class='metric-label'>Altura</div></div>
+  <div class='metric-card'><div class='metric-value'>{idade} anos</div><div class='metric-label'>Idade</div></div>
+  <div class='metric-card'><div class='metric-value'>{sexo}</div><div class='metric-label'>Sexo</div></div>
+  <div class='metric-card'><div class='metric-value'>{objetivo}</div><div class='metric-label'>Objetivo</div></div>
+  <div class='metric-card'><div class='metric-value'>{p_alvo:.1f} kg</div><div class='metric-label'>Meta</div></div>
+</div>
+
+<h2>⚡ METABOLISMO</h2>
+<div class='grid-4'>
+  <div class='metric-card'><div class='metric-value'>{get_atual:.0f} kcal</div><div class='metric-label'>GET</div></div>
+  <div class='metric-card'><div class='metric-value'>{tmb_atual:.0f} kcal</div><div class='metric-label'>TMB</div></div>
+  <div class='metric-card'><div class='metric-value'>{composicao_val['imc']}</div><div class='metric-label'>IMC ({classificacao_imc_val})</div></div>
+  <div class='metric-card'><div class='metric-value'>{peso_ideal_val:.1f} kg</div><div class='metric-label'>Peso Ideal</div></div>
+</div>
+
+<h2>🧬 COMPOSIÇÃO CORPORAL</h2>
+<div class='grid-3'>
+  <div class='metric-card'><div class='metric-value'>{perc_gordura_val:.1f}%</div><div class='metric-label'>% Gordura</div></div>
+  <div class='metric-card'><div class='metric-value'>{massa_gorda_val:.1f} kg</div><div class='metric-label'>Massa Gorda</div></div>
+  <div class='metric-card'><div class='metric-value'>{massa_magra_val:.1f} kg</div><div class='metric-label'>Massa Magra</div></div>
+</div>
+
+<div class='graficos-container'>
+  <img src="data:image/png;base64,{graficos_b64}" alt="Gráficos">
+</div>
+
+<h2>📊 ANÁLISE</h2>
+<div class='grid-3'>
+  <div class='metric-card'><div class='metric-value'>{media_kcal_dia:.0f} kcal</div><div class='metric-label'>Média consumo/dia</div></div>
+  <div class='metric-card'><div class='metric-value'>{saldo_dia:+.0f} kcal</div><div class='metric-label'>Saldo diário</div></div>
+  <div class='metric-card'><div class='metric-value'>{proj_30dias:.1f} kg</div><div class='metric-label'>Projeção 30 dias</div></div>
+</div>
+<div class='{"success-box" if saldo_dia > 0 else "warning-box"}'>
+  {saldo_msg}
+</div>
+<div class='warning-box'>{aviso_cientifico}</div>
+"""
+            # ── Alertas no HTML ──
+            html_alertas = ""
+            for d in dados_tabela:
+                a = d.get("Alerta OMS", "-")
+                if "RESTRIÇÃO" in str(a):
+                    html_alertas += (
+                        f"<div style='background:#fee2e2;border-left:4px solid #ef4444;"
+                        f"padding:10px;border-radius:8px;margin:8px 0'>"
+                        f"🚨 <b>RESTRIÇÃO ALIMENTAR:</b> {d['Alimento']} — "
+                        f"verifique com o profissional responsável!</div>"
+                    )
+                elif "Grupo 1" in str(a):
+                    html_alertas += (
+                        f"<div style='background:#fee2e2;border-left:4px solid #ef4444;"
+                        f"padding:10px;border-radius:8px;margin:8px 0'>"
+                        f"🔴 <b>OMS GRUPO 1 — CANCERÍGENO CONFIRMADO:</b> {d['Alimento']}<br>"
+                        f"<small>{ALIMENTOS_RISCO['grupo1']['mensagem']}</small></div>"
+                    )
+                elif "Grupo 2A" in str(a):
+                    html_alertas += (
+                        f"<div style='background:#fef3c7;border-left:4px solid #f59e0b;"
+                        f"padding:10px;border-radius:8px;margin:8px 0'>"
+                        f"🟠 <b>OMS GRUPO 2A — PROVAVELMENTE CANCERÍGENO:</b> {d['Alimento']}<br>"
+                        f"<small>{ALIMENTOS_RISCO['grupo2a']['mensagem']}</small></div>"
+                    )
+                elif "Grupo 2B" in str(a):
+                    html_alertas += (
+                        f"<div style='background:#fef3c7;border-left:4px solid #f59e0b;"
+                        f"padding:10px;border-radius:8px;margin:8px 0'>"
+                        f"🟣 <b>OMS GRUPO 2B — POSSIVELMENTE CANCERÍGENO:</b> {d['Alimento']}<br>"
+                        f"<small>{ALIMENTOS_RISCO['grupo2b']['mensagem']}</small></div>"
+                    )
+
+            if html_alertas:
+                html_export += f"<h2>⚠️ ALERTAS IDENTIFICADOS</h2>{html_alertas}"
+
+            # Tabela do cardápio
+            html_export += f"""
+<h2>🍽️ CARDÁPIO - {tipo_planejamento}</h2>
+<table>
+<thead><tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>Kcal</th><th>P(g)</th><th>C(g)</th><th>G(g)</th><th>Fonte</th><th>Alerta OMS/Restrição</th></tr></thead>
+<tbody>
+"""
+            for _, row in df_sel.iterrows():
+                alerta_val = row.get("Alerta OMS", "-")
+                cor_linha = (
+                    "background:#fee2e2"
+                    if "Grupo 1" in str(alerta_val) or "RESTRIÇÃO" in str(alerta_val)
+                    else "background:#fef9c3" if "Grupo 2" in str(alerta_val) else ""
+                )
+                html_export += (
+                    f"<tr style='{cor_linha}'>"
+                    f"<td>{row['Dia']}</td>"
+                    f"<td>{row['Refeição']}</td>"
+                    f"<td>{row['Alimento']}</td>"
+                    f"<td>{row['Quantidade']}</td>"
+                    f"<td>{row['Kcal']:.1f}</td>"
+                    f"<td>{row['Proteínas(g)']:.1f}</td>"
+                    f"<td>{row['Carboidratos(g)']:.1f}</td>"
+                    f"<td>{row['Gorduras(g)']:.1f}</td>"
+                    f"<td>{row.get('Fonte', '-')}</td>"
+                    f"<td>{alerta_val}</td>"
+                    f"</tr>"
+                )
+            # ── Totais por dia para o HTML ──
+            ordem_dias_html = {
+                "Segunda": 1,
+                "Terça": 2,
+                "Quarta": 3,
+                "Quinta": 4,
+                "Sexta": 5,
+                "Sábado": 6,
+                "Domingo": 7,
+            }
+            totais_dia_html = (
+                df_sel.groupby("Dia")[
+                    ["Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)"]
+                ]
+                .sum()
+                .round(1)
+            )
+            totais_dia_html["_ord"] = [
+                ordem_dias_html.get(d, 99) for d in totais_dia_html.index
+            ]
+            totais_dia_html = totais_dia_html.sort_values("_ord").drop(columns="_ord")
+
+            linhas_totais_dia = ""
+            for dia_nome, tdia in totais_dia_html.iterrows():
+                linhas_totais_dia += (
+                    f"<tr>"
+                    f"<td><b>{dia_nome}</b></td>"
+                    f"<td>{tdia['Kcal']:.0f} kcal</td>"
+                    f"<td>{tdia['Proteínas(g)']:.1f}g</td>"
+                    f"<td>{tdia['Carboidratos(g)']:.1f}g</td>"
+                    f"<td>{tdia['Gorduras(g)']:.1f}g</td>"
+                    f"</tr>"
+                )
+
+            html_export += f"""
+</tbody></table>
+
+<h2>📅 TOTAIS POR DIA</h2>
+<table style='width:auto'>
+<thead>
+  <tr>
+    <th>Dia</th>
+    <th>Kcal</th>
+    <th>Proteínas</th>
+    <th>Carboidratos</th>
+    <th>Gorduras</th>
+  </tr>
+</thead>
+<tbody>
+{linhas_totais_dia}
+</tbody>
+</table>
+
+<h2>🔥 TOTAIS GERAIS ({len(df_sel)} itens selecionados)</h2>
+<div class='grid-4'>
+  <div class='metric-card'>
+    <div class='metric-value'>{total_kcal:.0f}</div>
+    <div class='metric-label'>Total Kcal</div>
+  </div>
+  <div class='metric-card'>
+    <div class='metric-value'>{total_prot:.0f}g</div>
+    <div class='metric-label'>Proteínas</div>
+  </div>
+  <div class='metric-card'>
+    <div class='metric-value'>{total_carb:.0f}g</div>
+    <div class='metric-label'>Carboidratos</div>
+  </div>
+  <div class='metric-card'>
+    <div class='metric-value'>{total_gord:.0f}g</div>
+    <div class='metric-label'>Gorduras</div>
+  </div>
+</div>
+
+<div class='footer'>
+  BioGestão 360 | Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')} |
+  {len(df_sel)} alimentos selecionados | Valores TACO/IBGE |
+  ⚠️ Não substitui orientação de profissional de saúde habilitado.
+</div>
+</div>
+</body></html>"""
+
+            with col_d2:
+                st.download_button(
+                    "📄 Baixar Relatório HTML",
+                    data=html_export,
+                    file_name=f"cardapio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html",
+                    use_container_width=True,
+                )
+
     else:
-        st.info("Nenhum alimento identificado.")
+        st.info(
+            "Nenhum alimento identificado. "
+            "Verifique o formato do cardápio e tente novamente."
+        )
 
 # ============================================
 # 25. AVALIAÇÃO FÍSICA PROFISSIONAL

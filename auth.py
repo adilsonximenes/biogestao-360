@@ -37,13 +37,21 @@ def tela_login():
             st.sidebar.error("📏 Avaliação Física: Expirada")
 
         # Botão para renovar acesso com código
-        with st.sidebar.expander("🔑 Renovar acesso com código", expanded=False):
-            st.caption("Adquiriu um plano? Cole o código recebido:")
+        with st.sidebar.expander("💚 Ativar plano de apoio", expanded=False):
+            st.markdown(
+                "Após realizar o PIX, o administrador irá gerar "
+                "um código de ativação e enviar para você pelo WhatsApp."
+            )
+            st.markdown("**Cole abaixo o código recebido:**")
             codigo = st.text_input(
-                "Digite seu código", type="password", key="codigo_acesso"
+                "Código de ativação", type="password", key="codigo_acesso"
+            )
+            st.caption(
+                "O código ativa automaticamente o plano correto "
+                "(Importador, Avaliação ou Combo) pelo período contratado."
             )
             if st.button(
-                "Ativar código", use_container_width=True, key="btn_ativar_codigo"
+                "✅ Ativar", use_container_width=True, key="btn_ativar_codigo"
             ):
                 if codigo:
                     sucesso, msg = validar_codigo_acesso(
@@ -51,7 +59,6 @@ def tela_login():
                     )
                     if sucesso:
                         st.sidebar.success(msg)
-                        # Atualizar status
                         st.session_state["tem_acesso_ia"] = usuario_tem_acesso_ia(
                             st.session_state["usuario_id"]
                         )
@@ -61,7 +68,12 @@ def tela_login():
                         st.rerun()
                     else:
                         st.sidebar.error(msg)
-            st.caption("⚠️ Após enviar o PIX, a ativação pode levar até 72 horas.")
+                else:
+                    st.sidebar.warning("Cole o código antes de clicar em Ativar.")
+            st.caption(
+                "⚠️ Após o PIX, ativação em até 72h. "
+                "Dúvidas: WhatsApp (21) 97948-6731"
+            )
 
         # Botão sair
         if st.sidebar.button("🚪 Sair", use_container_width=True, key="btn_sair"):
@@ -89,6 +101,10 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
+            # Limpar espaços invisíveis — problema comum no celular
+            username = username.strip().lower()
+            senha = senha.strip()
+
             if not username or not senha:
                 st.sidebar.error("Preencha usuário e senha")
                 return False
@@ -136,24 +152,45 @@ def tela_login():
             )
 
             if st.form_submit_button("Cadastrar", use_container_width=True):
+                # Limpar espaços e padronizar
+                novo_user = novo_user.strip().lower()
+                novo_email = novo_email.strip().lower()
+                nova_senha = nova_senha.strip()
+                confirm_senha = confirm_senha.strip()
+
                 if not novo_user or not novo_email or not nova_senha:
                     st.sidebar.error("Preencha todos os campos")
+                elif " " in novo_user:
+                    st.sidebar.error(
+                        "❌ O nome de usuário não pode ter espaços. "
+                        "Use underline: ex. joao_silva"
+                    )
+                elif len(novo_user) < 3:
+                    st.sidebar.error(
+                        "❌ Nome de usuário deve ter pelo menos 3 caracteres"
+                    )
+                elif not novo_user.replace("_", "").replace(".", "").isalnum():
+                    st.sidebar.error(
+                        "❌ Nome de usuário só pode ter letras, números, "
+                        "ponto (.) ou underline (_)"
+                    )
                 elif nova_senha != confirm_senha:
-                    st.sidebar.error("Senhas não conferem")
+                    st.sidebar.error("❌ Senhas não conferem")
                 elif len(nova_senha) < 4:
-                    st.sidebar.error("Senha deve ter pelo menos 4 caracteres")
+                    st.sidebar.error("❌ Senha deve ter pelo menos 4 caracteres")
                 elif "@" not in novo_email or "." not in novo_email:
-                    st.sidebar.error("Informe um e-mail válido")
+                    st.sidebar.error("❌ Informe um e-mail válido")
                 else:
                     if cadastrar_usuario(novo_user, novo_email, nova_senha):
                         st.sidebar.success(
                             "✅ Cadastro realizado! Faça login para começar."
                         )
                         st.sidebar.info(
-                            "💡 Seu acesso gratuito de 2 dias já está ativo!"
+                            f"💡 Usuário cadastrado como: **{novo_user}**\n\n"
+                            "Seu acesso gratuito de 2 dias já está ativo!"
                         )
                     else:
-                        st.sidebar.error("Usuário ou e-mail já existe")
+                        st.sidebar.error("❌ Usuário ou e-mail já existe")
 
     # Se não estiver logado, mostrar aviso
     if not st.session_state.get("logado", False):

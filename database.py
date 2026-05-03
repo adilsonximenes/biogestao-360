@@ -132,16 +132,20 @@ def verificar_credenciais(username, senha):
     if not conn:
         return None
     cursor = conn.cursor()
+    # Normalizar para evitar problema de espaços e maiúsculas
+    username = username.strip().lower()
+    senha = senha.strip()
     senha_hash = hashlib.sha256(senha.encode()).hexdigest()
     cursor.execute(
         """
         SELECT id, username, email, role, plano_ia, plano_avaliacao,
                acesso_ia_until, acesso_avaliacao_until, max_sessoes, ativo
         FROM usuarios
-        WHERE username = %s AND senha_hash = %s
+        WHERE LOWER(username) = %s AND senha_hash = %s
     """,
         (username, senha_hash),
     )
+
     user = cursor.fetchone()
     cursor.close()
     conn.close()

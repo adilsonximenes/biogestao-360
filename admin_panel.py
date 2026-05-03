@@ -138,9 +138,28 @@ def tela_admin_dashboard():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 👥 Gerenciar Usuários")
 
-    for user in usuarios:
+    # Botão para abrir a página de gestão
+    st.sidebar.link_button(
+        "👥 Abrir Painel de Gestão de Usuários",
+        url="https://admin.biogestao-360.com.br",
+        use_container_width=True,
+    )
+    st.sidebar.caption(
+        "⚠️ Acesso protegido pelo Cloudflare Access — " "requer autenticação adicional."
+    )
+
+    # Resumo rápido sem expanders
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**👤 Últimos cadastros:**")
+    for user in usuarios[-5:]:  # Mostra só os 5 últimos
         if user["role"] == "admin":
             continue
+        status = "🟢" if user.get("ativo", 1) == 1 else "🔴"
+        st.sidebar.caption(
+            f"{status} {user['username']} | "
+            f"Importador: {user['plano_ia']} | "
+            f"Avaliação: {user['plano_avaliacao']}"
+        )
 
         with st.sidebar.expander(f"📌 {user['username']}"):
             st.markdown(f"**ID:** {user['id']} | **Email:** {user['email']}")
