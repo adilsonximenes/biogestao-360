@@ -578,46 +578,119 @@ def carregar_alimentos_risco():
     return {
         "grupo1": {
             "alimentos": [
+                # Embutidos e curados
                 "salsicha",
                 "presunto",
-                "linguiça",
                 "linguiça",
                 "bacon",
                 "salame",
                 "mortadela",
-                "nuggets",
-                "peixe salgado",
-                "salame",
                 "apresuntado",
+                "copa",
+                "paio",
+                "chouriço",
+                "calabresa",
+                "pepperoni",
+                "peito de peru",
+                "rosbife",
+                "pate",
+                "patê",
+                # Hambúrgueres industrializados
+                "hamburguer",
+                "hambúrguer",
+                # Peixes e carnes salgadas/curadas
+                "peixe salgado",
+                "charque",
+                "jerked beef",
+                "carne seca",
+                "carne de sol",
+                # Nuggets e processados empanados
+                "nuggets",
+                "nugget",
+                # Bebidas alcoólicas
+                "cerveja",
+                "vinho",
+                "cachaça",
+                "vodka",
+                "whisky",
+                "destilado",
+                "bebida alcoolica",
+                "bebida alcoólica",
             ],
-            "mensagem": "⚠️ GRUPO 1: CANCERÍGENO PARA HUMANOS! Consumo diário de 50g aumenta em 18% o risco de câncer colorretal.",
+            "mensagem": (
+                "⚠️ GRUPO 1 OMS/IARC: CANCERÍGENO CONFIRMADO PARA HUMANOS! "
+                "Consumo diário de 50g aumenta em 18% o risco de câncer colorretal. "
+                "Recomendação: evitar ou reduzir ao máximo."
+            ),
         },
         "grupo2a": {
             "alimentos": [
+                # Cortes bovinos
                 "carne bovina",
+                "bovina",
+                "picanha",
+                "contrafile",
+                "contrafilé",
+                "alcatra",
+                "patinho",
+                "coxao",
+                "coxão",
+                "file mignon",
+                "filé mignon",
+                "acem",
+                "açém",
+                "costela",
+                "fraldinha",
+                "maminha",
+                "bisteca bovina",
+                # Carne de porco
                 "carne de porco",
+                "porco",
+                "pernil",
+                "lombo suino",
+                "lombo suíno",
+                "bisteca suina",
+                "bisteca suína",
+                # Outras carnes vermelhas
                 "carneiro",
                 "cordeiro",
                 "vitela",
-                "carne",
-                "bovina",
-                "porco",
-                "picanha",
-                "contrafile",
-                "alcatra",
+                "cabrito",
+                "javali",
+                "bufalo",
+                "búfalo",
+                # Termos genéricos
+                "carne vermelha",
+                "bife",
             ],
-            "mensagem": "⚠️ GRUPO 2A: PROVAVELMENTE CANCERÍGENO! Limite a 500g por semana.",
+            "mensagem": (
+                "⚠️ GRUPO 2A OMS/IARC: PROVAVELMENTE CANCERÍGENO! "
+                "Limite o consumo a no máximo 500g por semana. "
+                "Prefira métodos de preparo sem queima (cozido, vapor)."
+            ),
         },
         "grupo2b": {
             "alimentos": [
+                # Adoçantes artificiais
                 "aspartame",
-                "bebida adoçada",
-                "refrigerante diet",
+                "sucralose",
+                "sacarina",
+                "ciclamato",
+                "acesulfame",
+                "adocante artificial",
                 "adoçante artificial",
+                # Bebidas diet/light com adoçantes
+                "refrigerante diet",
                 "refrigerante light",
-                "diet",
+                "bebida adocada",
+                "bebida adoçada",
+                "suco diet",
             ],
-            "mensagem": "⚠️ GRUPO 2B: POSSIVELMENTE CANCERÍGENO! Ingestão diária aceitável: 40mg/kg.",
+            "mensagem": (
+                "⚠️ GRUPO 2B OMS/IARC: POSSIVELMENTE CANCERÍGENO! "
+                "Ingestão diária aceitável de aspartame: 40mg/kg de peso corporal. "
+                "Prefira adoçantes naturais como stevia ou eritritol."
+            ),
         },
     }
 
@@ -4117,16 +4190,46 @@ st.markdown(
 st.markdown(
     f"""
 <div class='instrucao-cientifica'>
-    <h4>📋 Para seguir sua receita da nutri:</h4>
+    <h4>📋 Como montar seu plano alimentar:</h4>
     <ol>
-        <li>🔍 Identifique os alimentos da sua receita na tabela <strong>{st.session_state.fonte_dados}</strong> (busque pelo nome)</li>
-        <li>➕ Adicione um a um nos campos abaixo com as quantidades prescritas</li>
-        <li>⚡ O sistema calcula automaticamente calorias e nutrientes com base em dados científicos</li>
-        <li>📊 Use o resumo para impressão e acompanhamento</li>
+        <li>🔍 Identifique os alimentos do seu plano na tabela 
+            <strong>{st.session_state.fonte_dados}</strong> — 
+            os valores nutricionais mudam automaticamente conforme a tabela selecionada 
+            na barra lateral</li>
+        <li>➕ Adicione um a um nos campos abaixo com as quantidades indicadas</li>
+        <li>⚡ O sistema calcula automaticamente calorias, proteínas, carboidratos e 
+            gorduras com base nos dados científicos da tabela selecionada</li>
+        <li>📊 Use o resumo para acompanhamento e impressão</li>
     </ol>
-    <p>⚠️ <strong>Atenção:</strong> Alguns alimentos podem ter dados incompletos (valores NA, *, Tr). Nesses casos, o sistema considera 0 (zero).</p>
-    <p>⚠️ <strong>ALERTA DE RESTRIÇÕES ALIMENTARES:</strong> Caso você ou seu paciente tenha alguma restrição (alergia, intolerância), <strong>informe nas Observações da Consulta</strong> (seção "Identificação da Consulta"). O sistema irá <strong>automaticamente</strong> verificar os alimentos adicionados e exibirá um alerta se algum item contiver o ingrediente restrito.</p>
-    <p>🔗 <strong>Fontes científicas:</strong> TACO/UNICAMP | IBGE | FAO/WHO</p>
+    <p>
+        ⚠️ <strong>Dados incompletos:</strong> Alguns alimentos nas tabelas possuem 
+        valores ausentes (NA, *, Tr). Nesses casos o sistema considera 0 (zero). 
+        Consulte o rótulo do produto para maior precisão.
+    </p>
+    <p>
+        ⚠️ <strong>Alertas OMS/IARC:</strong> O sistema sinaliza automaticamente 
+        alimentos com classificação de risco da OMS. O alerta é baseado na 
+        <strong>composição e processamento do alimento</strong> — não apenas no 
+        nome ou na origem (animal ou vegetal). Um hambúrguer de soja industrializado, 
+        por exemplo, recebe o mesmo alerta que um hambúrguer bovino, pois ambos são 
+        ultra-processados com conservantes e aditivos. Sempre prefira versões 
+        in natura ou minimamente processadas.
+    </p>
+    <p>
+        ⚠️ <strong>Restrições alimentares:</strong> Caso tenha alguma restrição 
+        (alergia, intolerância), informe nas <strong>Observações da Consulta</strong>. 
+        O sistema verificará automaticamente cada alimento adicionado e exibirá 
+        um alerta se identificar o ingrediente restrito.
+    </p>
+    <p>
+        🔗 <strong>Fontes científicas:</strong> TACO/UNICAMP | IBGE POF 2008-2009 | 
+        FAO/WHO | OMS/IARC
+    </p>
+    <p>
+        💡 <strong>Lembrete:</strong> Este sistema é uma ferramenta de 
+        organização e cálculo. O plano alimentar deve ser elaborado e 
+        supervisionado por profissional habilitado.
+    </p>
 </div>
 """,
     unsafe_allow_html=True,
