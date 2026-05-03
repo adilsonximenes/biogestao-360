@@ -502,30 +502,54 @@ def extrair_palavras_chave_restricao(observacoes):
 
     # Alimentos comuns que podem ser restrições
     alimentos_monitorados = [
+        # Glúten e derivados
         "gluten",
         "glúten",
+        "trigo",
+        "aveia",
+        "centeio",
+        # Leite, lactose e derivados
         "lactose",
         "leite",
+        "queijo",
+        "iogurte",
+        "requeijao",
+        "requeijão",
+        "manteiga",
+        "creme de leite",
+        "ricota",
+        "coalhada",
+        "kefir",
+        "nata",
+        # Proteínas animais
         "frango",
         "carne",
         "peixe",
         "ovo",
+        "porco",
+        "camarao",
+        "camarão",
+        # Oleaginosas e leguminosas
         "soja",
         "amendoim",
         "nozes",
         "castanha",
+        "amêndoa",
+        "amendoa",
+        # Frutos do mar
         "frutos do mar",
-        "camarão",
-        "frango",
-        "porco",
-        "trigo",
-        "aveia",
-        "centeio",
+        "marisco",
+        "lula",
+        "polvo",
+        "ostra",
+        # Outros
         "açúcar",
         "acucar",
         "sal",
         "sódio",
         "sodio",
+        "glicose",
+        "frutose",
     ]
 
     palavras_encontradas = []
@@ -560,7 +584,9 @@ def extrair_palavras_chave_restricao(observacoes):
 
 def verificar_restricao_alimento(nome_alimento, palavras_restritas):
     """
-    Verifica se um alimento tem restrição baseado nas palavras-chave
+    Verifica se um alimento tem restrição baseado nas palavras-chave.
+    Inclui verificação por família alimentar:
+    restrição a 'leite' também alerta 'queijo minas', 'iogurte', etc.
     """
     if not nome_alimento or not palavras_restritas:
         return None
@@ -569,13 +595,175 @@ def verificar_restricao_alimento(nome_alimento, palavras_restritas):
     if not nome_alimento_norm:
         return None
 
+    # Mapa de famílias: se a pessoa tem restrição ao "pai",
+    # os "filhos" também disparam alerta.
+    # Chave = palavra que a pessoa pode escrever na observação
+    # Valor = lista de nomes de alimentos que são derivados/relacionados
+    familias = {
+        "leite": [
+            "queijo",
+            "queijo minas",
+            "queijo prato",
+            "queijo coalho",
+            "queijo cottage",
+            "queijo mussarela",
+            "queijo parmesao",
+            "requeijao",
+            "requeijão",
+            "iogurte",
+            "manteiga",
+            "creme de leite",
+            "leite condensado",
+            "doce de leite",
+            "ricota",
+            "cream cheese",
+            "chantilly",
+            "coalhada",
+            "kefir",
+            "nata",
+            "cafe com leite",
+            "achocolatado",
+            "vitamina de",
+            "mingau",
+        ],
+        "lactose": [
+            "leite",
+            "queijo",
+            "queijo minas",
+            "requeijao",
+            "requeijão",
+            "iogurte",
+            "manteiga",
+            "creme de leite",
+            "leite condensado",
+            "ricota",
+            "cream cheese",
+            "coalhada",
+            "kefir",
+        ],
+        "gluten": [
+            "pao",
+            "pão",
+            "torrada",
+            "biscoito",
+            "bolacha",
+            "macarrao",
+            "macarrão",
+            "espaguete",
+            "lasanha",
+            "farinha de trigo",
+            "bolo",
+            "cerveja",
+            "cream cracker",
+            "biscoito agua e sal",
+        ],
+        "trigo": [
+            "pao",
+            "pão",
+            "torrada",
+            "biscoito",
+            "macarrao",
+            "macarrão",
+            "bolo",
+            "farinha",
+            "cream cracker",
+        ],
+        "ovo": [
+            "omelete",
+            "ovo mexido",
+            "ovo cozido",
+            "ovo frito",
+            "ovo estrelado",
+            "maionese",
+        ],
+        "amendoim": [
+            "pasta de amendoim",
+            "manteiga de amendoim",
+            "pacoca",
+            "paçoca",
+            "pe de moleque",
+        ],
+        "soja": [
+            "tofu",
+            "leite de soja",
+            "proteina de soja",
+            "hamburguer de soja",
+            "shoyu",
+            "miso",
+        ],
+        "frutos do mar": [
+            "camarao",
+            "camarão",
+            "lagosta",
+            "siri",
+            "ostra",
+            "marisco",
+            "lula",
+            "polvo",
+        ],
+        "camarao": [
+            "frutos do mar",
+            "camarao",
+            "camarão",
+        ],
+        "porco": [
+            "presunto",
+            "bacon",
+            "linguica",
+            "linguiça",
+            "salsicha",
+            "pernil",
+            "costela de porco",
+            "lombo",
+        ],
+        "frango": [
+            "peito de frango",
+            "coxa de frango",
+            "sobrecoxa",
+            "frango grelhado",
+            "frango assado",
+            "frango desfiado",
+            "nugget",
+            "nuggets",
+        ],
+    }
+
     for palavra_restrita in palavras_restritas:
         if not palavra_restrita:
             continue
-        if palavra_restrita in nome_alimento_norm:
-            padrao = r"\b" + re.escape(palavra_restrita) + r"\b"
-            if re.search(padrao, nome_alimento_norm):
-                return f"⚠️ **ALERTA DE RESTRIÇÃO ALIMENTAR:** O alimento '{nome_alimento}' contém '{palavra_restrita}', que foi mencionado como restrição. Verifique se o paciente pode consumir este item."
+
+        palavra_norm = normalizar_texto(palavra_restrita)
+
+        # ── Verificação direta ──
+        # Verifica se a palavra restrita aparece diretamente no nome do alimento
+        if palavra_norm in nome_alimento_norm:
+            return (
+                f"⚠️ **ALERTA DE RESTRIÇÃO ALIMENTAR:** "
+                f"O alimento '{nome_alimento}' contém '{palavra_restrita}', "
+                f"que foi mencionado como restrição. "
+                f"Verifique se o paciente pode consumir este item."
+            )
+
+        # ── Verificação por família alimentar ──
+        # Verifica se a palavra restrita é um "pai" e o alimento é um "filho"
+        for familia_pai, filhos in familias.items():
+            familia_pai_norm = normalizar_texto(familia_pai)
+
+            # A palavra restrita bate com o pai da família?
+            if palavra_norm == familia_pai_norm or palavra_norm in familia_pai_norm:
+                # O alimento atual é um filho desta família?
+                for filho in filhos:
+                    filho_norm = normalizar_texto(filho)
+                    if (
+                        filho_norm in nome_alimento_norm
+                        or nome_alimento_norm in filho_norm
+                    ):
+                        return (
+                            f"⚠️ **ALERTA DE RESTRIÇÃO (DERIVADO):** "
+                            f"'{nome_alimento}' é derivado de '{palavra_restrita}'. "
+                            f"Verifique se o paciente pode consumir este item."
+                        )
+
     return None
 
 
@@ -670,6 +858,15 @@ def carregar_alimentos_risco():
                 # Termos genéricos
                 "carne vermelha",
                 "bife",
+                # Carne moída (vermelha não processada)
+                "carne moida",
+                "carne moída",
+                "carne bovina moida",
+                "carne bovina moída",
+                "patinho moido",
+                "patinho moído",
+                "acem moido",
+                "açém moído",
             ],
             "mensagem": (
                 "⚠️ GRUPO 2A OMS/IARC: PROVAVELMENTE CANCERÍGENO! "
