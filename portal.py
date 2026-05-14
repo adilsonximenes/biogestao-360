@@ -113,27 +113,27 @@ vêm de **três bases de referência**:
         ("free",   "🔥 Metabolismo e GET",
          "Calcula o Gasto Energético Total (GET) e Metabolismo Basal (TMB) pelos métodos "
          "Harris-Benedict (peso total) e Katch-McArdle (massa magra). "
-         "Mostra projeção de perda/ganho de peso em 30 dias."),
-        ("free",   "🍏 Seção 26 — Montagem do Plano Alimentar",
-         "Monte seu plano alimentar buscando alimentos nas tabelas TACO, IBGE ou BioGestão 360. "
-         "Seletor de tabela na sidebar. Seletor de marca para produtos industrializados. "
-         "Alertas automáticos OMS/IARC e restrições alimentares."),
+         "Mostra projeção de perda/ganho de peso em 30 dias."),        
         ("free",   "📋 Laudo Técnico",
          "Gera laudo completo em HTML com dados do paciente, profissional, composição corporal, "
-         "saldo calórico, projeções e alertas nutricionais. Exportável para impressão ou PDF."),
-        ("free",   "🏋️ Seção 25.1 — Monte Seu Treino",
-         "Planejamento de atividade física com anamnese, seleção de modalidade (musculação, "
-         "corrida, natação, triathlon, dança, adaptado PCD), cálculo de calorias pelo MET, "
-         "sugestão automática de treino e montagem livre com 120+ exercícios e 14 métodos. "
-         "Exporta relatório HTML completo."),
+         "saldo calórico, projeções e alertas nutricionais. Exportável para impressão ou PDF."),    
         ("acesso", "📥 Seção 24.1 — Importador Automático de Cardápio",
          "Cole seu cardápio em texto e o sistema identifica os alimentos, busca os valores "
          "nutricionais automaticamente na hierarquia TACO → IBGE → BioGestão 360 → estimativa. "
          "Exporta CSV e HTML com gráficos."),
-        ("prof",   "📏 Seção 25 — Avaliação Física Profissional",
+         ("prof",   "📏 Seção 25 — Avaliação Física Profissional",
          "Protocolo de dobras cutâneas Jackson & Pollock (7 dobras), circunferências, "
          "handgrip e banco de Wells. Requer acesso profissional. Exporta laudo técnico completo "
          "com classificação por gênero/idade segundo ACSM."),
+         ("free",   "🏋️ Seção 25.1 — Monte Seu Treino",
+         "Planejamento de atividade física com anamnese, seleção de modalidade (musculação, "
+         "corrida, natação, triathlon, dança, adaptado PCD), cálculo de calorias pelo MET, "
+         "sugestão automática de treino e montagem livre com 120+ exercícios e 14 métodos. "
+         "Exporta relatório HTML completo."),        
+        ("free",   "🍏 Seção 26 — Montagem do Plano Alimentar",
+         "Monte seu plano alimentar buscando alimentos nas tabelas TACO, IBGE ou BioGestão 360. "
+         "Seletor de tabela na sidebar. Seletor de marca para produtos industrializados. "
+         "Alertas automáticos OMS/IARC e restrições alimentares."),
     ]
 
     rotulos = {

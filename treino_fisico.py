@@ -688,10 +688,39 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
     if sugestao:
         st.success(f"**{sugestao['nome']}**")
         st.write(sugestao["descricao"])
+
+        # Montar lista de termos contraindicados pelas condições de saúde
+        _termos_proibidos = []
+        for cond in condicoes_ativas:
+            if cond in RESTRICOES:
+                _, contraindicados, _ = RESTRICOES[cond]
+                for c in contraindicados:
+                    import unicodedata as _ud, re as _re
+                    t = c.lower()
+                    t = _ud.normalize("NFKD", t).encode("ASCII","ignore").decode("ASCII")
+                    _termos_proibidos.append(t)
+
         for dia_t, exs in sugestao["dias"].items():
             with st.expander(f"📅 {dia_t}"):
                 for ex in exs:
-                    st.write(f"• {ex}")
+                    ex_norm = ex.lower()
+                    try:
+                        import unicodedata as _ud
+                        ex_norm = _ud.normalize("NFKD", ex_norm).encode("ASCII","ignore").decode("ASCII")
+                    except Exception:
+                        pass
+                    proibido = any(
+                        termo.split()[0] in ex_norm
+                        for termo in _termos_proibidos
+                        if termo.split()
+                    )
+                    if proibido:
+                        st.markdown(
+                            f"~~• {ex}~~ &nbsp; ⚠️ *contraindicado — {', '.join(c for c in condicoes_ativas if c in RESTRICOES)}*",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.write(f"• {ex}")
     else:
         st.info(f"Sugestão automática não disponível para **{categoria} / {nivel} / {frequencia}**. Use a seção 5.5 abaixo para montar seu treino.")
 

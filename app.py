@@ -1053,16 +1053,19 @@ def verificar_risco_oms(nome_alimento):
     if not nome_norm:
         return None
 
-    # Verifica grupo 1
+    # Verifica grupo 1 — busca por PALAVRAS INTEIRAS (evita "gin" em "original")
+    palavras_nome = set(nome_norm.split())
     for item in ALIMENTOS_RISCO["grupo1"]["alimentos"]:
         item_norm = normalizar_texto(item)
-        if item_norm in nome_norm:
+        palavras_item = set(item_norm.split())
+        if palavras_item.issubset(palavras_nome):
             return ALIMENTOS_RISCO["grupo1"]["mensagem"]
 
-    # Verifica grupo 2a
+    # Verifica grupo 2a — busca por PALAVRAS INTEIRAS
     for item in ALIMENTOS_RISCO["grupo2a"]["alimentos"]:
         item_norm = normalizar_texto(item)
-        if item_norm in nome_norm:
+        palavras_item = set(item_norm.split())
+        if palavras_item.issubset(palavras_nome):
             return ALIMENTOS_RISCO["grupo2a"]["mensagem"]
 
     # Verifica grupo 2b
@@ -1075,14 +1078,18 @@ def verificar_risco_oms(nome_alimento):
     for item in ALIMENTOS_RISCO["grupo2b"]["alimentos"]:
         item_norm = normalizar_texto(item)
         if item_norm == "cafe":
-            # Para café: só alerta se o nome for apenas "café" ou "café torrado"
-            # não alerta em bebidas compostas (café com leite, etc.)
+            # Café com leite e variações NUNCA são grupo 2b
+            if nome_norm.startswith("cafe com leite"):
+                continue
+            if nome_norm.startswith("cafe com"):
+                continue
             if nome_norm in _EXCECOES_CAFE:
                 continue
-            # Alerta só se "cafe" aparece sem palavras que indicam bebida pronta
-            palavras_nome = set(nome_norm.split())
-            if "cafe" in palavras_nome and not any(
-                p in nome_norm for p in ["com leite", "com acucar", "infusao", "coado", "filtrado"]
+            palavras_nome_g2b = set(nome_norm.split())
+            if "cafe" in palavras_nome_g2b and not any(
+                p in nome_norm for p in ["com leite", "com acucar", "infusao",
+                                          "coado", "filtrado", "original",
+                                          "cremoso", "gelado", "frio"]
             ):
                 return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
         else:
