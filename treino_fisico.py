@@ -11,6 +11,8 @@ Chamada no app.py:
 import streamlit as st
 from datetime import datetime
 import base64
+import unicodedata
+import re
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TABELA MET — Metabolic Equivalent of Task
@@ -84,6 +86,37 @@ TABELA_MET = {
         "Caminhada assistida / pós-cirúrgico":            2.0,
         "Yoga adaptado":                                  2.0,
     },
+    "🥋 Lutas": {
+        "Judô (treino técnico)":                          7.0,
+        "Judô (randori / luta)":                         10.0,
+        "Jiu-Jitsu (técnica)":                            5.5,
+        "Jiu-Jitsu (rolagem / luta)":                     9.0,
+        "Boxe (sombra, corda, técnica)":                  6.0,
+        "Boxe (saco pesado, luta)":                       9.5,
+        "Muay Thai / Kickboxing (técnica)":               8.0,
+        "Muay Thai / Kickboxing (luta)":                 11.0,
+        "Taekwondo (poomsae/técnica)":                    5.0,
+        "Taekwondo (kyorugi/luta)":                       9.0,
+        "Lutas em geral (treino moderado)":               7.0,
+        "Lutas em geral (treino intenso)":               10.0,
+    },
+    "⚽ Esportes Olímpicos": {
+        "Basquetebol (jogo recreativo)":                  6.5,
+        "Basquetebol (jogo competitivo)":                 8.0,
+        "Voleibol (jogo recreativo)":                     4.0,
+        "Voleibol (jogo competitivo)":                    6.0,
+        "Futsal / Futebol Society":                       8.0,
+        "Futebol de Campo (recreativo)":                  7.0,
+        "Futebol de Campo (competitivo)":                 9.5,
+        "Handebol":                                       8.0,
+        "Tênis (simples)":                                6.5,
+        "Tênis (duplas)":                                 5.0,
+        "Ginástica Artística (treino geral)":             5.0,
+        "Hipismo (trote/galope)":                         4.5,
+        "Hipismo (saltos)":                               6.0,
+        "Rugby":                                          8.5,
+        "Beach Tennis":                                   5.5,
+    },
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -119,6 +152,16 @@ REFERENCIAS_MODALIDADE = {
         "Modalidades adaptadas para pessoas com deficiência física, mobilidade reduzida ou "
         "restrições médicas. Sempre requer avaliação individualizada por profissional habilitado "
         "e, quando necessário, laudo médico."
+    ),
+    "🥋 Lutas": (
+        "Modalidades de luta e artes marciais que combinam técnica, força e condicionamento. "
+        "Ótimo para coordenação motora, autoconfiança e condicionamento cardiovascular. "
+        "Exige supervisão adequada para evitar lesões."
+    ),
+    "⚽ Esportes Olímpicos": (
+        "Esportes coletivos e individuais de alto rendimento ou lazer. Desenvolvem coordenação, "
+        "agilidade, resistência e trabalho em equipe. Necessitam de profissional habilitado e "
+        "avaliação médica prévia."
     ),
 }
 
@@ -206,7 +249,48 @@ RESTRICOES = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# BANCO DE EXERCÍCIOS PARA MONTAGEM LIVRE (Seção 5.5)
+# RESTRIÇÕES PARA LESÕES (NOVO)
+# ══════════════════════════════════════════════════════════════════════════════
+RESTRICOES_LESOES = {
+    "Lesão de LCA (Ligamento Cruzado Anterior)": (
+        ["Cadeira extensora (ângulo 90°-45°)", "Cadeira flexora", "Ciclismo (selim alto)", "Natação (crawl com prancha)", "Prancha", "Hidroginástica"],
+        ["Agachamento profundo", "Leg press com carga alta", "Saltos", "Corrida em subida", "Avanço (lunge) com rotação", "Movimentos de torção"],
+        "⚠️ Reconstrução do LCA requer protocolo específico de reabilitação. Fortalecimento de isquiotibiais é crucial. Evitar estresse de rotação e impacto."
+    ),
+    "Lesão de LCP (Ligamento Cruzado Posterior)": (
+        ["Cadeira extensora (sem carga)", "Ciclismo", "Natação", "Prancha"],
+        ["Agachamento profundo", "Leg press com amplitude máxima", "Cadeira flexora com sobrecarga", "Saltos"],
+        "⚠️ Evitar movimentos que forcem a tíbia para trás. Priorizar cadeia cinética aberta com orientação."
+    ),
+    "Lesão de Menisco": (
+        ["Cadeira extensora (sem carga no pico)", "Ciclismo (selim alto)", "Natação (avaliar nado peito)", "Hidroginástica"],
+        ["Agachamento profundo", "Leg press com amplitude máxima", "Corrida em terreno irregular", "Movimentos de torção", "Avanço"],
+        "⚠️ Priorizar exercícios em cadeia cinética fechada com controle. Evitar rotação e estresse compressivo."
+    ),
+    "Lesão do Manguito Rotador": (
+        ["Elevação lateral (até 90°, sem carga)", "Rotação externa com elástico", "Remada baixa (cotovelo junto)", "Puxada frontal (pegada aberta)"],
+        ["Supino reto com barra", "Desenvolvimento por trás da cabeça", "Crucifixo", "Paralela", "Remada alta"],
+        "⚠️ Fortalecer o manguito rotador e escapuloumerais. Evitar movimentos acima de 90° com carga."
+    ),
+    "Síndrome do Impacto do Ombro": (
+        ["Rotação externa com elástico", "Remada baixa", "Puxada frontal", "Alongamento de peitoral"],
+        ["Supino reto", "Desenvolvimento", "Elevação lateral acima de 90°", "Paralela", "Remada alta"],
+        "⚠️ Evitar movimentos que comprimem o subacromial. Trabalhar estabilização escapular."
+    ),
+    "Tendinite Patelar (Joelho de Saltador)": (
+        ["Cadeira extensora (ângulo 90°-45°)", "Ciclismo (selim alto)", "Natação", "Hidroginástica"],
+        ["Saltos", "Agachamento profundo", "Leg press com amplitude total", "Corrida em declive"],
+        "⚠️ Fortalecer VMO e cadeia posterior. Evitar impacto direto e sobrecarga do tendão patelar."
+    ),
+    "Bursite Trocanteriana": (
+        ["Ciclismo (selim baixo)", "Hidroginástica", "Alongamento de ITB", "Fortalecimento de glúteo médio"],
+        ["Avanço (lunge)", "Agachamento profundo", "Corrida em superfície inclinada", "Exercícios de abdução com carga"],
+        "⚠️ Evitar atrito no trocanter. Fortalecer glúteo médio e alongar ITB e piriforme."
+    ),
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BANCO DE EXERCÍCIOS PARA MONTAGEM LIVRE
 # ══════════════════════════════════════════════════════════════════════════════
 BANCO_EXERCICIOS = {
     "Peito": [
@@ -292,27 +376,132 @@ BANCO_EXERCICIOS = {
 }
 
 METODOS_TREINO = {
-    "Séries convencionais": "Número fixo de séries e repetições. Ex: 3×12 (3 séries de 12 repetições).",
-    "Pirâmide crescente": "Aumenta a carga a cada série e diminui as repetições. Ex: 12→10→8 com carga 40→50→60kg.",
-    "Pirâmide decrescente": "Diminui a carga a cada série e aumenta as repetições. Ex: 8→10→12 com carga 60→50→40kg.",
-    "Drop set": "Ao falhar, reduz a carga imediatamente e continua sem descanso. Máxima intensidade.",
-    "Super set": "Dois exercícios em sequência sem descanso — mesmo grupo muscular (intensidade) ou antagonistas (volume).",
-    "Tri set": "Três exercícios em sequência sem descanso para o mesmo grupo muscular.",
-    "Giant set": "Quatro ou mais exercícios em sequência sem descanso.",
-    "Rest-pause": "Uma série até a falha, 10–20s de descanso, continua com mais repetições.",
-    "Negativa acentuada": "Fase excêntrica lenta (4–6 segundos). Maior dano muscular e ganho de força.",
-    "Isometria": "Contração sem movimento. Ex: segurar 3 segundos no ponto de maior tensão.",
-    "Pré-exaustão": "Isolar o músculo principal antes do exercício composto. Ex: crucifixo antes do supino.",
-    "Cluster set": "Série com micro-pausas de 10–15s entre grupos de repetições para manter a qualidade.",
-    "AMRAP": "As Many Reps As Possible — máximo de repetições com boa forma em um tempo definido.",
-    "EMOM": "Every Minute On the Minute — executa X repetições no início de cada minuto.",
-    "Circuito": "Série de exercícios realizados em sequência com descanso apenas ao final da rodada.",
+    "Séries convencionais": {
+        "descricao": "Número fixo de séries e repetições. Ex: 3×12 (3 séries de 12 repetições).",
+        "tipo": "fixo",
+        "exemplo_series": 3,
+        "exemplo_reps": "12",
+        "permite_carga_progressiva": False
+    },
+    "Pirâmide crescente": {
+        "descricao": "Aumenta a carga a cada série e diminui as repetições. Ex: 12→10→8 com carga 40→50→60kg.",
+        "tipo": "progressivo",
+        "series_padrao": 3,
+        "reps_por_serie": ["12", "10", "8"],
+        "carga_por_serie": ["40kg", "50kg", "60kg"],
+        "permite_carga_progressiva": True
+    },
+    "Pirâmide decrescente": {
+        "descricao": "Diminui a carga a cada série e aumenta as repetições. Ex: 8→10→12 com carga 60→50→40kg.",
+        "tipo": "progressivo",
+        "series_padrao": 3,
+        "reps_por_serie": ["8", "10", "12"],
+        "carga_por_serie": ["60kg", "50kg", "40kg"],
+        "permite_carga_progressiva": True
+    },
+    "Drop set": {
+        "descricao": "Ao falhar, reduz a carga imediatamente e continua sem descanso. Máxima intensidade.",
+        "tipo": "drop",
+        "series_padrao": 1,
+        "drops_por_serie": 3,
+        "reps_iniciais": "até a falha",
+        "reducao_carga": "20-30% a cada drop",
+        "permite_carga_progressiva": True
+    },
+    "Super set": {
+        "descricao": "Dois exercícios em sequência sem descanso — mesmo grupo muscular (intensidade) ou antagonistas (volume).",
+        "tipo": "superset",
+        "series_padrao": 3,
+        "reps_por_exercicio": "10-12",
+        "descanso_entre_supersets": "60-90s",
+        "permite_carga_progressiva": False
+    },
+    "Tri set": {
+        "descricao": "Três exercícios em sequência sem descanso para o mesmo grupo muscular.",
+        "tipo": "triset",
+        "series_padrao": 3,
+        "reps_por_exercicio": "10-12",
+        "descanso_entre_trisets": "90-120s",
+        "permite_carga_progressiva": False
+    },
+    "Giant set": {
+        "descricao": "Quatro ou mais exercícios em sequência sem descanso.",
+        "tipo": "giantset",
+        "series_padrao": 3,
+        "reps_por_exercicio": "8-12",
+        "descanso_entre_giantsets": "90-120s",
+        "permite_carga_progressiva": False
+    },
+    "Rest-pause": {
+        "descricao": "Uma série até a falha, 10–20s de descanso, continua com mais repetições.",
+        "tipo": "restpause",
+        "series_padrao": 1,
+        "pausas_por_serie": 2,
+        "reps_primeiro_set": "até a falha",
+        "reps_pos_pausa": "2-5",
+        "permite_carga_progressiva": True
+    },
+    "Negativa acentuada": {
+        "descricao": "Fase excêntrica lenta (4–6 segundos). Maior dano muscular e ganho de força.",
+        "tipo": "negativa",
+        "series_padrao": 3,
+        "reps_padrao": "6-8",
+        "tempo_excentrico": "4-6 segundos",
+        "permite_carga_progressiva": True
+    },
+    "Isometria": {
+        "descricao": "Contração sem movimento. Ex: segurar 3 segundos no ponto de maior tensão.",
+        "tipo": "isometrico",
+        "series_padrao": 3,
+        "tempo_segundos": "15-30s",
+        "permite_carga_progressiva": False
+    },
+    "Pré-exaustão": {
+        "descricao": "Isolar o músculo principal antes do exercício composto. Ex: crucifixo antes do supino.",
+        "tipo": "pre_exaustao",
+        "series_padrao": 3,
+        "reps_isolador": "12-15",
+        "reps_composto": "8-10",
+        "permite_carga_progressiva": False
+    },
+    "Cluster set": {
+        "descricao": "Série com micro-pausas de 10–15s entre grupos de repetições para manter a qualidade.",
+        "tipo": "cluster",
+        "series_padrao": 3,
+        "clusters_por_serie": 3,
+        "reps_por_cluster": "2-4",
+        "pausa_entre_clusters": "10-15s",
+        "permite_carga_progressiva": True
+    },
+    "AMRAP": {
+        "descricao": "As Many Reps As Possible — máximo de repetições com boa forma em um tempo definido.",
+        "tipo": "amrap",
+        "tempo_minutos": 10,
+        "permite_carga_progressiva": False
+    },
+    "EMOM": {
+        "descricao": "Every Minute On the Minute — executa X repetições no início de cada minuto.",
+        "tipo": "emom",
+        "duracao_minutos": 10,
+        "reps_por_minuto": "5-10",
+        "permite_carga_progressiva": False
+    },
+    "Circuito": {
+        "descricao": "Série de exercícios realizados em sequência com descanso apenas ao final da rodada.",
+        "tipo": "circuito",
+        "series_padrao": 3,
+        "exercicios_por_circuito": "6-8",
+        "reps_por_exercicio": "10-15",
+        "descanso_entre_rodadas": "60-90s",
+        "permite_carga_progressiva": False
+    },
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SUGESTÕES AUTOMÁTICAS
+# SUGESTÕES AUTOMÁTICAS (REFATORADO COM MAIS OPÇÕES)
 # ══════════════════════════════════════════════════════════════════════════════
 SUGESTOES_TREINO = {
+    # Academia / Musculação
     ("🏋️ Academia / Musculação", "Iniciante", "3x"): {
         "nome": "Full Body A/B — Iniciante 3x",
         "descricao": "Alternância entre Treino A e B em dias não consecutivos. 3 séries × 12 repetições. Intervalo de 60–90s entre séries.",
@@ -334,42 +523,6 @@ SUGESTOES_TREINO = {
                 "Rosca martelo — 3×12",
                 "Tríceps testa (barra W) — 3×12",
                 "Abdominal crunch — 3×20",
-            ],
-        }
-    },
-    ("🏋️ Academia / Musculação", "Iniciante", "4-5x"): {
-        "nome": "Upper / Lower Split — Iniciante 4x",
-        "descricao": "2 dias MMSS + 2 dias MMII. 4 séries × 10–12 repetições. Intervalo 60–90s.",
-        "dias": {
-            "Upper A — Empurrar + Puxar (Seg)": [
-                "Supino reto (barra) — 4×10",
-                "Remada curvada (barra) — 4×10",
-                "Desenvolvimento (halteres) — 3×12",
-                "Puxada frontal — 3×12",
-                "Rosca direta — 3×12",
-                "Tríceps pulley — 3×12",
-            ],
-            "Lower A — Quadríceps (Ter)": [
-                "Agachamento livre — 4×10",
-                "Leg press 45° — 4×12",
-                "Cadeira extensora — 3×15",
-                "Panturrilha em pé — 4×15",
-                "Prancha — 3×40s",
-            ],
-            "Upper B (Qui)": [
-                "Supino inclinado (halteres) — 4×10",
-                "Remada unilateral — 4×10",
-                "Elevação lateral — 4×15",
-                "Barra fixa assistida — 3×8",
-                "Rosca martelo — 3×12",
-                "Dips (tríceps) assistido — 3×10",
-            ],
-            "Lower B — Posterior (Sex)": [
-                "Stiff (halteres) — 4×10",
-                "Cadeira flexora — 4×12",
-                "Hip thrust — 4×12",
-                "Avanço (lunge) — 3×10 cada perna",
-                "Panturrilha sentado — 4×15",
             ],
         }
     },
@@ -462,6 +615,8 @@ SUGESTOES_TREINO = {
             ],
         }
     },
+    
+    # Cardiovascular
     ("🏃 Cardiovascular", "Iniciante", "3x"): {
         "nome": "Corrida Iniciante — Método Jeff Galloway (Run/Walk)",
         "descricao": "Progressão segura em 8 semanas. Intercala corrida e caminhada para evitar lesões e construir base aeróbica.",
@@ -472,35 +627,115 @@ SUGESTOES_TREINO = {
             "Semana 7–8": ["Caminhar 5 min → Correr 10 min + Caminhar 2 min (repetir 2x) → Caminhar 5 min"],
         }
     },
-    ("🏊 Aquáticas", "Iniciante", "3x"): {
-        "nome": "Natação para Iniciantes — Adaptação ao Meio Aquático",
-        "descricao": "Foco em técnica e adaptação. Crawl como nado principal. Progressão semanal.",
+    ("🏃 Cardiovascular", "Intermediário", "4-5x"): {
+        "nome": "Corrida Intermediário — Volume Base 4x",
+        "descricao": "4 sessões com treino longo, intervalado, regenerativo e fartlek.",
         "dias": {
-            "Treino 1 (Seg)": [
-                "Aquecimento: caminhada na piscina — 5 min",
-                "Flutuação ventral e dorsal — 2×25m",
-                "Pernada com prancha (crawl) — 4×25m",
-                "Braçada assistida com pull buoy — 3×25m",
-                "Resfriamento: costas relaxado — 2×25m",
+            "Treino Longo (Dom)": ["Corrida contínua 50-60 min em ritmo leve"],
+            "Intervalado (Ter)":  ["6 × 400m em ritmo forte | descanso 60s"],
+            "Regenerativo (Qui)": ["Corrida leve 25-30 min | pace bem confortável"],
+            "Fartlek (Sáb)":     ["35 min: alterna 3 min forte + 2 min leve"],
+        }
+    },
+    ("🏃 Cardiovascular", "Avançado", "4-5x"): {
+        "nome": "Corrida Avançado — Treino Periodizado",
+        "descricao": "Periodização com treino de limiar, VO2max e longo. Para corredores experientes.",
+        "dias": {
+            "Longo (Dom)":        ["70-90 min em pace fácil (Z2) — base aeróbica"],
+            "Limiar (Ter)":       ["3 × 15 min no limiar anaeróbico | 3 min descanso"],
+            "VO2max (Qui)":       ["5 × 1000m em pace 5km | descanso 2 min"],
+            "Recuperação (Sáb)": ["30 min leve + 6 × 100m aceleração"],
+        }
+    },
+    
+    # Triatlo - Específico
+    ("🏃 Cardiovascular", "Triathlon — treino combinado (natação+bike+corrida)", "Avançado", "4-5x"): {
+        "nome": "Triatlo Avançado — Preparação Olímpico",
+        "descricao": "Treino específico para triatlo com natação, ciclismo e corrida. Inclui tiros, rodagem e transições.",
+        "dias": {
+            "Segunda — Natação + Corrida": [
+                "Natação: 300m aquecimento → 6×100m crawl (descanso 30s) → 200m recupero",
+                "Corrida: 5km em ritmo de prova (transição)"
             ],
-            "Treino 2 (Qua)": [
-                "Aquecimento — 100m livre",
-                "Pernada sem prancha — 4×25m",
-                "Respiração lateral bilateral — 4×25m",
-                "Crawl completo — 4×50m c/ 30s descanso",
+            "Terça — Musculação Funcional": [
+                "Peso morto (RDL) — 4×8",
+                "Agachamento frontal — 4×6",
+                "Remada curvada — 4×10",
+                "Prancha — 4×45s",
+                "Exercícios de mobilidade para triatlo"
             ],
-            "Treino 3 (Sex)": [
-                "Aquecimento — 200m",
-                "Série: 6×50m crawl c/ 30s descanso",
-                "Costas (técnica) — 4×25m",
-                "Resfriamento — 100m livre",
+            "Quarta — Bike Longa": [
+                "Aquecimento 15 min → 90 min de pedal em zona 2 (60-70% FCM) → 15 min desaquecimento"
             ],
+            "Quinta — Natação + Transição": [
+                "Natação contínua: 2000m crawl em ritmo moderado",
+                "Transição para corrida: 20 min trote leve"
+            ],
+            "Sexta — Corrida com Tiros": [
+                "Aquecimento 15 min → 8×400m em ritmo 5km (descanso 60s) → 15 min desaquecimento"
+            ],
+            "Sábado — Bike + Corrida (Brick)": [
+                "Bike: 60 min em zona 3 → Transição direta → Corrida: 30 min em ritmo de prova"
+            ],
+            "Domingo — Descanso Ativo": ["Alongamento, Yoga ou 30 min caminhada leve"]
+        }
+    },
+    
+    # Lutas - Jiu-Jitsu
+    ("🥋 Lutas", "Jiu-Jitsu (rolagem / luta)", "Intermediário", "4-5x"): {
+        "nome": "Jiu-Jitsu Intermediário — Performance",
+        "descricao": "Treino específico para Jiu-Jitsu com ênfase em condicionamento, força de pegada e explosão.",
+        "dias": {
+            "Segunda — Técnica + Rolagem": ["Aquecimento específico BJJ → Técnica (40 min) → Rolagem (30 min) → Alongamento"],
+            "Terça — Força e Condicionamento": [
+                "Puxada frontal (pegada supinada) — 4×8",
+                "Remada cavalinho — 4×10",
+                "Rosca direta (pegada grossa) — 4×12",
+                "Prancha com peso — 4×45s",
+                "Farmer's walk — 4×20m"
+            ],
+            "Quarta — Técnica + Rolagem": ["Aquecimento → Posicionamento/Passagem (40 min) → Rolagem específica (30 min)"],
+            "Quinta — Condicionamento Metabólico": [
+                "Circuito HIIT: 8 exercícios (burpees, kettlebell swing, corda naval)",
+                "30s trabalho / 15s descanso — 6 rodadas"
+            ],
+            "Sexta — Técnica + Resistência": ["Aquecimento → Técnica avançada (50 min) → Rolagem longa (40 min)"],
+            "Sábado — Recuperação Ativa": ["Natação 1000m ou alongamento dinâmico"]
+        }
+    },
+    
+    # Esportes - Basquete
+    ("⚽ Esportes Olímpicos", "Basquetebol (jogo competitivo)", "Intermediário", "4-5x"): {
+        "nome": "Basquete Intermediário — Agilidade e Arremesso",
+        "descricao": "Treino específico para basquete com fundamentos, agilidade, saltos e condicionamento.",
+        "dias": {
+            "Segunda — Fundamentos + Arremesso": [
+                "Aquecimento com bola (10 min)",
+                "Arremessos (100 tentativas)",
+                "Bandejas (50 cada lado)",
+                "Manejo de bola"
+            ],
+            "Terça — Agilidade e Saltos": [
+                "Escada de agilidade (15 min)",
+                "Saltos verticais (4×10)",
+                "Pliometria (hopping, bounding)",
+                "Defesa lateral (sideshuffle)"
+            ],
+            "Quarta — Força": [
+                "Agachamento — 4×6",
+                "Levantamento terra — 4×5",
+                "Supino reto — 4×8",
+                "Prancha lateral — 4×30s"
+            ],
+            "Quinta — Jogo Tático": ["Aquecimento → Exercícios táticos → Jogo reduzido (5x5, 20 min)"],
+            "Sexta — Condicionamento": ["Idas e vindas (suicides) → Corrida contínua 30 min"],
+            "Sábado — Descanso ou Alongamento": []
         }
     },
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# AVISO DE SEGURANÇA
+# AVISO DE SEGURANÇA (ATUALIZADO COM INFORMAÇÕES DE FREQUÊNCIA CARDÍACA)
 # ══════════════════════════════════════════════════════════════════════════════
 AVISO_SEGURANCA = """
 **⚠️ IMPORTANTE — Leia antes de iniciar qualquer atividade física**
@@ -509,16 +744,28 @@ Este aplicativo é uma **ferramenta educacional e de apoio ao planejamento**. El
 
 **Antes de iniciar:**
 - Consulte um **médico** para avaliação clínica, especialmente se tiver doenças crônicas, cardiovasculares ou musculoesqueléticas.
-- Exija do seu profissional o **CREF ativo** (Conselho Regional de Educação Física). Todo profissional de Educação Física deve apresentar o registro. [Consultar profissional](https://cref-rj.implanta.net.br/servicosOnline/Publico/ConsultaInscritos/) | [Fazer denúncia](https://cref-rj.implanta.net.br/servicosOnline/Publico/Denuncias/)
-- Todo profissional de Educação Física que atua com pessoas deve ter o **SBV — Suporte Básico de Vida** (também chamado de BLS — Basic Life Support). Esse curso capacita para RCP (ressuscitação cardiopulmonar) e uso do DEA (desfibrilador). É exigido pelo CREF para atuação em qualquer área da Educação Física.
-- Para atividades aquáticas supervisionadas: o profissional deve possuir adicionalmente o **Curso de Primeiros Socorros e Salvamento Aquático**, exigido pelo CREF para atuação em piscinas e ambientes aquáticos.
+- Exija do seu profissional o **CREF ativo** (Conselho Regional de Educação Física). Todo profissional de Educação Física deve apresentar o registro.
+- Todo profissional de Educação Física que atua com pessoas deve ter o **SBV — Suporte Básico de Vida** (também chamado de BLS — Basic Life Support). Esse curso capacita para RCP e uso do DEA.
+- Para atividades aquáticas supervisionadas: o profissional deve possuir adicionalmente o **Curso de Primeiros Socorros e Salvamento Aquático**.
 - **Bacharel em Educação Física com CREF ativo** é o profissional habilitado para prescrever exercícios. Para reabilitação: **Fisioterapeuta com CREFITO ativo**.
+
+**📈 Frequência Cardíaca e Zonas de Treino**
+A frequência cardíaca (FC) é um excelente marcador da intensidade do exercício.
+- **FC Máxima estimada (FCM):** `220 - IDADE` (fórmula geral). Para indivíduos mais treinados, a fórmula de Karvonen é mais precisa.
+- **Zonas de Treino (Baseadas na % da FCM):**
+    - **Zona 1 (Muito Leve - 50-60%):** Aquecimento e recuperação ativa.
+    - **Zona 2 (Leve - 60-70%):** Queima de gordura, base aeróbica. Ideal para iniciantes.
+    - **Zona 3 (Moderada - 70-80%):** Melhora cardiovascular. É a zona do "diálogo entrecortado".
+    - **Zona 4 (Intensa - 80-90%):** Aumenta o limiar anaeróbico. Melhora performance.
+    - **Zona 5 (Máxima - 90-100%):** Esforço máximo, para sprints e treinos curtos.
+- **Monitoramento:** Utilize um frequencímetro de peito (mais preciso) ou de pulso. Durante o exercício, a meta é manter a FC na zona de treino escolhida.
 
 **Sinais de alerta — PARE o treino imediatamente se sentir:**
 - Dor no peito, falta de ar intensa ou tontura
 - Dor aguda em qualquer articulação
 - Batimentos cardíacos irregulares
 - Visão turva ou desmaio iminente
+- FC acima do limite seguro prescrito
 
 **Progressão segura:**
 - Inicie sempre com intensidade baixa e progrida gradualmente (máximo 10% de volume/semana).
@@ -528,6 +775,293 @@ Este aplicativo é uma **ferramenta educacional e de apoio ao planejamento**. El
 
 *BioGestão 360 — para uso por profissionais habilitados e público autocapacitado sob orientação médica.*
 """
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO PARA RENDERIZAR CONFIGURAÇÕES DO MÉTODO DE TREINO
+# ══════════════════════════════════════════════════════════════════════════════
+def renderizar_configuracoes_metodo(metodo_key, prefixo="global"):
+    """Renderiza os campos específicos para cada método de treino"""
+    metodo = METODOS_TREINO[metodo_key]
+    config = {}
+    
+    if metodo["tipo"] == "fixo":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=10, value=3, key=f"{prefixo}_series")
+        with col2:
+            config["reps"] = st.text_input("Repetições por série:", value="12", key=f"{prefixo}_reps", placeholder="Ex: 12 / 10-12")
+        config["tipo"] = "fixo"
+    
+    elif metodo["tipo"] == "progressivo":
+        num_series = metodo.get("series_padrao", 3)
+        config["series"] = st.number_input("Número de séries:", min_value=1, max_value=6, value=num_series, key=f"{prefixo}_series")
+        config["reps_por_serie"] = []
+        config["carga_por_serie"] = []
+        
+        st.markdown("**Configuração por série:**")
+        for i in range(config["series"]):
+            col1, col2 = st.columns(2)
+            with col1:
+                reps_default = metodo["reps_por_serie"][i] if i < len(metodo["reps_por_serie"]) else "10"
+                reps = st.text_input(f"Série {i+1} - Repetições:", value=reps_default, key=f"{prefixo}_reps_{i}")
+                config["reps_por_serie"].append(reps)
+            with col2:
+                carga_default = metodo["carga_por_serie"][i] if i < len(metodo["carga_por_serie"]) else "Carga a definir"
+                carga = st.text_input(f"Série {i+1} - Carga:", value=carga_default, key=f"{prefixo}_carga_{i}", 
+                                      placeholder="Ex: 40kg / 50% RM")
+                config["carga_por_serie"].append(carga)
+        config["tipo"] = "progressivo"
+    
+    elif metodo["tipo"] == "drop":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=5, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["drops_por_serie"] = st.number_input("Drops por série:", min_value=1, max_value=5, value=metodo["drops_por_serie"], key=f"{prefixo}_drops")
+        
+        config["reps_iniciais"] = st.text_input("Repetições iniciais:", value=metodo["reps_iniciais"], key=f"{prefixo}_reps_ini")
+        config["reducao_carga"] = st.text_input("Redução de carga por drop:", value=metodo["reducao_carga"], key=f"{prefixo}_reducao")
+        config["tipo"] = "drop"
+    
+    elif metodo["tipo"] == "superset":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de supersets:", min_value=1, max_value=6, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps_por_exercicio"] = st.text_input("Repetições por exercício:", value=metodo["reps_por_exercicio"], key=f"{prefixo}_reps")
+        config["descanso"] = st.text_input("Descanso entre supersets:", value=metodo["descanso_entre_supersets"], key=f"{prefixo}_descanso")
+        config["tipo"] = "superset"
+    
+    elif metodo["tipo"] == "triset":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de trisets:", min_value=1, max_value=5, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps_por_exercicio"] = st.text_input("Repetições por exercício:", value=metodo["reps_por_exercicio"], key=f"{prefixo}_reps")
+        config["descanso"] = st.text_input("Descanso entre trisets:", value=metodo["descanso_entre_trisets"], key=f"{prefixo}_descanso")
+        config["tipo"] = "triset"
+    
+    elif metodo["tipo"] == "giantset":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de giantsets:", min_value=1, max_value=4, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps_por_exercicio"] = st.text_input("Repetições por exercício:", value=metodo["reps_por_exercicio"], key=f"{prefixo}_reps")
+        config["descanso"] = st.text_input("Descanso entre giantsets:", value=metodo["descanso_entre_giantsets"], key=f"{prefixo}_descanso")
+        config["tipo"] = "giantset"
+    
+    elif metodo["tipo"] == "restpause":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=4, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["pausas_por_serie"] = st.number_input("Pausas por série:", min_value=1, max_value=4, value=metodo["pausas_por_serie"], key=f"{prefixo}_pausas")
+        config["reps_primeiro_set"] = st.text_input("Repetições no primeiro set:", value=metodo["reps_primeiro_set"], key=f"{prefixo}_reps_ini")
+        config["reps_pos_pausa"] = st.text_input("Repetições após cada pausa:", value=metodo["reps_pos_pausa"], key=f"{prefixo}_reps_pausa")
+        config["tipo"] = "restpause"
+    
+    elif metodo["tipo"] == "negativa":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=6, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps"] = st.text_input("Repetições:", value=metodo["reps_padrao"], key=f"{prefixo}_reps")
+        config["tempo_excentrico"] = st.text_input("Tempo da fase excêntrica:", value=metodo["tempo_excentrico"], key=f"{prefixo}_tempo")
+        config["tipo"] = "negativa"
+    
+    elif metodo["tipo"] == "isometrico":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=6, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["tempo"] = st.text_input("Tempo de contração:", value=metodo["tempo_segundos"], key=f"{prefixo}_tempo")
+        config["tipo"] = "isometrico"
+    
+    elif metodo["tipo"] == "pre_exaustao":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=5, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps_isolador"] = st.text_input("Repetições (exercício isolador):", value=metodo["reps_isolador"], key=f"{prefixo}_reps_iso")
+        config["reps_composto"] = st.text_input("Repetições (exercício composto):", value=metodo["reps_composto"], key=f"{prefixo}_reps_comp")
+        config["tipo"] = "pre_exaustao"
+    
+    elif metodo["tipo"] == "cluster":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de séries:", min_value=1, max_value=5, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["clusters_por_serie"] = st.number_input("Clusters por série:", min_value=2, max_value=6, value=metodo["clusters_por_serie"], key=f"{prefixo}_clusters")
+        config["reps_por_cluster"] = st.text_input("Repetições por cluster:", value=metodo["reps_por_cluster"], key=f"{prefixo}_reps_cluster")
+        config["pausa_entre_clusters"] = st.text_input("Pausa entre clusters:", value=metodo["pausa_entre_clusters"], key=f"{prefixo}_pausa")
+        config["tipo"] = "cluster"
+    
+    elif metodo["tipo"] == "amrap":
+        config["tempo"] = st.number_input("Duração (minutos):", min_value=3, max_value=30, value=metodo["tempo_minutos"], key=f"{prefixo}_tempo")
+        config["tipo"] = "amrap"
+    
+    elif metodo["tipo"] == "emom":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["duracao"] = st.number_input("Duração (minutos):", min_value=5, max_value=30, value=metodo["duracao_minutos"], key=f"{prefixo}_duracao")
+        with col2:
+            config["reps_por_minuto"] = st.text_input("Repetições por minuto:", value=metodo["reps_por_minuto"], key=f"{prefixo}_reps")
+        config["tipo"] = "emom"
+    
+    elif metodo["tipo"] == "circuito":
+        col1, col2 = st.columns(2)
+        with col1:
+            config["series"] = st.number_input("Número de rodadas:", min_value=1, max_value=6, value=metodo["series_padrao"], key=f"{prefixo}_series")
+        with col2:
+            config["reps_por_exercicio"] = st.text_input("Repetições por exercício:", value=metodo["reps_por_exercicio"], key=f"{prefixo}_reps")
+        config["exercicios_por_circuito"] = st.number_input("Número de exercícios por circuito:", min_value=4, max_value=12, value=8, key=f"{prefixo}_num_ex")
+        config["descanso"] = st.text_input("Descanso entre rodadas:", value=metodo["descanso_entre_rodadas"], key=f"{prefixo}_descanso")
+        config["tipo"] = "circuito"
+    
+    return config
+
+
+def formatar_exercicio_para_exibicao(nome_exercicio, config_metodo, series, reps, intervalo, carga_adicional=""):
+    """Formata a linha do exercício baseado no método de treino"""
+    metodo_tipo = config_metodo.get("tipo", "fixo")
+    
+    if metodo_tipo == "fixo":
+        return f"{nome_exercicio} — {series}×{reps} | intervalo: {intervalo}"
+    
+    elif metodo_tipo == "progressivo":
+        reps_str = " → ".join(config_metodo.get("reps_por_serie", []))
+        carga_str = " → ".join(config_metodo.get("carga_por_serie", []))
+        return f"{nome_exercicio} — {series} séries | reps: {reps_str} | carga: {carga_str} | intervalo: {intervalo}"
+    
+    elif metodo_tipo == "drop":
+        return f"{nome_exercicio} — {series} série(s) com {config_metodo.get('drops_por_serie', 3)} drops | reps: {config_metodo.get('reps_iniciais', 'falha')} | redução: {config_metodo.get('reducao_carga', '20-30%')}"
+    
+    elif metodo_tipo == "superset":
+        return f"{nome_exercicio} (em superset com próximo) — {series}×{reps} | descanso: {config_metodo.get('descanso', intervalo)}"
+    
+    elif metodo_tipo == "triset":
+        return f"{nome_exercicio} (em triset com próximos 2) — {series}×{reps} | descanso: {config_metodo.get('descanso', intervalo)}"
+    
+    elif metodo_tipo == "giantset":
+        return f"{nome_exercicio} (em giantset) — {series}×{reps} | descanso: {config_metodo.get('descanso', intervalo)}"
+    
+    elif metodo_tipo == "restpause":
+        return f"{nome_exercicio} — {series} série(s) | {config_metodo.get('pausas_por_serie', 2)} pausas | primeiro set: {config_metodo.get('reps_primeiro_set', 'falha')} | após pausa: {config_metodo.get('reps_pos_pausa', '2-5')} reps"
+    
+    elif metodo_tipo == "negativa":
+        return f"{nome_exercicio} — {series}×{reps} | fase excêntrica: {config_metodo.get('tempo_excentrico', '4-6s')} | intervalo: {intervalo}"
+    
+    elif metodo_tipo == "isometrico":
+        return f"{nome_exercicio} — {series}×{config_metodo.get('tempo', '15-30s')} de contração isométrica | intervalo: {intervalo}"
+    
+    elif metodo_tipo == "pre_exaustao":
+        return f"{nome_exercicio} — {series} séries | isolador: {config_metodo.get('reps_isolador', '12-15')} reps | composto: {config_metodo.get('reps_composto', '8-10')} reps"
+    
+    elif metodo_tipo == "cluster":
+        return f"{nome_exercicio} — {series} séries | {config_metodo.get('clusters_por_serie', 3)} clusters de {config_metodo.get('reps_por_cluster', '2-4')} reps | pausa: {config_metodo.get('pausa_entre_clusters', '10-15s')}"
+    
+    elif metodo_tipo == "amrap":
+        return f"{nome_exercicio} — AMRAP por {config_metodo.get('tempo', 10)} minutos"
+    
+    elif metodo_tipo == "emom":
+        return f"{nome_exercicio} — EMOM por {config_metodo.get('duracao', 10)} min | {config_metodo.get('reps_por_minuto', '5-10')} reps/min"
+    
+    elif metodo_tipo == "circuito":
+        return f"{nome_exercicio} (circuito com {config_metodo.get('exercicios_por_circuito', 8)} exercícios) — {series} rodadas | {reps} reps/exercício | descanso: {config_metodo.get('descanso', '60-90s')}"
+    
+    else:
+        return f"{nome_exercicio} — {series}×{reps} | intervalo: {intervalo}"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO AUXILIAR PARA NORMALIZAR TEXTO
+# ══════════════════════════════════════════════════════════════════════════════
+def normalizar_texto(texto):
+    """Remove acentos e caracteres especiais para comparação"""
+    texto = texto.lower()
+    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+    return texto
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO AUXILIAR PARA BUSCAR SUGESTÃO INTELIGENTE
+# ══════════════════════════════════════════════════════════════════════════════
+def buscar_sugestao_inteligente(categoria, atividade, nivel, frequencia):
+    """
+    Busca a sugestão de treino mais adequada baseada na categoria, atividade, nível e frequência.
+    """
+    freq_map = {"1-2x": "3x", "3x": "3x", "4-5x": "4-5x", "6-7x": "6-7x"}
+    freq_chave = freq_map.get(frequencia, "3x")
+    
+    # Tenta buscar com atividade específica (se for uma atividade relevante)
+    niveis_tentativa = [nivel, "Intermediário", "Iniciante", "Avançado"]
+    
+    for n in niveis_tentativa:
+        chave_especifica = (categoria, atividade, n, freq_chave)
+        if chave_especifica in SUGESTOES_TREINO:
+            return SUGESTOES_TREINO[chave_especifica]
+    
+    # Tenta buscar genérico da categoria
+    for n in niveis_tentativa:
+        chave_generica = (categoria, n, freq_chave)
+        if chave_generica in SUGESTOES_TREINO:
+            return SUGESTOES_TREINO[chave_generica]
+    
+    return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO AUXILIAR PARA APLICAR FILTROS DE RESTRIÇÃO
+# ══════════════════════════════════════════════════════════════════════════════
+def aplicar_filtro_restricoes(exercicios, termos_proibidos):
+    """Marca exercícios como contraindicados baseado nos termos proibidos"""
+    if not termos_proibidos:
+        return exercicios
+    
+    exercicios_filtrados = []
+    for ex in exercicios:
+        ex_norm = normalizar_texto(ex)
+        proibido = False
+        motivo = None
+        
+        for termo, cond, obs in termos_proibidos:
+            if termo in ex_norm:
+                proibido = True
+                motivo = f"{cond} — {obs}"
+                break
+        
+        exercicios_filtrados.append({
+            "texto": ex,
+            "proibido": proibido,
+            "motivo": motivo
+        })
+    
+    return exercicios_filtrados
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO AUXILIAR PARA COLETAR TERMOS CONTRAINDICADOS
+# ══════════════════════════════════════════════════════════════════════════════
+def coletar_termos_proibidos(condicoes, lesoes):
+    """Coleta todos os termos contraindicados das condições e lesões"""
+    termos_proibidos = []
+    
+    # Processa condições de saúde
+    for cond in condicoes:
+        if cond in RESTRICOES:
+            _, contraindicados, obs = RESTRICOES[cond]
+            for c in contraindicados:
+                termo_norm = normalizar_texto(c)
+                termos_proibidos.append((termo_norm, cond, obs))
+    
+    # Processa lesões
+    for lesao in lesoes:
+        if lesao in RESTRICOES_LESOES:
+            _, contraindicados, obs = RESTRICOES_LESOES[lesao]
+            for c in contraindicados:
+                termo_norm = normalizar_texto(c)
+                termos_proibidos.append((termo_norm, lesao, obs))
+    
+    return termos_proibidos
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -555,6 +1089,14 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
                 "https://cref-rj.implanta.net.br/servicosOnline/Publico/Denuncias/"
             )
         st.caption("Links válidos para o CREF-RJ. Para outros estados, acesse o site do CREF do seu estado.")
+        
+        # Exemplo de cálculo de FC baseado na idade
+        idade_exemplo = st.number_input("Digite sua idade para ver exemplo de zonas de FC:", min_value=15, max_value=100, value=30, key="fc_idade_exemplo")
+        fcm = 220 - idade_exemplo
+        st.info(f"💡 **Para {idade_exemplo} anos:** Frequência Cardíaca Máxima = **{fcm} bpm**\n\n"
+                f"- Zona Leve (60-70%): **{fcm*0.6:.0f} - {fcm*0.7:.0f} bpm**\n"
+                f"- Zona Moderada (70-80%): **{fcm*0.7:.0f} - {fcm*0.8:.0f} bpm**\n"
+                f"- Zona Intensa (80-90%): **{fcm*0.8:.0f} - {fcm*0.9:.0f} bpm**")
 
     # ── 5.1 ANAMNESE ─────────────────────────────────────────────────────────
     with st.expander("📋 5.1 — Anamnese Física", expanded=True):
@@ -569,6 +1111,20 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
             idade_aluno = st.number_input("Idade:", min_value=5, max_value=110, value=25, step=1, key="treino_idade_aluno")
         with col_p3:
             sexo_aluno = st.selectbox("Sexo biológico:", ["Masculino", "Feminino"], key="treino_sexo_aluno")
+        
+        # NOVO: Frequência Cardíaca de Repouso
+        st.markdown("**❤️ Frequência Cardíaca**")
+        col_fc1, col_fc2 = st.columns(2)
+        with col_fc1:
+            fc_repouso = st.number_input("Frequência Cardíaca em Repouso (bpm):",
+                                         min_value=40, max_value=150, value=70, step=1,
+                                         key="treino_fc_repouso",
+                                         help="Meça ao acordar, ainda deitado, antes de levantar. Valor normal: 60-100 bpm.")
+        with col_fc2:
+            if idade_aluno > 0:
+                fcm_estimada = 220 - idade_aluno
+                st.metric("FC Máxima Estimada", f"{fcm_estimada} bpm", 
+                         help="Fórmula: 220 - idade. Para indivíduos treinados, use a fórmula de Karvonen.")
 
         st.markdown("---")
         st.markdown("**🏅 Dados do Profissional / Local**")
@@ -603,12 +1159,31 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
             exames = st.radio("Exames cardíacos em dia:",
                 ["Sim", "Não"], horizontal=True, key="treino_exames")
 
-        lesoes = st.text_area("Lesões atuais ou histórico relevante:",
-            placeholder="Ex: entorse de tornozelo há 3 meses, cirurgia de joelho em 2022...",
-            key="treino_lesoes", height=70)
+        # Campo de lesões com sugestões
+        st.markdown("**🩺 Lesões atuais ou histórico relevante**")
+        lesoes_selecionadas = st.multiselect(
+            "Selecione lesões existentes:",
+            list(RESTRICOES_LESOES.keys()) + ["Outra lesão (especifique abaixo)"],
+            key="treino_lesoes_select"
+        )
+        
+        lesoes_outra = ""
+        if "Outra lesão (especifique abaixo)" in lesoes_selecionadas:
+            lesoes_outra = st.text_input("Especifique a lesão:",
+                                        placeholder="Ex: Fratura de rádio distal, Tendinite de Aquiles...",
+                                        key="treino_lesoes_outra")
+            # Remove o marcador "Outra lesão" e adiciona o texto específico
+            lesoes_lista = [l for l in lesoes_selecionadas if l != "Outra lesão (especifique abaixo)"]
+            if lesoes_outra:
+                lesoes_lista.append(lesoes_outra)
+        else:
+            lesoes_lista = lesoes_selecionadas.copy()
 
-    # ── Alertas de condições ──────────────────────────────────────────────────
+    # ── Alertas de condições e lesões (UNIFICADOS) ───────────────────────────
     condicoes_ativas = [c for c in condicoes if c != "Nenhuma"]
+    lesoes_ativas = lesoes_lista
+    
+    # Exibe alertas para condições de saúde
     if condicoes_ativas:
         for cond in condicoes_ativas:
             if cond in RESTRICOES:
@@ -619,9 +1194,45 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
                     c1.success("✅ **Indicado:** " + " | ".join(indicado))
                 if contraindicado:
                     c2.error("❌ **Contraindicado:** " + " | ".join(contraindicado))
+    
+    # Exibe alertas para lesões
+    if lesoes_ativas:
+        for lesao in lesoes_ativas:
+            # Procura primeiro no dicionário de lesões
+            if lesao in RESTRICOES_LESOES:
+                indicado, contraindicado, obs = RESTRICOES_LESOES[lesao]
+                st.warning(f"**{lesao}** — {obs}")
+                c1, c2 = st.columns(2)
+                if indicado:
+                    c1.success("✅ **Indicado:** " + " | ".join(indicado))
+                if contraindicado:
+                    c2.error("❌ **Contraindicado:** " + " | ".join(contraindicado))
+            # Se não encontrou mas tem "lesão" no texto, busca aproximada
+            else:
+                # Tenta encontrar chave similar
+                encontrado = False
+                for key in RESTRICOES_LESOES.keys():
+                    if normalizar_texto(lesao) in normalizar_texto(key):
+                        indicado, contraindicado, obs = RESTRICOES_LESOES[key]
+                        st.warning(f"**{lesao}** (similar a {key}) — {obs}")
+                        c1, c2 = st.columns(2)
+                        if indicado:
+                            c1.success("✅ **Indicado:** " + " | ".join(indicado))
+                        if contraindicado:
+                            c2.error("❌ **Contraindicado:** " + " | ".join(contraindicado))
+                        encontrado = True
+                        break
+                if not encontrado:
+                    st.info(f"**{lesao}** — ℹ️ Informe esta condição ao profissional de Educação Física para adaptações necessárias.")
 
+    # Alertas críticos
     if "Cardiopatia" in condicoes_ativas or "Pós-operatório (< 6 meses)" in condicoes_ativas:
         st.error("🚨 **ATENÇÃO:** Esta condição requer laudo médico por escrito antes de iniciar qualquer atividade física.")
+    
+    if fc_repouso > 100:
+        st.warning("⚠️ **Frequência cardíaca de repouso elevada (>100 bpm).** Consulte um médico antes de iniciar atividades físicas.")
+    elif fc_repouso < 60 and nivel != "Atleta":
+        st.info("ℹ️ **Frequência cardíaca de repouso baixa (<60 bpm).** Pode ser indicativo de bom condicionamento, mas informe-se com um médico se houver sintomas.")
 
     # ── 5.2 MODALIDADE ───────────────────────────────────────────────────────
     st.markdown("---")
@@ -665,138 +1276,200 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
     col3.metric("📆 kcal / mês",    f"{kcal_mes:.0f} kcal")
     st.caption(f"Fórmula MET: {met_val} × {peso_treino}kg × {duracao_h:.2f}h = {kcal_sessao} kcal/sessão")
 
-    # ── 5.4 SUGESTÃO AUTOMÁTICA ───────────────────────────────────────────────
+    # ── 5.4 SUGESTÃO AUTOMÁTICA (INTELIGENTE) ─────────────────────────────────
     st.markdown("---")
     st.markdown("### 📋 5.4 — Sugestão de Treino Automática")
 
-    freq_map   = {"1-2x": "3x", "3x": "3x", "4-5x": "4-5x", "6-7x": "6-7x"}
-    freq_chave = freq_map.get(frequencia, "3x")
-    chave      = (categoria, nivel, freq_chave)
-
-    # Fallbacks inteligentes — tenta manter o nível, só muda a frequência
-    # Nunca cai direto para Iniciante sem antes tentar o nível correto
-    _niveis   = ["Avançado", "Intermediário", "Iniciante"]
-    _freqs    = ["6-7x", "4-5x", "3x"]
-    _cats     = [categoria, "🏋️ Academia / Musculação"]
-
-    sugestao = SUGESTOES_TREINO.get(chave)
-
-    if not sugestao:
-        # 1. Mesmo nível, mesma categoria, frequência diferente
-        for f in _freqs:
-            s = SUGESTOES_TREINO.get((categoria, nivel, f))
-            if s:
-                sugestao = s
-                break
-
-    if not sugestao:
-        # 2. Mesmo nível, academia, frequência diferente
-        for f in _freqs:
-            s = SUGESTOES_TREINO.get(("🏋️ Academia / Musculação", nivel, f))
-            if s:
-                sugestao = s
-                break
-
-    if not sugestao:
-        # 3. Nível abaixo, mesma categoria e frequência
-        for n in _niveis:
-            for f in _freqs:
-                s = SUGESTOES_TREINO.get((categoria, n, f))
-                if s:
-                    sugestao = s
-                    break
-            if sugestao:
-                break
-
-    if not sugestao:
-        # 4. Academia, nível abaixo
-        for n in _niveis:
-            for f in _freqs:
-                s = SUGESTOES_TREINO.get(("🏋️ Academia / Musculação", n, f))
-                if s:
-                    sugestao = s
-                    break
-            if sugestao:
-                break
+    # Coleta termos proibidos para filtro
+    termos_proibidos = coletar_termos_proibidos(condicoes_ativas, lesoes_ativas)
+    
+    # Busca sugestão inteligente
+    sugestao = buscar_sugestao_inteligente(categoria, atividade, nivel, frequencia)
 
     if sugestao:
         st.success(f"**{sugestao['nome']}**")
         st.write(sugestao["descricao"])
 
-        # Montar lista de termos contraindicados pelas condições de saúde
-        _termos_proibidos = []
-        for cond in condicoes_ativas:
-            if cond in RESTRICOES:
-                _, contraindicados, _ = RESTRICOES[cond]
-                for c in contraindicados:
-                    import unicodedata as _ud, re as _re
-                    t = c.lower()
-                    t = _ud.normalize("NFKD", t).encode("ASCII","ignore").decode("ASCII")
-                    _termos_proibidos.append(t)
-
         for dia_t, exs in sugestao["dias"].items():
             with st.expander(f"📅 {dia_t}"):
-                for ex in exs:
-                    ex_norm = ex.lower()
-                    try:
-                        import unicodedata as _ud
-                        ex_norm = _ud.normalize("NFKD", ex_norm).encode("ASCII","ignore").decode("ASCII")
-                    except Exception:
-                        pass
-                    proibido = any(
-                        termo.split()[0] in ex_norm
-                        for termo in _termos_proibidos
-                        if termo.split()
-                    )
-                    if proibido:
-                        st.markdown(
-                            f"~~• {ex}~~ &nbsp; ⚠️ *contraindicado — {', '.join(c for c in condicoes_ativas if c in RESTRICOES)}*",
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        st.write(f"• {ex}")
+                if not exs:
+                    st.write("Descanso ativo ou livre")
+                else:
+                    for ex in exs:
+                        # Aplica filtro de restrições
+                        ex_norm = normalizar_texto(ex)
+                        proibido = False
+                        motivo = None
+                        
+                        for termo, cond, obs in termos_proibidos:
+                            if termo in ex_norm:
+                                proibido = True
+                                motivo = f"{cond} — {obs}"
+                                break
+                        
+                        if proibido:
+                            st.markdown(
+                                f"~~• {ex}~~ &nbsp; ⚠️ *Contraindicado: {motivo}*",
+                                unsafe_allow_html=True
+                            )
+                        else:
+                            st.write(f"• {ex}")
     else:
-        st.info(f"Sugestão automática não disponível para **{categoria} / {nivel} / {frequencia}**. Use a seção 5.5 abaixo para montar seu treino.")
+        st.info(f"Sugestão automática não disponível para **{categoria} / {atividade} / {nivel} / {frequencia}**. Use a seção 5.5 abaixo para montar seu treino.")
 
-    # ── 5.5 MONTAGEM LIVRE DE TREINO ──────────────────────────────────────────
+    # ── 5.5 MONTAGEM LIVRE DE TREINO (REFATORADO COM MÉTODOS) ────────────────────
     st.markdown("---")
     st.markdown("### 🛠️ 5.5 — Monte Seu Próprio Treino (Musculação)")
-    st.caption("Escolha os grupos musculares, exercícios e método. Disponível para todos os níveis.")
+    st.caption("Escolha os grupos musculares, exercícios e método. Configurações dinâmicas para cada tipo de treino.")
 
-    treino_montado = {}
+    # Inicializa session state para os dias de treino
+    if "treino_personalizado_dias" not in st.session_state:
+        st.session_state.treino_personalizado_dias = []
 
-    grupos_sel = st.multiselect(
-        "Grupos musculares desta sessão:",
-        list(BANCO_EXERCICIOS.keys()),
-        key="treino_grupos"
-    )
+    # Botões para gerenciar dias
+    col_btn1, col_btn2, col_btn3 = st.columns(3)
+    with col_btn1:
+        if st.button("➕ Adicionar Dia de Treino", key="add_dia_btn"):
+            novo_num = len(st.session_state.treino_personalizado_dias) + 1
+            st.session_state.treino_personalizado_dias.append({
+                "nome": f"Dia {novo_num}",
+                "exercicios": [],
+                "metodo": "Séries convencionais",
+                "config_metodo": {}
+            })
+    with col_btn2:
+        if st.button("📋 Duplicar Último Dia", key="duplicate_dia_btn") and st.session_state.treino_personalizado_dias:
+            ultimo_dia = st.session_state.treino_personalizado_dias[-1].copy()
+            ultimo_dia["nome"] = f"{ultimo_dia['nome']} (cópia)"
+            st.session_state.treino_personalizado_dias.append(ultimo_dia)
+    with col_btn3:
+        if st.button("🗑️ Remover Último Dia", key="remove_dia_btn") and st.session_state.treino_personalizado_dias:
+            st.session_state.treino_personalizado_dias.pop()
 
-    metodo_sel = st.selectbox(
-        "Método de treino:",
-        list(METODOS_TREINO.keys()),
-        key="treino_metodo"
-    )
-    st.caption(f"📖 **{metodo_sel}:** {METODOS_TREINO[metodo_sel]}")
+    # Configurações globais vs específicas
+    col_global, _ = st.columns([1, 2])
+    with col_global:
+        usar_config_global = st.checkbox("Usar mesma configuração para todos os dias", value=True, key="usar_config_global")
 
-    col_s, col_r, col_i = st.columns(3)
-    with col_s:
-        num_series = st.number_input("Séries:", min_value=1, max_value=10, value=3, key="treino_series")
-    with col_r:
-        num_reps   = st.text_input("Repetições:", value="12", key="treino_reps",
-                                   placeholder="Ex: 12 / 10-12 / máx")
-    with col_i:
-        intervalo  = st.text_input("Intervalo:", value="60s", key="treino_intervalo",
-                                   placeholder="Ex: 60s / 90s / 2min")
+    # Método global (se aplicável)
+    metodo_global = "Séries convencionais"
+    config_global = {}
 
-    for grupo in grupos_sel:
-        st.markdown(f"**{grupo}**")
-        exs_sel = st.multiselect(
-            f"Exercícios — {grupo}:",
-            BANCO_EXERCICIOS[grupo],
-            key=f"treino_ex_{grupo}"
+    if usar_config_global:
+        metodo_global = st.selectbox(
+            "Método de treino (para todos os dias):",
+            list(METODOS_TREINO.keys()),
+            key="treino_metodo_global"
         )
-        if exs_sel:
-            treino_montado[grupo] = exs_sel
+        st.caption(f"📖 **{metodo_global}:** {METODOS_TREINO[metodo_global]['descricao']}")
+        
+        # Renderiza configurações específicas do método global
+        with st.expander("⚙️ Configurações do método de treino", expanded=True):
+            config_global = renderizar_configuracoes_metodo(metodo_global, "global")
+
+    # Loop para cada dia de treino
+    for i, dia in enumerate(st.session_state.treino_personalizado_dias):
+        with st.expander(f"📅 {dia['nome']}", expanded=(i == len(st.session_state.treino_personalizado_dias)-1)):
+            # Editar nome do dia
+            novo_nome = st.text_input("Nome do dia:", value=dia['nome'], key=f"nome_dia_{i}")
+            st.session_state.treino_personalizado_dias[i]['nome'] = novo_nome
+            
+            # Seleção de método (se não usar global)
+            if not usar_config_global:
+                metodo_dia = st.selectbox(
+                    "Método de treino para este dia:",
+                    list(METODOS_TREINO.keys()),
+                    index=list(METODOS_TREINO.keys()).index(dia.get("metodo", "Séries convencionais")),
+                    key=f"metodo_dia_{i}"
+                )
+                st.caption(f"📖 {METODOS_TREINO[metodo_dia]['descricao']}")
+                st.session_state.treino_personalizado_dias[i]['metodo'] = metodo_dia
+                
+                with st.expander("⚙️ Configurações do método", expanded=True):
+                    config_dia = renderizar_configuracoes_metodo(metodo_dia, f"dia_{i}")
+                    st.session_state.treino_personalizado_dias[i]['config_metodo'] = config_dia
+            else:
+                metodo_dia = metodo_global
+                config_dia = config_global
+                st.session_state.treino_personalizado_dias[i]['metodo'] = metodo_dia
+                st.session_state.treino_personalizado_dias[i]['config_metodo'] = config_dia
+                st.info(f"📖 Usando método global: **{metodo_dia}**")
+            
+            # Selecionar grupos musculares para este dia
+            grupos_dia = st.multiselect(
+                "Grupos musculares desta sessão:",
+                list(BANCO_EXERCICIOS.keys()),
+                key=f"grupos_dia_{i}"
+            )
+            
+            # Para cada grupo selecionado, mostrar exercícios
+            exercicios_dia = []
+            for grupo in grupos_dia:
+                st.markdown(f"**{grupo}**")
+                
+                # Filtra exercícios contraindicados
+                opcoes_exercicios = []
+                for ex in BANCO_EXERCICIOS[grupo]:
+                    ex_norm = normalizar_texto(ex)
+                    proibido = False
+                    motivo = None
+                    
+                    for termo, cond, obs in termos_proibidos:
+                        if termo in ex_norm:
+                            proibido = True
+                            motivo = f"({cond})"
+                            break
+                    
+                    if proibido:
+                        opcoes_exercicios.append(f"❌ {ex} {motivo}")
+                    else:
+                        opcoes_exercicios.append(f"✅ {ex}")
+                
+                exs_sel = st.multiselect(
+                    f"Exercícios para {grupo}:",
+                    opcoes_exercicios,
+                    key=f"exs_dia_{i}_{grupo}"
+                )
+                
+                # Limpa os marcadores ✅ e ❌ para armazenar apenas o nome do exercício
+                for ex in exs_sel:
+                    ex_limpo = ex.replace("✅ ", "").replace("❌ ", "")
+                    if " (" in ex_limpo:
+                        ex_limpo = ex_limpo.split(" (")[0]
+                    exercicios_dia.append(ex_limpo)
+            
+            # Intervalo entre séries/exercícios
+            intervalo = st.text_input("Intervalo de descanso:", value="60s", key=f"intervalo_dia_{i}",
+                                    help="Tempo de descanso entre séries ou entre exercícios (quando aplicável)")
+            
+            # Armazena os exercícios com suas configurações
+            st.session_state.treino_personalizado_dias[i]["exercicios"] = [
+                {
+                    "nome": ex,
+                    "metodo": metodo_dia,
+                    "config_metodo": config_dia,
+                    "intervalo": intervalo
+                }
+                for ex in exercicios_dia
+            ]
+            
+            # Exibe prévia formatada dos exercícios do dia
+            if st.session_state.treino_personalizado_dias[i]["exercicios"]:
+                st.markdown("**📋 Prévia do treino formatada:**")
+                for ex in st.session_state.treino_personalizado_dias[i]["exercicios"]:
+                    linha_formatada = formatar_exercicio_para_exibicao(
+                        ex["nome"],
+                        ex["config_metodo"],
+                        ex["config_metodo"].get("series", 3),
+                        ex["config_metodo"].get("reps", "12"),
+                        ex["intervalo"]
+                    )
+                    st.markdown(f"• {linha_formatada}")
+                
+                # Botão para remover todos exercícios do dia
+                if st.button(f"🗑️ Limpar todos exercícios do {dia['nome']}", key=f"limpar_dia_{i}"):
+                    st.session_state.treino_personalizado_dias[i]["exercicios"] = []
+                    st.rerun()
 
     # ── 5.6 BALANÇO ENERGÉTICO ────────────────────────────────────────────────
     st.markdown("---")
@@ -819,21 +1492,80 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
     st.markdown("### 📄 Gerar Relatório de Treino")
 
     if st.button("📄 Gerar Relatório HTML", key="btn_relatorio_treino", use_container_width=True):
+        # 1. Constrói dicionário de treino mantendo TODOS os dados dos exercícios
+        treino_para_relatorio = {}
+        if "treino_personalizado_dias" in st.session_state and st.session_state.treino_personalizado_dias:
+            for dia in st.session_state.treino_personalizado_dias:
+                nome_dia = dia.get("nome", "Dia sem nome")
+                exercicios = dia.get("exercicios", [])
+                # Inclui apenas se houver exercícios
+                if exercicios:
+                    treino_para_relatorio[nome_dia] = exercicios
+
+        # 2. Define valores padrão para os parâmetros do método (evita unknown-name)
+        if usar_config_global:
+            metodo_final = metodo_global
+            config_final = config_global
+            series_final = config_global.get("series", 3)
+            reps_final = config_global.get("reps", "12")
+            intervalo_final = "60s"
+        else:
+            if st.session_state.treino_personalizado_dias:
+                primeiro_dia = st.session_state.treino_personalizado_dias[0]
+                metodo_final = primeiro_dia.get("metodo", "Séries convencionais")
+                config_final = primeiro_dia.get("config_metodo", {})
+                series_final = config_final.get("series", 3)
+                reps_final = config_final.get("reps", "12")
+                # Busca intervalo do primeiro exercício do primeiro dia, se houver
+                exercicios_primeiro = primeiro_dia.get("exercicios", [])
+                if exercicios_primeiro and isinstance(exercicios_primeiro[0], dict):
+                    intervalo_final = exercicios_primeiro[0].get("intervalo", "60s")
+                else:
+                    intervalo_final = "60s"
+            else:
+                metodo_final = "Séries convencionais"
+                config_final = {}
+                series_final = 3
+                reps_final = "12"
+                intervalo_final = "60s"
+
+        # 3. Gera o HTML do relatório
         html = _gerar_relatorio_html(
-            nome_aluno=nome_aluno, idade_aluno=idade_aluno, sexo_aluno=sexo_aluno,
-            nome_instrutor=nome_instrutor, cref=cref, local_treino=local_treino,
-            nivel=nivel, frequencia=frequencia, objetivo=objetivo,
-            condicoes=condicoes_ativas, liberacao=liberacao,
-            exames=exames, lesoes=lesoes,
-            categoria=categoria, atividade=atividade, met_val=met_val,
-            peso_treino=peso_treino, duracao_min=duracao_min,
-            sessoes_semana=sessoes_semana, kcal_sessao=kcal_sessao,
-            kcal_semana=kcal_semana, kcal_mes=kcal_mes,
-            sugestao=sugestao, treino_montado=treino_montado,
-            metodo_sel=metodo_sel, num_series=num_series,
-            num_reps=num_reps, intervalo=intervalo,
+            nome_aluno=nome_aluno,
+            idade_aluno=idade_aluno,
+            sexo_aluno=sexo_aluno,
+            nome_instrutor=nome_instrutor,
+            cref=cref,
+            local_treino=local_treino,
+            nivel=nivel,
+            frequencia=frequencia,
+            objetivo=objetivo,
+            condicoes=condicoes_ativas,
+            liberacao=liberacao,
+            exames=exames,
+            lesoes=lesoes_ativas,
+            lesoes_outra=lesoes_outra,
+            fc_repouso=fc_repouso,
+            fcm_estimada=220 - idade_aluno if idade_aluno > 0 else 0,
+            categoria=categoria,
+            atividade=atividade,
+            met_val=met_val,
+            peso_treino=peso_treino,
+            duracao_min=duracao_min,
+            sessoes_semana=sessoes_semana,
+            kcal_sessao=kcal_sessao,
+            kcal_semana=kcal_semana,
+            kcal_mes=kcal_mes,
+            sugestao=sugestao,
+            treino_montado=treino_para_relatorio,
+            metodo_sel=metodo_final,
+            num_series=series_final,
+            num_reps=reps_final,
+            intervalo=intervalo_final,
             get_atual=get_atual,
         )
+
+        # 4. Disponibiliza download
         nome_arq = f"treino_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         b64 = base64.b64encode(html.encode("utf-8")).decode()
         st.markdown(
@@ -844,68 +1576,209 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GERADOR HTML
+# GERADOR HTML (ATUALIZADO COM FREQUÊNCIA CARDÍACA)
 # ══════════════════════════════════════════════════════════════════════════════
 def _gerar_relatorio_html(**kw):
-    now          = datetime.now().strftime("%d/%m/%Y %H:%M")
-    sugestao     = kw.get("sugestao")
-    treino_m     = kw.get("treino_montado", {})
-    condicoes    = kw.get("condicoes", [])
-    get_atual    = kw.get("get_atual", 0)
+    now = datetime.now().strftime("%d/%m/%Y %H:%M")
+    sugestao = kw.get("sugestao")
+    treino_montado_dict = kw.get("treino_montado", {})
+    condicoes = kw.get("condicoes", [])
+    lesoes = kw.get("lesoes", [])
+    lesoes_outra = kw.get("lesoes_outra", "")
+    get_atual = kw.get("get_atual", 0)
+    fc_repouso = kw.get("fc_repouso", 0)
+    fcm_estimada = kw.get("fcm_estimada", 0)
+    
+    # Coleta termos proibidos (igual à interface)
+    termos_proibidos = []
+    for cond in condicoes:
+        if cond in RESTRICOES:
+            _, contraindicados, obs = RESTRICOES[cond]
+            for c in contraindicados:
+                termo_norm = normalizar_texto(c)
+                termos_proibidos.append((termo_norm, cond, obs))
+    for lesao in lesoes:
+        if lesao in RESTRICOES_LESOES:
+            _, contraindicados, obs = RESTRICOES_LESOES[lesao]
+            for c in contraindicados:
+                termo_norm = normalizar_texto(c)
+                termos_proibidos.append((termo_norm, lesao, obs))
+    
+    # Junta condições e lesões para exibição
+    todas_condicoes = condicoes.copy()
+    if lesoes:
+        todas_condicoes.extend(lesoes)
+    if lesoes_outra:
+        todas_condicoes.append(lesoes_outra)
+    cond_html = ", ".join(todas_condicoes) if todas_condicoes else "Nenhuma"
 
-    # Sugestão automática
+    # Sugestão automática (já funcionando)
     sug_html = ""
     if sugestao:
         sug_html = f"<h3>{sugestao['nome']}</h3><p><em>{sugestao['descricao']}</em></p>"
         for dia, exs in sugestao["dias"].items():
             sug_html += f"<h4 style='color:#0f3460'>{dia}</h4><ul>"
             for ex in exs:
-                sug_html += f"<li>{ex}</li>"
+                ex_norm = normalizar_texto(ex)
+                proibido = False
+                motivo = ""
+                for termo, cond, obs in termos_proibidos:
+                    if termo in ex_norm:
+                        proibido = True
+                        motivo = f"{cond} — {obs}"
+                        break
+                if proibido:
+                    sug_html += f"<li><del>{ex}</del> ⚠️ <em>Contraindicado: {motivo}</em></li>"
+                else:
+                    sug_html += f"<li>{ex}</li>"
             sug_html += "</ul>"
 
-    # Treino montado
+    # Treino personalizado com formatação detalhada (CORRIGIDO)
     montado_html = ""
-    if treino_m:
+    if treino_montado_dict:
         montado_html = f"""
-        <h3>Treino Personalizado — {kw.get('metodo_sel','')}</h3>
-        <p><strong>Séries:</strong> {kw.get('num_series','3')} &nbsp;|&nbsp;
-           <strong>Repetições:</strong> {kw.get('num_reps','12')} &nbsp;|&nbsp;
-           <strong>Intervalo:</strong> {kw.get('intervalo','60s')}</p>
-        <p><em>{METODOS_TREINO.get(kw.get('metodo_sel',''), '')}</em></p>
+        <h3>Treino Personalizado</h3>
+        <p><strong>Método padrão:</strong> {kw.get('metodo_sel', 'Séries convencionais')}</p>
+        <p><strong>Séries padrão:</strong> {kw.get('num_series', '3')} &nbsp;|&nbsp;
+           <strong>Repetições padrão:</strong> {kw.get('num_reps', '12')} &nbsp;|&nbsp;
+           <strong>Intervalo padrão:</strong> {kw.get('intervalo', '60s')}</p>
+        <p><em>{METODOS_TREINO.get(kw.get('metodo_sel', 'Séries convencionais'), {}).get('descricao', '')}</em></p>
         """
-        for grupo, exs in treino_m.items():
-            montado_html += f"<h4 style='color:#0f3460'>{grupo}</h4><ul>"
-            for ex in exs:
-                montado_html += (
-                    f"<li>{ex} — "
-                    f"{kw.get('num_series','3')}×{kw.get('num_reps','12')}"
-                    f" | intervalo: {kw.get('intervalo','60s')}</li>"
-                )
+        for dia, exs_data in treino_montado_dict.items():
+            montado_html += f"<h4 style='color:#0f3460'>{dia}</h4><ul>"
+            if exs_data and isinstance(exs_data, list):
+                for ex in exs_data:
+                    if isinstance(ex, dict):
+                        nome = ex.get("nome", "")
+                        intervalo = ex.get("intervalo", kw.get('intervalo', '60s'))
+                        config_usuario = ex.get("config_metodo", {})
+                        metodo = ex.get("metodo", kw.get('metodo_sel', 'Séries convencionais'))
+                        
+                        # Obtém definição do método
+                        metodo_def = METODOS_TREINO.get(metodo, {})
+                        if not metodo_def:
+                            metodo_def = METODOS_TREINO.get("Séries convencionais", {})
+                        
+                        # Cria config baseada no método, sobrescrevendo com dados do usuário se existirem
+                        config = {}
+                        if metodo_def.get("tipo") == "progressivo":
+                            config = {
+                                "tipo": "progressivo",
+                                "series": config_usuario.get("series") or metodo_def.get("series_padrao", 3),
+                                "reps_por_serie": config_usuario.get("reps_por_serie") or metodo_def.get("reps_por_serie", []),
+                                "carga_por_serie": config_usuario.get("carga_por_serie") or metodo_def.get("carga_por_serie", [])
+                            }
+                        elif metodo_def.get("tipo") == "drop":
+                            config = {
+                                "tipo": "drop",
+                                "series": config_usuario.get("series") or metodo_def.get("series_padrao", 1),
+                                "drops_por_serie": config_usuario.get("drops_por_serie") or metodo_def.get("drops_por_serie", 3),
+                                "reps_iniciais": config_usuario.get("reps_iniciais") or metodo_def.get("reps_iniciais", "até a falha")
+                            }
+                        elif metodo_def.get("tipo") == "amrap":
+                            config = {
+                                "tipo": "amrap",
+                                "tempo": config_usuario.get("tempo") or metodo_def.get("tempo_minutos", 10)
+                            }
+                        elif metodo_def.get("tipo") == "emom":
+                            config = {
+                                "tipo": "emom",
+                                "duracao": config_usuario.get("duracao") or metodo_def.get("duracao_minutos", 10),
+                                "reps_por_minuto": config_usuario.get("reps_por_minuto") or metodo_def.get("reps_por_minuto", "5-10")
+                            }
+                        elif metodo_def.get("tipo") == "circuito":
+                            config = {
+                                "tipo": "circuito",
+                                "series": config_usuario.get("series") or metodo_def.get("series_padrao", 3),
+                                "reps_por_exercicio": config_usuario.get("reps_por_exercicio") or metodo_def.get("reps_por_exercicio", "10-15"),
+                                "exercicios_por_circuito": config_usuario.get("exercicios_por_circuito") or metodo_def.get("exercicios_por_circuito", "6-8")
+                            }
+                        else:
+                            # Fixo, negativa, isometria, etc.
+                            config = {
+                                "tipo": metodo_def.get("tipo", "fixo"),
+                                "series": config_usuario.get("series") or metodo_def.get("series_padrao", 3),
+                                "reps": config_usuario.get("reps") or metodo_def.get("exemplo_reps", "12")
+                            }
+                        
+                        # Aplica filtro de restrição
+                        ex_norm = normalizar_texto(nome)
+                        proibido = False
+                        motivo = ""
+                        for termo, cond, obs in termos_proibidos:
+                            if termo in ex_norm:
+                                proibido = True
+                                motivo = f"{cond} — {obs}"
+                                break
+                        
+                        # Formata a linha
+                        if config.get("tipo") == "progressivo":
+                            reps_str = " → ".join(config.get("reps_por_serie", []))
+                            carga_str = " → ".join(config.get("carga_por_serie", []))
+                            linha = f"{nome} — {config.get('series', 3)} séries | reps: {reps_str} | carga: {carga_str} | intervalo: {intervalo}"
+                        elif config.get("tipo") == "drop":
+                            linha = f"{nome} — {config.get('series', 1)} série(s) com {config.get('drops_por_serie', 3)} drops | reps: {config.get('reps_iniciais', 'falha')}"
+                        elif config.get("tipo") == "superset":
+                            linha = f"{nome} (em superset) — {config.get('series', 3)}×{config.get('reps_por_exercicio', '10-12')}"
+                        elif config.get("tipo") == "amrap":
+                            linha = f"{nome} — AMRAP por {config.get('tempo', 10)} minutos"
+                        elif config.get("tipo") == "emom":
+                            linha = f"{nome} — EMOM por {config.get('duracao', 10)} min | {config.get('reps_por_minuto', '5-10')} reps/min"
+                        elif config.get("tipo") == "circuito":
+                            linha = f"{nome} (circuito) — {config.get('series', 3)} rodadas | {config.get('reps_por_exercicio', '10-15')} reps/exercício"
+                        else:
+                            series = config.get('series', kw.get('num_series', '3'))
+                            reps = config.get('reps', kw.get('num_reps', '12'))
+                            linha = f"{nome} — {series}×{reps} | intervalo: {intervalo}"
+                        
+                        if proibido:
+                            montado_html += f"<li><del>{linha}</del> ⚠️ <em>Contraindicado: {motivo}</em></li>"
+                        else:
+                            montado_html += f"<li>{linha}</li>"
+                    else:
+                        montado_html += f"<li>{ex}</li>"
             montado_html += "</ul>"
 
-    # Condições
-    cond_html = ", ".join(condicoes) if condicoes else "Nenhuma"
-
-    # Alertas
+    # Alertas, balanço, frequência cardíaca e o restante do HTML (igual ao seu original, mantido)
     alertas_html = ""
     for cond in condicoes:
         if cond in RESTRICOES:
             _, _, obs = RESTRICOES[cond]
             alertas_html += f'<div class="alerta"><strong>{cond}:</strong> {obs}</div>'
+    for lesao in lesoes:
+        if lesao in RESTRICOES_LESOES:
+            _, _, obs = RESTRICOES_LESOES[lesao]
+            alertas_html += f'<div class="alerta"><strong>{lesao}:</strong> {obs}</div>'
 
-    # Balanço
     balanco_html = ""
     if get_atual > 0:
-        get_com = round(get_atual + kw['kcal_semana'] / 7)
+        kcal_semana = kw.get('kcal_semana', 0)
+        sessoes_semana = kw.get('sessoes_semana', 0)
+        get_com = round(get_atual + kcal_semana / 7) if kcal_semana > 0 else get_atual
         balanco_html = f"""
         <h2>⚖️ Balanço Energético</h2>
         <table>
           <tr><th>GET em repouso (sem treino)</th><td>{get_atual:.0f} kcal/dia</td></tr>
-          <tr><th>Gasto médio c/ treino ({kw['sessoes_semana']}x/sem)</th>
-              <td>+{kw['kcal_semana']/7:.0f} kcal/dia</td></tr>
+          <tr><th>Gasto médio c/ treino ({sessoes_semana}x/sem)</th>
+              <td>+{kcal_semana/7:.0f} kcal/dia</td></tr>
           <tr><th>GET total estimado</th><td><strong>{get_com} kcal/dia</strong></td></tr>
-        </table>"""
+        </table>
+        """
 
+    fc_html = ""
+    if fc_repouso > 0 and fcm_estimada > 0:
+        fc_html = f"""
+        <h2>❤️ Frequência Cardíaca</h2>
+        <table>
+            <tr><th>FC de Repouso</th><td>{fc_repouso} bpm</td>
+                <th>FC Máxima Estimada</th><td>{fcm_estimada} bpm</td></tr>
+            <tr><th>Zona Leve (60-70%)</th><td colspan="3">{fcm_estimada*0.6:.0f} - {fcm_estimada*0.7:.0f} bpm</td></tr>
+            <tr><th>Zona Moderada (70-80%)</th><td colspan="3">{fcm_estimada*0.7:.0f} - {fcm_estimada*0.8:.0f} bpm</td></tr>
+            <tr><th>Zona Intensa (80-90%)</th><td colspan="3">{fcm_estimada*0.8:.0f} - {fcm_estimada*0.9:.0f} bpm</td></tr>
+        </table>
+        """
+
+    # O restante do HTML (cabeçalho, corpo, rodapé) é igual ao seu original
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -957,11 +1830,11 @@ def _gerar_relatorio_html(**kw):
       <th>Frequência</th><td>{kw.get('frequencia','—')}/semana</td></tr>
   <tr><th>Liberação médica</th><td>{kw.get('liberacao','—')}</td>
       <th>Exames cardíacos</th><td>{kw.get('exames','—')}</td></tr>
-  <tr><th>Condições de saúde</th><td colspan="3">{cond_html}</td></tr>
-  <tr><th>Lesões / Histórico</th><td colspan="3">{kw.get('lesoes','—') or '—'}</td></tr>
+  <tr><th>Condições de saúde / Lesões</th><td colspan="3">{cond_html}</td></tr>
 </table>
 
 {f'<h2>⚠️ Alertas de Saúde</h2>{alertas_html}' if alertas_html else ''}
+{fc_html}
 
 <h2>🏊 Modalidade</h2>
 <table>
@@ -993,11 +1866,12 @@ def _gerar_relatorio_html(**kw):
   • Para atividades aquáticas supervisionadas: verifique Curso de Socorrismo Aquático do profissional.<br>
   • Pare imediatamente se sentir dor no peito, falta de ar intensa, tontura ou dor articular aguda.<br>
   • Hidrate-se, realize aquecimento e resfriamento em toda sessão.<br>
-  • Progressão gradual: nunca aumente carga ou volume mais de 10% por semana.
+  • Progressão gradual: nunca aumente carga ou volume mais de 10% por semana.<br>
+  • Monitore sua frequência cardíaca durante o exercício, mantendo-a na zona alvo.
 </div>
 
 <footer>
-  BioGestão 360 v4.1 | Plano de Treino gerado em {now}<br>
+  BioGestão 360 v5.0 | Plano de Treino gerado em {now}<br>
   Profissional responsável: {kw.get('nome_instrutor') or '—'} | CREF: {kw.get('cref') or '—'}<br>
   Este documento não substitui avaliação presencial de profissional de Educação Física habilitado (CREF).<br>
   Referência MET: Ainsworth BE et al. Compendium of Physical Activities. Med Sci Sports Exerc. 2011.
