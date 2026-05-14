@@ -4393,13 +4393,13 @@ with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
     | Base | Cobertura | Característica |
     |------|-----------|----------------|
     | **BioGestão 360** | 25.000+ produtos do mercado brasileiro | Dados reais de rótulos — **fonte principal** |
-    
-    🔗 **Atribuição (licença ODbL):**
-    - **Open Food Facts:** https://br.openfoodfacts.org
-    - **Licença:** Open Database License (ODbL) — dados abertos para uso livre com atribuição
-    
-    > Este sistema é uma **plataforma de apoio ao profissional de saúde e atividade física** 
-    > e não substitui a consulta a nutricionista, médico ou profissional de Educação Física habilitado.
+    | **TACO/UNICAMP** | 613 alimentos in natura e preparações | 4ª Edição — referência científica oficial brasileira |
+    | **IBGE/POF 2008-2009** | 1.962 alimentos com 16 modos de preparo | Inclui gordura saturada, trans e açúcar total |
+
+    🔗 **Atribuições e licenças:**
+    - **Open Food Facts:** https://br.openfoodfacts.org — Open Database License (ODbL)
+    - **TACO/UNICAMP:** https://www.fao.org/food-composition/tables-and-databases/detail/(brazil--2011)-tabela-brasileira-de-composi%C3%A7%C3%A3o-de-alimentos-(taco)/en
+    - **IBGE POF 2008-2009:** https://www.fao.org/food-composition/tables-and-databases/detail/(brazil--2011)-tabelas-de-composi%C3%A7%C3%A3o-nutricional-dos-alimentos-consumidos-no-brasil/en
     
     ---
     
