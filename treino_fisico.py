@@ -732,6 +732,467 @@ SUGESTOES_TREINO = {
             "Sábado — Descanso ou Alongamento": []
         }
     },
+# Inserir ANTES da linha 735 (antes do fechamento } do dicionário)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # ACADEMIA — níveis faltantes
+    # ══════════════════════════════════════════════════════════════════════════
+    ("🏋️ Academia / Musculação", "Iniciante", "4-5x"): {
+        "nome": "Upper / Lower Split — Iniciante 4x",
+        "descricao": "2 dias MMSS + 2 dias MMII. 3 séries × 12 reps. Intervalo 60s. Aprende o movimento antes de aumentar carga.",
+        "dias": {
+            "Upper A — Seg": ["Supino reto halteres 3×12","Remada curvada 3×12","Desenvolvimento halteres 3×12","Puxada frontal 3×12","Rosca direta 3×12","Tríceps pulley 3×12"],
+            "Lower A — Ter": ["Agachamento livre 3×12","Leg press 3×12","Cadeira extensora 3×15","Panturrilha em pé 4×15","Prancha 3×30s"],
+            "Upper B — Qui": ["Supino inclinado 3×12","Remada unilateral 3×12","Elevação lateral 3×15","Barra fixa assistida 3×8","Rosca martelo 3×12","Dips assistido 3×10"],
+            "Lower B — Sex": ["Stiff halteres 3×12","Cadeira flexora 3×12","Hip thrust 3×12","Avanço 3×10 cada","Panturrilha sentado 4×15"],
+        }
+    },
+    ("🏋️ Academia / Musculação", "Intermediário", "3x"): {
+        "nome": "Full Body Intermediário — Força 3x",
+        "descricao": "3 sessões full body com ênfase em força. 4 séries. Periodização simples: semana de força / semana de volume.",
+        "dias": {
+            "Treino A — Seg": ["Agachamento 4×5 (força)","Supino reto 4×5","Remada curvada 4×5","Desenvolvimento 3×8","Rosca+Tríceps superset 3×10"],
+            "Treino B — Qua": ["Levantamento terra 4×4","Supino inclinado 4×8","Puxada frontal 4×8","Elevação lateral 3×15","Panturrilha 4×15"],
+            "Treino C — Sex": ["Leg press 4×10","Crucifixo 4×12","Remada cavalinho 4×10","Rosca+Tríceps superset 4×12","Prancha 3×45s"],
+        }
+    },
+    ("🏋️ Academia / Musculação", "Intermediário", "6-7x"): {
+        "nome": "PPL Intermediário — Push/Pull/Legs",
+        "descricao": "6 treinos semanais. Duas vezes por semana cada grupo. Intensidade moderada-alta.",
+        "dias": {
+            "Push A — Seg": ["Supino reto 4×8","Supino inclinado 4×10","Desenvolvimento 4×10","Elevação lateral 4×15","Tríceps corda 3×12"],
+            "Pull A — Ter": ["Remada curvada 4×8","Puxada frontal 4×10","Remada unilateral 3×12","Rosca direta 4×10"],
+            "Legs A — Qua": ["Agachamento 4×8","Leg press 4×12","Extensora 3×15","Stiff 4×10","Panturrilha 5×15"],
+            "Push B — Qui": ["Supino inclinado halteres 4×10","Peck deck 3×12","Desenvolvimento halteres 3×12","Triceps testa 3×10"],
+            "Pull B — Sex": ["Pullover 4×12","Barra fixa 4×máx","Remada cavalinho 4×10","Rosca martelo 3×12"],
+            "Legs B — Sáb": ["Stiff 4×8","Flexora 4×12","Hip thrust 4×10","Sumô 3×12","Panturrilha sentado 5×20"],
+        }
+    },
+    ("🏋️ Academia / Musculação", "Avançado", "4-5x"): {
+        "nome": "Upper/Lower Avançado — Força + Hipertrofia",
+        "descricao": "Periodização ondulada avançada. 5×5 nos dias de força, 4×10-12 nos dias de hipertrofia.",
+        "dias": {
+            "Upper Força — Seg": ["Supino reto 5×5","Remada curvada 5×5","Desenvolvimento militar 4×6","Rosca 3×8","Tríceps francês 3×8"],
+            "Lower Força — Ter": ["Agachamento 5×5","Levantamento terra 4×4","Avanço búlgaro 3×8 cada","Panturrilha 5×12"],
+            "Upper Hipertrofia — Qui": ["Supino inclinado 4×10","Puxada neutra 4×10","Face pull 4×15","Rosca 21 3 séries","Tríceps corda drop set 3 séries"],
+            "Lower Hipertrofia — Sex": ["Leg press 4×15","Extensora 4×15+drop","Flexora 4×15","Hip thrust 4×12","Panturrilha sentado 5×20"],
+        }
+    },
+    ("🏋️ Academia / Musculação", "Atleta", "4-5x"): {
+        "nome": "Força Atleta — Powerlifting Adaptado",
+        "descricao": "Foco em força máxima. Periodização por blocos. Exercícios base com variações.",
+        "dias": {
+            "Agachamento (Seg)": ["Agachamento 5×3 (85-90% 1RM)","Leg press pausa 4×6","Extensora 3×10","Stiff 4×6"],
+            "Supino (Ter)": ["Supino reto 5×3 (85-90%)","Supino pausa 4×5","Crucifixo 3×12","Tríceps corda 4×10","Face pull 4×15"],
+            "Terra (Qui)": ["Levantamento terra 5×2 (90%+)","RDL 4×6","Remada curvada 4×6","Puxada 4×8"],
+            "Volume (Sex)": ["Agachamento 4×8 (70%)","Supino 4×8 (70%)","Acessórios: panturrilha, core, ombro"],
+        }
+    },
+    ("🏋️ Academia / Musculação", "Atleta", "6-7x"): {
+        "nome": "Atleta — PPL de Alta Performance",
+        "descricao": "PPL 6x com periodização avançada. Drop sets, rest-pause e técnicas de intensificação.",
+        "dias": {
+            "Push A — Força (Seg)": ["Supino 5×3","Desenvolvimento militar 4×5","Crucifixo 4×10","Tríceps francês 4×8"],
+            "Pull A — Força (Ter)": ["Terra 4×3","Barra fixa lastro 4×5","Remada curvada 4×6","Rosca 4×8"],
+            "Legs A — Foco Quad (Qua)": ["Agachamento 5×4","Front squat 4×5","Leg press 4×10+drop","Extensora 4×15"],
+            "Push B — Volume (Qui)": ["Supino inclinado 5×8","Peck deck 4×12","Desenvolvimento 4×10","Superset tríceps 4 séries"],
+            "Pull B — Volume (Sex)": ["Pullover 4×12","Puxada neutra 4×10","Remada cavalinho 4×10","Superset rosca 4 séries"],
+            "Legs B — Foco Post (Sáb)": ["RDL 5×6","Hip thrust 4×10","Flexora drop set 4 séries","Panturrilha 6×15"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # CARDIOVASCULAR — todos os níveis e atividades específicas
+    # ══════════════════════════════════════════════════════════════════════════
+    ("🏃 Cardiovascular", "Iniciante", "4-5x"): {
+        "nome": "Caminhada Progressiva — Iniciante 4x",
+        "descricao": "Progressão de caminhada para corrida em 8 semanas. 4 sessões semanais.",
+        "dias": {
+            "Sessão 1 (Seg)": ["Caminhada 30 min em ritmo confortável — Zona 2 (60-70% FCM)"],
+            "Sessão 2 (Ter)": ["Caminhada 20 min + 4×2 min corrida leve com 3 min caminhada"],
+            "Sessão 3 (Qui)": ["Caminhada 35 min levemente mais rápido"],
+            "Sessão 4 (Sex)": ["Caminhada/corrida 30 min alternando conforme condicionamento"],
+        }
+    },
+    ("🏃 Cardiovascular", "Intermediário", "3x"): {
+        "nome": "Corrida Intermediário — Base Aeróbica 3x",
+        "descricao": "Construção de base aeróbica sólida. Longo semanal + intervalado + regenerativo.",
+        "dias": {
+            "Longo (Dom)": ["Corrida 40-50 min em ritmo leve — Zona 2 (60-70% FCM)"],
+            "Intervalado (Qua)": ["Aquecimento 10 min → 5×800m em Zona 4 (80-90% FCM) c/ 90s descanso → volta 10 min"],
+            "Regenerativo (Sex)": ["Trote 25-30 min muito leve — Zona 1 (abaixo de 65% FCM)"],
+        }
+    },
+    ("🏃 Cardiovascular", "Avançado", "6-7x"): {
+        "nome": "Corrida Avançado — Alto Volume 6x",
+        "descricao": "Preparação para meia maratona ou maratona. Periodização 3:1 (3 semanas carga, 1 recuperação).",
+        "dias": {
+            "Longo (Dom)": ["90-120 min em Zona 2 — base aeróbica"],
+            "Tempo (Seg)": ["40 min em limiar anaeróbico (Zona 3-4) — pace confortavelmente difícil"],
+            "Intervalado (Ter)": ["8×800m em Zona 5 (pace 5km) | descanso 90s"],
+            "Regenerativo (Qua)": ["30 min muito leve ou descanso"],
+            "Fartlek (Qui)": ["45 min: alterna 2 min forte / 1 min leve"],
+            "Strides (Sex)": ["20 min leve + 8×100m aceleração progressiva"],
+        }
+    },
+    ("🏃 Cardiovascular", "Atleta", "6-7x"): {
+        "nome": "Corrida Atleta — Competição",
+        "descricao": "Estrutura de atleta competitivo. Requer acompanhamento de treinador. Volume 80-120km/semana.",
+        "dias": {
+            "Longo (Dom)": ["120-150 min em Zona 2"],
+            "Qualidade A (Ter)": ["10-12×1000m em pace 10km | descanso 90s"],
+            "Qualidade B (Qui)": ["3×20 min no limiar | descanso 3 min"],
+            "Volume (Seg/Qua/Sex)": ["30-60 min regenerativo ou moderado (Zona 1-2)"],
+        }
+    },
+
+    # Triathlon — todos os níveis (atividade específica com 4 chaves)
+    ("🏃 Cardiovascular", "Triathlon — treino combinado (natação+bike+corrida)", "Iniciante", "3x"): {
+        "nome": "Triathlon Iniciante — Fundamentos das 3 Modalidades",
+        "descricao": "Aprende as 3 modalidades e as transições. Distâncias curtas (Sprint ou Super Sprint).",
+        "dias": {
+            "Natação (Seg)": ["300-400m contínuo crawl | técnica e respiração bilateral | foco na eficiência"],
+            "Bike (Qua)": ["30-40 min ciclismo lazer em zona 2 | pedalada técnica e posição","Musculação: Agachamento 3×12 | Leg press 3×12 | Prancha 3×30s"],
+            "Corrida (Sex)": ["Corrida/caminhada alternada 25 min | Jeff Galloway adaptado","Após: 10 min natação ou mobilidade"],
+        }
+    },
+    ("🏃 Cardiovascular", "Triathlon — treino combinado (natação+bike+corrida)", "Intermediário", "4-5x"): {
+        "nome": "Triathlon Intermediário — Olímpico ou Sprint",
+        "descricao": "Preparação para triathlon olímpico (1.5km nado + 40km bike + 10km corrida). Inclui brick e musculação de suporte.",
+        "dias": {
+            "Natação + Corrida (Seg)": [
+                "Natação: 400m aquec. → 6×100m crawl (30s desc.) → 200m recupero",
+                "Corrida (transição): 15-20 min em ritmo de prova",
+            ],
+            "Musculação Funcional (Ter)": [
+                "Agachamento 4×8 | RDL (peso morto romeno) 4×8",
+                "Remada curvada 4×10 | Supino 3×10",
+                "Prancha + Rotação de tronco 3×45s",
+                "⚡ Fortalecimento previne lesões no triathlon",
+            ],
+            "Bike Moderada (Qua)": [
+                "60-75 min em Zona 2-3 (65-80% FCM)",
+                "Últimos 15 min: aumentar cadência (90-100 rpm)",
+            ],
+            "Natação Técnica (Qui)": [
+                "2000m: drills de braçada + séries de velocidade",
+                "Crawl, costas e viradas de parede",
+            ],
+            "BRICK — Bike + Corrida (Sáb)": [
+                "Bike: 45-60 min em Zona 3 → Transição direta",
+                "Corrida: 20-25 min em ritmo de prova",
+                "⚡ Brick treina o corpo para a transição T2",
+            ],
+        }
+    },
+    ("🏃 Cardiovascular", "Triathlon — treino combinado (natação+bike+corrida)", "Avançado", "6-7x"): {
+        "nome": "Triathlon Avançado — Meio Ironman / Ironman",
+        "descricao": "Volume alto com periodização. Treinos duplos. Para atletas experientes com base sólida.",
+        "dias": {
+            "Longa Natação + Corrida (Seg)": [
+                "Natação: 3000m com séries por zona de FC",
+                "Corrida: 30 min em Zona 2",
+            ],
+            "Musculação (Ter)": [
+                "Levantamento terra 4×5 | Agachamento 4×6",
+                "Remada 4×8 | Core avançado (dead bug, pallof press)",
+                "⚡ Força de base reduz lesão em alto volume",
+            ],
+            "Bike Longa (Qua)": ["2-3h em Zona 2-3 | últimos 20 min em Zona 4 (Sweetspot)"],
+            "Natação Velocidade (Qui)": ["10×200m em Zona 4-5 | descanso 30s | total ~3000m"],
+            "Corrida Qualidade (Sex)": ["3×15 min no limiar | descanso 3 min | total ~50 min"],
+            "BRICK Longo (Sáb)": [
+                "Bike: 90-120 min Zona 3 → Transição",
+                "Corrida: 30-40 min em ritmo de prova",
+            ],
+            "Recuperação (Dom)": ["Natação técnica 1500m ou alongamento/yoga 45 min"],
+        }
+    },
+    ("🏃 Cardiovascular", "Triathlon — treino combinado (natação+bike+corrida)", "Atleta", "6-7x"): {
+        "nome": "Triathlon Atleta — Alto Desempenho",
+        "descricao": "Periodização de atleta competitivo de triathlon. Necessita treinador especializado.",
+        "dias": {
+            "Natação AM + Corrida PM (Seg)": ["AM: 4000m técnica e velocidade | PM: 45 min corrida Zona 2"],
+            "Força + Bike (Ter)": ["Força olímpica 60 min | Bike 90 min Zona 2"],
+            "Natação AM + Bike PM (Qua)": ["AM: 3000m velocidade | PM: 2h bike Zona 3-4"],
+            "Corrida (Qui)": ["70 min: 4×10 min no limiar com 3 min descanso"],
+            "BRICK Longo (Sex)": ["Bike 120 min Zona 3 → Corrida 45 min ritmo de prova"],
+            "Sessão Longa (Sáb)": ["Natação 4000m OU Bike 3-4h OU Corrida 25-30km"],
+            "Recuperação (Dom)": ["Natação técnica leve ou descanso completo"],
+        }
+    },
+
+    # Ciclismo específico
+    ("🏃 Cardiovascular", "Ciclismo moderado (16–22 km/h)", "Iniciante", "3x"): {
+        "nome": "Ciclismo Iniciante — Base e Técnica",
+        "descricao": "Construção de base aeróbica no ciclismo. Cadência técnica e posição no bike.",
+        "dias": {
+            "Bike Leve (Seg)": ["45 min Zona 2 (60-70% FCM) | cadência 80-90 rpm | terreno plano"],
+            "Musculação Suporte (Qua)": ["Agachamento 3×12 | Leg press 3×12 | Extensora 3×15 | Stiff 3×12 | Core 3 séries"],
+            "Bike Moderado (Sex)": ["60 min Zona 2-3 | incluir pequenas subidas | foco na respiração"],
+        }
+    },
+    ("🏃 Cardiovascular", "Ciclismo moderado (16–22 km/h)", "Intermediário", "4-5x"): {
+        "nome": "Ciclismo Intermediário — Volume e Intensidade",
+        "descricao": "Progressão de volume e introdução de treinos de qualidade (intervalados e sweetspot).",
+        "dias": {
+            "Endurance (Seg)": ["90 min Zona 2 | cadência 85-95 rpm"],
+            "Intervalado (Ter)": ["Aquec. 15 min → 5×4 min em Zona 4 (85-90% FCM) desc. 4 min → Resfr. 15 min"],
+            "Musculação (Qua)": ["Agachamento 4×8 | Terra 4×6 | Afundo 3×10 | Core avançado"],
+            "Sweetspot (Qui)": ["30 min Zona 2 → 2×20 min em Zona 3-4 (Sweetspot) → 15 min Zona 1"],
+            "Bike Longa (Sáb/Dom)": ["2-3h em Zona 2 com intensificações nos últimos 20 min"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # AQUÁTICAS — todos os níveis
+    # ══════════════════════════════════════════════════════════════════════════
+    ("🏊 Aquáticas", "Iniciante", "4-5x"): {
+        "nome": "Natação Iniciante — Progressão 4x",
+        "descricao": "Adaptação ao meio aquático e técnica de crawl. Inclui musculação de suporte.",
+        "dias": {
+            "Natação Técnica (Seg)": ["Pernada com prancha 4×25m | Braçada c/ pull buoy 4×25m | Crawl 4×50m"],
+            "Musculação (Ter)": ["Puxada frontal 3×12 | Remada unilateral 3×12 | Desenvolvimento 3×12 | Rotação externa ombro 3×15"],
+            "Natação Volume (Qui)": ["6×50m crawl c/ 30s desc. | 4×25m costas | 200m livre"],
+            "Hidroginástica (Sex)": ["45 min de hidroginástica moderada — baixo impacto"],
+        }
+    },
+    ("🏊 Aquáticas", "Intermediário", "3x"): {
+        "nome": "Natação Intermediário — Técnica e Volume",
+        "descricao": "Aprimoramento técnico com volume progressivo. Foco em crawl e costas.",
+        "dias": {
+            "Técnico (Seg)": ["400m aquec. | Drills 4×50m | 6×100m crawl c/ 20s desc. | 200m costas"],
+            "Velocidade (Qua)": ["300m aquec. | 8×50m sprint (30s desc.) | 4×100m moderado c/ 15s | 200m resfr."],
+            "Longo (Sex)": ["400m aquec. | 1500m contínuo em ritmo moderado | 200m peito resfr."],
+        }
+    },
+    ("🏊 Aquáticas", "Intermediário", "4-5x"): {
+        "nome": "Natação Intermediário — Todos os Nados",
+        "descricao": "Trabalha os 4 nados com séries específicas por técnica e velocidade.",
+        "dias": {
+            "Crawl + Costas (Seg)": ["500m aquec. | 8×100m crawl c/ 15s | 4×50m costas | 200m resfr."],
+            "Musculação Ombro (Ter)": ["Rotação externa 4×15 | Elevation lateral 4×15 | Remada 4×12 | Puxada 4×10"],
+            "Peito + Borboleta (Qua)": ["400m aquec. | 6×50m peito c/ 30s | 4×25m borboleta c/ 45s | 300m livre"],
+            "Velocidade (Qui)": ["12×50m alternando nados | 30s desc. | foco em viragem e saída"],
+            "Longo / Medley (Sáb)": ["3000m contínuo ou séries longas de medley"],
+        }
+    },
+    ("🏊 Aquáticas", "Avançado", "4-5x"): {
+        "nome": "Natação Avançado — Desempenho",
+        "descricao": "Treino de alto desempenho com séries de VO2, velocidade e resistência específica.",
+        "dias": {
+            "Crawl Intenso (Seg)": ["600m aquec. | 10×100m Zona 4 c/ 15s | 400m resfr. | total 2400m"],
+            "Técnica Mista (Ter)": ["Costas 4×100 | Peito 4×100 | Borboleta 4×50 | Drills 4×25"],
+            "Musculação (Qua)": ["Levantamento terra 4×5 | Remada curvada 4×8 | Puxada 4×8 | Core 4 séries"],
+            "Velocidade (Qui)": ["15×50m sprint alternando nados | 20s desc. | saída em bloco"],
+            "Longo (Sáb)": ["4000m crawl em pace aeróbico + 500m técnica"],
+        }
+    },
+    ("🏊 Aquáticas", "Atleta", "6-7x"): {
+        "nome": "Natação Atleta — Competição",
+        "descricao": "Volume de atleta competitivo. 4000-6000m/sessão. Necessita treinador.",
+        "dias": {
+            "Volume Longo (Seg)": ["5000m variando nados e intensidades"],
+            "Velocidade (Ter)": ["20×100m Zona 4-5 c/ 20s desc. | saída com bloco"],
+            "Técnica + Força (Qua)": ["3000m técnica | Musculação específica natação"],
+            "Medley Intenso (Qui)": ["Séries de medley 4×400m c/ 60s desc."],
+            "Sprint (Sex)": ["30×50m sprint c/ 30s desc. — potência máxima"],
+            "Longa (Sáb)": ["6000m contínuo ou com séries longas"],
+            "Recuperação (Dom)": ["1500m técnica muito leve"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # DANÇA — todos os níveis
+    # ══════════════════════════════════════════════════════════════════════════
+    ("💃 Dança", "Iniciante", "3x"): {
+        "nome": "Dança Iniciante — Ritmo e Coordenação",
+        "descricao": "Fundamentos de ritmo, postura e coordenação motora. Qualquer estilo de dança.",
+        "dias": {
+            "Aula 1": ["Aquecimento rítmico 10 min","Passos básicos do estilo escolhido 30 min","Alongamento final 10 min"],
+            "Aula 2": ["Revisão 15 min","Sequência nova 25 min","Prática livre 10 min"],
+            "Aula 3": ["Integração de sequências 20 min","Ensaio coreografia simples 20 min","Resfriamento 10 min"],
+        }
+    },
+    ("💃 Dança", "Iniciante", "4-5x"): {
+        "nome": "Dança Iniciante Intensivo",
+        "descricao": "Progressão mais rápida. Inclui condicionamento físico complementar.",
+        "dias": {
+            "Técnica (Seg/Qui)": ["Aquec. 15 min | Técnica do estilo 40 min | Resfr. 10 min"],
+            "Coreografia (Ter/Sex)": ["Ensaio de sequência 60 min"],
+            "Condicionamento (Qua)": ["Cardio 20 min + Core 20 min + Alongamento 20 min"],
+        }
+    },
+    ("💃 Dança", "Intermediário", "3x"): {
+        "nome": "Dança Intermediário — Técnica e Expressão",
+        "descricao": "Aprimoramento técnico, musicalidade e resistência para dançarinos.",
+        "dias": {
+            "Técnica (Seg)": ["Aquec. específico 15 min | Técnica avançada 40 min | Resfr. 10 min"],
+            "Coreografia (Qua)": ["Ensaio de repertório 60 min com feedback técnico"],
+            "Condicionamento (Sex)": ["Funcional para dança: core, equilíbrio, pliometria 60 min"],
+        }
+    },
+    ("💃 Dança", "Intermediário", "4-5x"): {
+        "nome": "Dança Intermediário — Performance",
+        "descricao": "Foco em performance, resistência e qualidade técnica.",
+        "dias": {
+            "Técnica A (Seg/Qua)": ["Aquec. 15 min | Técnica específica 40 min | Resfr. 10 min"],
+            "Coreografia (Ter/Qui)": ["Ensaio de repertório 60 min"],
+            "Condicionamento (Sex)": ["Funcional para dança 60 min — core, equilíbrio, pliometria"],
+        }
+    },
+    ("💃 Dança", "Avançado", "4-5x"): {
+        "nome": "Dança Avançado — Profissional",
+        "descricao": "Treino de bailarino profissional ou dançarino competitivo.",
+        "dias": {
+            "Barra + Centro (Diário)": ["Aquec. 20 min | Técnica avançada 50 min | Resfr. 15 min"],
+            "Coreografia (Ter/Sex)": ["Ensaio completo de coreografia competitiva 90 min"],
+            "Cross-training (Qua)": ["Pilates 60 min ou Yoga avançado — manutenção e prevenção de lesões"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # MENTE E CORPO — todos os níveis
+    # ══════════════════════════════════════════════════════════════════════════
+    ("🧘 Mente e Corpo", "Iniciante", "3x"): {
+        "nome": "Yoga / Pilates Iniciante — Fundamentos",
+        "descricao": "Respiração, consciência corporal e mobilidade. Sem exigência de flexibilidade prévia.",
+        "dias": {
+            "Sessão 1 — Base": ["Respiração diafragmática 5 min","Posturas em pé 20 min","Posturas no chão 20 min","Savasana 5 min"],
+            "Sessão 2 — Core": ["Prancha 3×30s","Dead bug 3×10","Bird dog 3×10","Alongamento global 20 min"],
+            "Sessão 3 — Mobilidade": ["Mobilização articular 10 min","Alongamento progressivo 40 min"],
+        }
+    },
+    ("🧘 Mente e Corpo", "Iniciante", "4-5x"): {
+        "nome": "Yoga / Pilates Iniciante — Prática Frequente",
+        "descricao": "4 sessões semanais para desenvolvimento rápido de flexibilidade e força de core.",
+        "dias": {
+            "Força (Seg/Qui)": ["Pilates solo 60 min — foco em powerhouse (core profundo)"],
+            "Flexibilidade (Ter)": ["Yoga Hatha 60 min — posturas sustentadas"],
+            "Mobilidade (Qua/Sex)": ["Mobilização articular + alongamento progressivo 45 min"],
+        }
+    },
+    ("🧘 Mente e Corpo", "Intermediário", "3x"): {
+        "nome": "Yoga / Pilates Intermediário — Força e Flexibilidade",
+        "descricao": "Equilíbrio entre força, flexibilidade e controle. Para praticantes com base.",
+        "dias": {
+            "Força (Seg)": ["Pilates aparelhos ou sequência avançada de core 60 min"],
+            "Flexibilidade (Qua)": ["Yoga restaurativo ou Yin Yoga 60 min"],
+            "Equilíbrio (Sex)": ["Posturas de equilíbrio, inversões assistidas e pranayama"],
+        }
+    },
+    ("🧘 Mente e Corpo", "Intermediário", "4-5x"): {
+        "nome": "Yoga / Pilates Intermediário — Desenvolvimento Completo",
+        "descricao": "4-5 sessões com foco em diferentes aspectos do treinamento mente-corpo.",
+        "dias": {
+            "Força Core (Seg)": ["Pilates mat avançado ou aparelhos 60 min"],
+            "Yoga Dinâmico (Ter)": ["Vinyasa ou Power Yoga 60 min"],
+            "Yin / Restaurativo (Qua)": ["Yoga restaurativo ou Yin 60 min"],
+            "Mobilidade (Qui)": ["Mobilização articular + pranayama 45 min"],
+            "Integração (Sex/Sáb)": ["Sequência completa combinando força, flex. e respiração"],
+        }
+    },
+    ("🧘 Mente e Corpo", "Avançado", "4-5x"): {
+        "nome": "Yoga / Pilates Avançado — Performance",
+        "descricao": "Prática avançada com inversões, posturas complexas e breathing técnico.",
+        "dias": {
+            "Força Avançada (Seg/Qui)": ["Ashtanga ou Pilates nível avançado 90 min"],
+            "Yin Profundo (Ter)": ["Yin Yoga 75 min — posturas sustentadas 5-10 min"],
+            "Meditação + Pranayama (Qua)": ["Técnicas respiratórias avançadas + meditação guiada 45 min"],
+            "Integração (Sex)": ["Sequência completa com inversões e transições fluidas 90 min"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # LUTAS — vários níveis e modalidades
+    # ══════════════════════════════════════════════════════════════════════════
+    ("🥋 Lutas", "Jiu-Jitsu (rolagem / luta)", "Iniciante", "3x"): {
+        "nome": "Jiu-Jitsu Iniciante — Técnica e Posicionamento",
+        "descricao": "Fundamentos do BJJ: posições de guarda, passagem, finalização básica.",
+        "dias": {
+            "Técnica (Seg)": ["Aquecimento específico BJJ 15 min","Técnica nova (2 posições) 40 min","Rolagem posicional leve 20 min","Alongamento 10 min"],
+            "Condicionamento (Qua)": ["Exercícios físicos específicos: puxadas, quedas técnicas, bridging","Circuito 3 rodadas: sprawl + grappling dummy + escada de agilidade"],
+            "Técnica + Rolagem (Sex)": ["Revisão técnica 30 min","Rolagem com parceiros de nível similar 30 min","Análise de posições"],
+        }
+    },
+    ("🥋 Lutas", "Judô / Jiu-Jitsu", "Intermediário", "4-5x"): {
+        "nome": "Judô/BJJ Intermediário — Condicionamento e Técnica",
+        "descricao": "Treino específico para artes marciais de agarre. Força de pegada, explosão e resistência.",
+        "dias": {
+            "Técnica (Seg/Qua/Sex)": ["Aquec. BJJ/Judô 15 min | Técnica 40 min | Randori/Rolagem 30 min"],
+            "Força e Pegada (Ter)": ["Puxada supinada 4×8","Remada cavalinho 4×10","Rosca grossa 4×12","Farmer's carry 4×20m","Prancha com peso 4×45s"],
+            "Condicionamento (Qui)": ["HIIT específico: 8 ex. × 30s trabalho / 15s desc. — 6 rodadas","Burpees, kettlebell, corda naval, sprawl"],
+        }
+    },
+    ("🥋 Lutas", "Boxe / Muay Thai / Kickboxing", "Iniciante", "3x"): {
+        "nome": "Boxe/Muay Thai Iniciante — Técnica de Base",
+        "descricao": "Guarda, jab, direto, giro de quadril e defesas básicas. Condicionamento aeróbico.",
+        "dias": {
+            "Técnica (Seg)": ["Sombra 3×3 min | Mitts com parceiro 3×2 min | Saco pesado 3×3 min","Aquecimento e resfriamento 15 min"],
+            "Condicionamento (Qua)": ["Corda 3×3 min","Saco pesado 5×3 min (intensidade leve-moderada)","Core: ab wheel + twists + prancha"],
+            "Técnica + Sparring Leve (Sex)": ["Revisão de combos | Sparring técnico controlado 3×2 min"],
+        }
+    },
+    ("🥋 Lutas", "Boxe / Muay Thai / Kickboxing", "Intermediário", "4-5x"): {
+        "nome": "Boxe/Muay Thai Intermediário — Combos e Condicionamento",
+        "descricao": "Desenvolvimento de combos, defesas e condicionamento específico para luta.",
+        "dias": {
+            "Técnica (Seg/Qua/Sex)": ["Sombra 5×3 min | Mitts 4×3 min | Saco 4×3 min | Sparring 3×3 min"],
+            "Força Funcional (Ter)": ["Supino 4×8 | Desenvolvimento 4×8 | Remada 4×10 | Core pesado"],
+            "Resistência (Qui)": ["Corda 10×1 min c/ 30s desc. | Sprint 8×100m | HIIT 3 rodadas"],
+        }
+    },
+    ("🥋 Lutas", "Taekwondo / Karatê / Artes Marciais em pé", "Iniciante", "3x"): {
+        "nome": "Artes Marciais em Pé — Iniciante",
+        "descricao": "Postura básica, chutes e socos fundamentais. Flexibilidade e equilíbrio.",
+        "dias": {
+            "Técnica (Seg)": ["Aquec. 15 min | Postura + Deslocamentos 20 min | Chutes básicos 25 min | Alongamento 15 min"],
+            "Condicionamento (Qua)": ["Corda 3×3 min | Pliometria (saltos) 20 min | Core 20 min"],
+            "Técnica + Kata (Sex)": ["Revisão técnica 30 min | Kata ou sequência básica 30 min"],
+        }
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # ESPORTES — modalidades coletivas e individuais
+    # ══════════════════════════════════════════════════════════════════════════
+    ("⚽ Esportes Olímpicos", "Futebol de Campo (recreativo)", "Iniciante", "3x"): {
+        "nome": "Futebol Recreativo — Condicionamento Base",
+        "descricao": "Condicionamento para jogar futebol recreativo sem lesões.",
+        "dias": {
+            "Condicionamento (Seg)": ["Corrida 20 min Zona 2","Agachamento 3×12 | Stiff 3×12 | Agilidade (cones) 15 min"],
+            "Técnica (Qua)": ["Fundamentos: passe, domínio, chute 45 min | Pequeno jogo 15 min"],
+            "Jogo + Física (Sex)": ["Aquec. 15 min | Partida 60 min | Resfr. e alongamento 15 min"],
+        }
+    },
+    ("⚽ Esportes Olímpicos", "Futsal / Futebol Society", "Intermediário", "4-5x"): {
+        "nome": "Futsal / Society Intermediário — Performance",
+        "descricao": "Treino específico de futsal com técnica, tática e condicionamento de alta intensidade.",
+        "dias": {
+            "Técnica (Seg/Qui)": ["Aquec. 15 min | Fundamentos técnicos 40 min | Jogo reduzido 20 min"],
+            "Força (Ter)": ["Agachamento 4×8 | Leg press 4×10 | Stiff 4×8 | Saltos 4×10"],
+            "HIIT Específico (Qua)": ["10×30m sprint c/ 30s desc. | Circuito agilidade 20 min"],
+            "Jogo (Sex)": ["Partida completa com análise tática"],
+        }
+    },
+    ("⚽ Esportes Olímpicos", "Voleibol (jogo recreativo)", "Iniciante", "3x"): {
+        "nome": "Vôlei Recreativo — Fundamentos",
+        "descricao": "Saque, manchete, toque e bloqueio. Condicionamento para quadra.",
+        "dias": {
+            "Técnica (Seg)": ["Manchete 20 min | Toque 20 min | Saque 15 min | Jogo 20 min"],
+            "Condicionamento (Qua)": ["Saltos 4×10 | Lateralidade (sliding) 20 min | Core 20 min"],
+            "Jogo (Sex)": ["Partida 60 min com feedback técnico"],
+        }
+    },
+    ("⚽ Esportes Olímpicos", "Tênis (simples)", "Intermediário", "4-5x"): {
+        "nome": "Tênis Intermediário — Técnica e Condicionamento",
+        "descricao": "Desenvolvimento de golpes, movimentação em quadra e resistência.",
+        "dias": {
+            "Técnica (Seg/Qui)": ["Aquec. 15 min | Treino de golpes 45 min | Jogo 30 min"],
+            "Força (Ter)": ["Rotação de tronco 4×15 | Supino 4×10 | Remada 4×10 | Agachamento 4×10"],
+            "Condicionamento (Qua)": ["Sprints laterais 10×30m | Footwork 20 min | HIIT 15 min"],
+            "Jogo Competitivo (Sex)": ["Pelada ou set de treino 90 min"],
+        }
+    },
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -987,25 +1448,50 @@ def normalizar_texto(texto):
 # ══════════════════════════════════════════════════════════════════════════════
 def buscar_sugestao_inteligente(categoria, atividade, nivel, frequencia):
     """
-    Busca a sugestão de treino mais adequada baseada na categoria, atividade, nível e frequência.
+    Busca a sugestão mais adequada respeitando:
+    1. Atividade específica + nível + frequência exata
+    2. Atividade específica + nível + frequência próxima
+    3. Categoria + nível + frequência exata (sem cair p/ outra categoria!)
+    4. Categoria + nível diferente (mais próximo, nunca muda de categoria)
     """
-    freq_map = {"1-2x": "3x", "3x": "3x", "4-5x": "4-5x", "6-7x": "6-7x"}
+    freq_map   = {"1-2x": "3x", "3x": "3x", "4-5x": "4-5x", "6-7x": "6-7x"}
     freq_chave = freq_map.get(frequencia, "3x")
-    
-    # Tenta buscar com atividade específica (se for uma atividade relevante)
-    niveis_tentativa = [nivel, "Intermediário", "Iniciante", "Avançado"]
-    
-    for n in niveis_tentativa:
-        chave_especifica = (categoria, atividade, n, freq_chave)
-        if chave_especifica in SUGESTOES_TREINO:
-            return SUGESTOES_TREINO[chave_especifica]
-    
-    # Tenta buscar genérico da categoria
-    for n in niveis_tentativa:
-        chave_generica = (categoria, n, freq_chave)
-        if chave_generica in SUGESTOES_TREINO:
-            return SUGESTOES_TREINO[chave_generica]
-    
+
+    _niveis_ord = ["Atleta", "Avançado", "Intermediário", "Iniciante"]
+    _freqs_ord  = ["6-7x", "4-5x", "3x"]
+    idx_nivel   = _niveis_ord.index(nivel) if nivel in _niveis_ord else 3
+
+    # 1. Atividade específica — nível exato — frequência exata
+    s = SUGESTOES_TREINO.get((categoria, atividade, nivel, freq_chave))
+    if s: return s
+
+    # 2. Atividade específica — nível exato — outra frequência
+    for f in _freqs_ord:
+        s = SUGESTOES_TREINO.get((categoria, atividade, nivel, f))
+        if s: return s
+
+    # 3. Atividade específica — nível mais próximo
+    for n in _niveis_ord[idx_nivel:]:
+        for f in _freqs_ord:
+            s = SUGESTOES_TREINO.get((categoria, atividade, n, f))
+            if s: return s
+
+    # 4. Categoria genérica — nível exato — frequência exata
+    s = SUGESTOES_TREINO.get((categoria, nivel, freq_chave))
+    if s: return s
+
+    # 5. Categoria genérica — nível exato — outra frequência
+    for f in _freqs_ord:
+        s = SUGESTOES_TREINO.get((categoria, nivel, f))
+        if s: return s
+
+    # 6. Categoria genérica — nível mais próximo (NUNCA muda de categoria)
+    for n in _niveis_ord[idx_nivel:]:
+        for f in _freqs_ord:
+            s = SUGESTOES_TREINO.get((categoria, n, f))
+            if s: return s
+
+    # 7. Nenhuma sugestão encontrada — retorna None (seção 5.5 entra em ação)
     return None
 
 
