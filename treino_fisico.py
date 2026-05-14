@@ -672,16 +672,50 @@ def tela_treino_fisico(peso_kg=0.0, dados_paciente=None):
     freq_map   = {"1-2x": "3x", "3x": "3x", "4-5x": "4-5x", "6-7x": "6-7x"}
     freq_chave = freq_map.get(frequencia, "3x")
     chave      = (categoria, nivel, freq_chave)
-    fallbacks  = [
-        (categoria, nivel, "3x"),
-        (categoria, "Iniciante", "3x"),
-        ("🏋️ Academia / Musculação", nivel, freq_chave),
-        ("🏋️ Academia / Musculação", "Iniciante", "3x"),
-    ]
+
+    # Fallbacks inteligentes — tenta manter o nível, só muda a frequência
+    # Nunca cai direto para Iniciante sem antes tentar o nível correto
+    _niveis   = ["Avançado", "Intermediário", "Iniciante"]
+    _freqs    = ["6-7x", "4-5x", "3x"]
+    _cats     = [categoria, "🏋️ Academia / Musculação"]
+
     sugestao = SUGESTOES_TREINO.get(chave)
+
     if not sugestao:
-        for fb in fallbacks:
-            sugestao = SUGESTOES_TREINO.get(fb)
+        # 1. Mesmo nível, mesma categoria, frequência diferente
+        for f in _freqs:
+            s = SUGESTOES_TREINO.get((categoria, nivel, f))
+            if s:
+                sugestao = s
+                break
+
+    if not sugestao:
+        # 2. Mesmo nível, academia, frequência diferente
+        for f in _freqs:
+            s = SUGESTOES_TREINO.get(("🏋️ Academia / Musculação", nivel, f))
+            if s:
+                sugestao = s
+                break
+
+    if not sugestao:
+        # 3. Nível abaixo, mesma categoria e frequência
+        for n in _niveis:
+            for f in _freqs:
+                s = SUGESTOES_TREINO.get((categoria, n, f))
+                if s:
+                    sugestao = s
+                    break
+            if sugestao:
+                break
+
+    if not sugestao:
+        # 4. Academia, nível abaixo
+        for n in _niveis:
+            for f in _freqs:
+                s = SUGESTOES_TREINO.get(("🏋️ Academia / Musculação", n, f))
+                if s:
+                    sugestao = s
+                    break
             if sugestao:
                 break
 
