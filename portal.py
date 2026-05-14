@@ -1,365 +1,328 @@
 """
 portal.py — BioGestão 360
 ===========================
-Página de instrução / landing page interativa.
-Agora com guia visual completo: sidebar, importador de cardápio,
-avaliação física, montagem de treino, plano alimentar, alertas OMS,
-política de privacidade e muito mais.
+Demonstração visual interativa do app.
+Mostra na prática como usar cada seção, com componentes reais do Streamlit,
+setas, círculos e simulações que funcionam tanto em modo claro quanto escuro.
 """
 
 import streamlit as st
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CSS PERSONALIZADO PARA ELEMENTOS VISUAIS (setas, círculos, cards, animações)
+# CSS adaptado para claro/escuro (usa variáveis do Streamlit)
 # ══════════════════════════════════════════════════════════════════════════════
 _CSS = """
 <style>
-/* Fonte e reset */
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
-* { font-family: 'Inter', sans-serif; }
-
-/* Hero aprimorado */
-.hero {
-    background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
-    border-radius: 24px; padding: 48px 32px; color: white;
-    text-align: center; margin-bottom: 32px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+/* Garante que os cards respeitem o tema */
+.demo-card {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    margin: 12px 0;
+    transition: all 0.2s;
 }
-.hero h1 { font-size: 2.8em; margin: 0 0 8px; background: linear-gradient(135deg, #ffd700, #ff8c00);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.hero p  { font-size: 1.2em; opacity: 0.9; margin: 8px 0; }
-.hero small { opacity: 0.7; }
-
-/* Card de passo a passo */
-.tour-step {
-    background: #f8fafc; border-radius: 20px;
-    border: 1px solid #e2e8f0; margin-bottom: 28px;
-    overflow: hidden; transition: all 0.2s;
+.demo-card:hover {
+    box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
 }
-.tour-step:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); transform: translateY(-2px); }
-.tour-header {
-    background: #0f3460; color: white; padding: 14px 20px;
-    font-size: 1.3rem; font-weight: 600;
-    display: flex; align-items: center; gap: 12px;
-}
-.tour-header .step-num {
-    background: #ffd700; color: #0f3460;
-    width: 36px; height: 36px; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 1.2rem;
-}
-.tour-body { padding: 20px 24px; }
-.tour-body p { margin-bottom: 12px; line-height: 1.5; }
-.seta {
-    display: inline-block; font-size: 1.6rem; margin: 0 5px;
-    animation: bounce 1s infinite;
-}
-@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(8px);} }
-
-/* Badges e destaques */
-.badge-highlight {
-    background: #fef9c3; color: #854d0e; border-radius: 30px;
-    padding: 4px 12px; font-size: 0.75rem; font-weight: 600;
-    display: inline-block; margin-right: 8px;
-}
-.badge-pro { background: #dcfce7; color: #166534; }
-.badge-ia { background: #e0f2fe; color: #0369a1; }
-.badge-oms1 { background: #fee2e2; color: #b91c1c; }
-.badge-oms2a { background: #ffedd5; color: #9a3412; }
-
-/* Simulação de cardápio minimalista */
-.sim-cardapio {
-    background: white; border-radius: 12px; border: 1px solid #e2e8f0;
-    padding: 12px; font-family: monospace; font-size: 0.8rem;
-    margin: 15px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-.sim-cardapio .refeicao { font-weight: bold; color: #0f3460; margin-top: 8px; }
-.sim-cardapio .item { margin-left: 12px; }
-
-/* Grid de planos */
-.planos-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px; margin: 20px 0;
-}
-.plano-card {
-    border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px;
-    background: white; text-align: center; transition: all 0.2s;
-}
-.plano-card:hover { border-color: #f59e0b; transform: scale(1.02); }
-.plano-card .preco { font-size: 1.7em; font-weight: 800; color: #0f3460; }
-.plano-card .nome { font-weight: 700; margin-bottom: 6px; }
-.plano-card .desc { font-size: 12px; color: #64748b; }
-
-/* Caixas de exemplo interativo (não funcional, apenas visual) */
-.demo-box {
-    background: #f1f5f9; border-radius: 12px; padding: 12px;
-    border-left: 5px solid #f59e0b; margin: 12px 0;
-    font-size: 0.85rem;
-}
-.demo-box code { background: #e2e8f0; padding: 2px 6px; border-radius: 6px; }
-.arrow-pointer {
-    position: relative;
+.arrow {
     display: inline-block;
-    animation: pointer-shake 0.8s infinite;
+    font-size: 1.8rem;
+    animation: bounce 0.8s infinite;
+    margin: 0 8px;
 }
-@keyframes pointer-shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(5px); }
-    75% { transform: translateX(-5px); }
-    100% { transform: translateX(0); }
+@keyframes bounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
 }
-
-.rodape-portal {
-    text-align: center; color: #64748b; font-size: 12px;
-    margin-top: 48px; padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+.highlight {
+    background: linear-gradient(120deg, #fef9c3 0%, #fef9c3 40%, transparent 60%);
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 6px;
+}
+.step-badge {
+    background: #f59e0b;
+    color: white;
+    border-radius: 40px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-right: 12px;
+}
+.mock-sidebar {
+    background: var(--secondary-background-color);
+    border-radius: 16px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+.mock-input {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 6px 0;
+    font-family: monospace;
+}
+.icone-grande {
+    font-size: 2.2rem;
+    margin-right: 12px;
+}
+.separator {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    margin: 24px 0;
+}
+code {
+    background: var(--secondary-background-color);
+    padding: 2px 6px;
+    border-radius: 8px;
 }
 </style>
 """
 
-# ══════════════════════════════════════════════════════════════════════════════
-# FUNÇÃO PRINCIPAL DA PÁGINA
-# ══════════════════════════════════════════════════════════════════════════════
+
 def tela_portal():
     st.markdown(_CSS, unsafe_allow_html=True)
 
-    # ── HERO ─────────────────────────────────────────────────────────────────
+    # ── TÍTULO PRINCIPAL ─────────────────────────────────────────────────────
     st.markdown("""
-    <div class="hero">
-        <h1>🏋️ BioGestão 360</h1>
-        <p><strong>Plataforma completa de avaliação física, planejamento alimentar e treino</strong></p>
-        <p>✅ 100% gratuita · ✅ Dados científicos · ✅ Zero-Footprint</p>
-        <small>Versão 5.0 — Guia de uso interativo</small>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── INTRODUÇÃO RÁPIDA ─────────────────────────────────────────────────────
-    st.markdown("""
-    <div style="background:#eef2ff; border-radius:20px; padding:20px; margin:20px 0; text-align:center;">
-        <span style="font-size:2rem;">👋</span>
-        <h3>Bem‑vindo ao BioGestão 360!</h3>
-        <p>Este guia mostra <strong>exatamente como usar cada recurso</strong> — da sidebar ao laudo técnico.<br>
-        Siga os passos abaixo e descubra tudo o que você pode fazer.</p>
+    <div style="text-align: center; margin-bottom: 32px;">
+        <span style="font-size: 3rem;">🏋️</span>
+        <h1 style="margin-bottom: 0;">BioGestão 360</h1>
+        <p style="font-size: 1.1rem;">Guia visual interativo – aprenda usando a própria interface</p>
     </div>
     """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════════════
-    # PASSO A PASSO VISUAL (TOUR)
+    # 1. SIDEBAR MOCK (mostra exatamente onde preencher)
     # ══════════════════════════════════════════════════════════════════════════
-
-    # 1. SIDEBAR – PERFIL BIOLÓGICO
-    with st.container():
+    with st.expander("📌 1. PREENCHA A BARRA LATERAL →", expanded=True):
         st.markdown("""
-        <div class="tour-step">
-            <div class="tour-header">
-                <span class="step-num">1</span>
-                <span>⚙️ Barra Lateral — Onde tudo começa</span>
+        <div class="mock-sidebar">
+            <span class="step-badge">🔑 ESSENCIAL</span> 
+            <strong>Todos os cálculos começam aqui!</strong>
+            <div style="margin-top: 12px;">
+                <div class="mock-input">⚖️ Peso Atual (kg): <span style="color:#f59e0b;">70.0</span> <span class="arrow">⬅️</span> <em>digite seu peso</em></div>
+                <div class="mock-input">📏 Altura (cm): <span style="color:#f59e0b;">170</span></div>
+                <div class="mock-input">🎂 Idade (anos): <span style="color:#f59e0b;">30</span></div>
+                <div class="mock-input">⚥ Sexo: <span style="color:#f59e0b;">Masculino / Feminino</span> <span class="arrow">⬅️</span> clique no botão</div>
+                <div class="mock-input">🎯 Objetivo: <span style="color:#f59e0b;">Perda de peso / Ganho de peso</span></div>
+                <div class="mock-input">📅 Planejamento: <span style="color:#f59e0b;">Diário / Semanal</span></div>
+                <div class="mock-input">🥦 Tabela nutricional: <span style="color:#f59e0b;">BioGestão 360 / TACO / IBGE</span></div>
             </div>
-            <div class="tour-body">
-                <p><span class="badge-highlight">🔑 PRIMEIRO PASSO</span> Preencha seus dados <strong>na barra lateral esquerda</strong>:
-                <strong>Peso, Altura, Idade, Sexo, Objetivo e Atividade Física</strong>.</p>
-                <div class="demo-box">
-                    <span class="arrow-pointer">👉</span> <strong>Exemplo:</strong> Peso 70kg · Altura 170cm · Idade 30 anos · Masculino · Objetivo "Perda de peso"
-                </div>
-                <p>✅ Após preencher, todas as seções do app serão atualizadas com <strong>GET (gasto calórico), TMB, IMC, % gordura estimada</strong> e projeções de resultado.</p>
-                <p><span class="badge-highlight">📌 DICA</span> Escolha o <strong>tipo de planejamento</strong> (Diário ou Semanal) e a <strong>tabela nutricional</strong> (BioGestão 360 / TACO / IBGE) também na sidebar.</p>
-            </div>
+            <p style="margin-top: 12px; font-size: 0.85rem;">✅ Após preencher, <strong>GET, TMB, IMC e % gordura</strong> aparecem automaticamente no dashboard.</p>
         </div>
         """, unsafe_allow_html=True)
 
-    # 2. SEÇÃO 24 – DADOS DO PACIENTE E PROFISSIONAL + RESTRIÇÕES
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">2</span>
-            <span>📋 Identificação da Consulta (Seção 24)</span>
-        </div>
-        <div class="tour-body">
-            <p><span class="badge-highlight">📝 IMPORTANTE</span> Cadastre nome, telefone, e‑mail do paciente e dados do profissional (CREF/CRN).</p>
-            <p><strong>⚡ Campo "Observações":</strong> informe aqui <strong>restrições alimentares, alergias ou intolerâncias</strong>.<br>
-            Exemplo: <code>"alergia a camarão"</code> ou <code>"intolerância a lactose"</code> ou <code>"não pode glúten"</code>.</p>
-            <div class="demo-box">
-                ✅ O sistema <strong>alertará automaticamente</strong> ao adicionar alimentos que contenham o ingrediente restrito.<br>
-                <span class="arrow-pointer">👇</span> O alerta aparecerá no cardápio e na tabela do importador.
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 3. SEÇÃO 24.1 – IMPORTADOR AUTOMÁTICO DE CARDÁPIO
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">3</span>
-            <span>📥 Importador Automático (Seção 24.1)</span>
-        </div>
-        <div class="tour-body">
-            <p><span class="badge-highlight badge-ia">🤖 INTELIGENTE</span> Cole seu cardápio em texto puro — o sistema identifica alimentos, quantidades e busca valores nutricionais na hierarquia <strong>TACO → IBGE → BioGestão 360 → Estimativa</strong>.</p>
-            <div class="sim-cardapio">
-                <strong>📋 Exemplo de cardápio (diário):</strong>
-                <div class="refeicao">Café da manhã:</div>
-                <div class="item">• 2 fatias de pão integral · 200ml de leite desnatado</div>
-                <div class="refeicao">Almoço:</div>
-                <div class="item">• 100g de arroz integral · 80g de feijão · 150g de frango grelhado</div>
-                <div class="refeicao">Jantar:</div>
-                <div class="item">• 100g de ovos mexidos · 30g de alface</div>
-            </div>
-            <p>✔️ Após importar, você pode <strong>marcar/desmarcar itens</strong>, ver <strong>alertas da OMS (Grupos 1,2A,2B)</strong> e restrições alimentares, além de <strong>baixar CSV ou relatório HTML completo com gráficos</strong>.</p>
-            <p><span class="badge-highlight">💡 DICA</span> Use o modo <strong>semanal</strong> para planejar 7 dias. O sistema soma totais por dia e mostra a média diária.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 4. SEÇÃO 25 – AVALIAÇÃO FÍSICA PROFISSIONAL
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">4</span>
-            <span>📏 Avaliação Física (Seção 25 – Jackson & Pollock)</span>
-        </div>
-        <div class="tour-body">
-            <p><span class="badge-highlight badge-pro">🔬 PROFISSIONAL</span> Protocolo de dobras cutâneas (3 ou 7 dobras), circunferências, handgrip e banco de Wells.</p>
-            <div class="demo-box">
-                <strong>📐 Exemplo de medições (adipômetro):</strong><br>
-                Tríceps: 12,0mm | Peitoral: 8,5mm | Abdome: 20,2mm | Coxa: 18,0mm<br>
-                <span class="arrow-pointer">➡️</span> O sistema calcula % de gordura, massa magra, classificação (Atleta/Saudável/Obesidade) e risco à saúde.
-            </div>
-            <p>✔️ Gera <strong>laudo completo em HTML</strong> com gráficos de composição corporal, comparativo por idade e biotipo.</p>
-            <p><span class="badge-highlight">⚠️ ATENÇÃO</span> Esta seção é recomendada para profissionais de Educação Física com CREF ativo. Os resultados são mais precisos que a estimativa por IMC.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 5. SEÇÃO 25.1 – MONTE SEU TREINO (NOVO)
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">5</span>
-            <span>🏋️ Monte Seu Treino (Seção 25.1 – Educação Física)</span>
-        </div>
-        <div class="tour-body">
-            <p><span class="badge-highlight">🎯 FERRAMENTA COMPLETA</span> Crie planos de treino personalizados com:</p>
-            <ul>
-                <li><strong>Anamnese</strong> – condições de saúde, lesões, liberação médica, frequência cardíaca de repouso.</li>
-                <li><strong>Seleção de modalidade</strong> – musculação, corrida, natação, triatlo, dança, lutas, esportes olímpicos, adaptado PCD.</li>
-                <li><strong>Cálculo de calorias</strong> – baseado no MET (Compendium of Physical Activities).</li>
-                <li><strong>Sugestão automática de treino</strong> – conforme nível, frequência e atividade escolhida.</li>
-                <li><strong>Montagem livre</strong> – escolha grupos musculares, exercícios (120+), método de treino (15 métodos: superset, drop set, pirâmide, AMRAP…).</li>
-            </ul>
-            <p>✔️ Gera <strong>relatório HTML</strong> com todo o plano, alertas de contraindicações (com base nas lesões/condições) e zonas de frequência cardíaca.</p>
-            <div class="demo-box">
-                <span class="arrow-pointer">🎯</span> <strong>Exemplo de método:</strong> "Supino reto — 4×12 | intervalo 60s" (séries convencionais) ou "Agachamento — 3 séries piramidal: 12→10→8 reps com carga 40→50→60kg".
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 6. SEÇÃO 26 – MONTAGEM DO PLANO ALIMENTAR
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">6</span>
-            <span>🍏 Plano Alimentar (Seção 26)</span>
-        </div>
-        <div class="tour-body">
-            <p><span class="badge-highlight">🔍 BUSCA MANUAL</span> Escolha refeição, alimento (com suporte a marcas), quantidade e unidade (g/ml/un).</p>
-            <p>✔️ O sistema exibe <strong>macros, micronutrientes (açúcar, saturada, trans, fibra, sódio)</strong> e alertas de risco OMS em tempo real.</p>
-            <p><span class="badge-highlight">📌 REGRA DE OURO</span> Para alimentos em "unidades" (ex: biscoito, ovo, pão), informe o <strong>peso real de UMA unidade</strong> no campo "Peso Real (g/ml)" – assim o cálculo fica preciso.</p>
-            <div class="demo-box">
-                <span class="arrow-pointer">🍪</span> Exemplo: 1 biscoito maisena = 5g → informe Peso Real = 5g, Quantidade = 2 → total 10g.
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 7. ALERTAS OMS / IARC E RELATÓRIOS
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">7</span>
-            <span>⚠️ Alertas Científicos (OMS/IARC) e Relatórios</span>
-        </div>
-        <div class="tour-body">
-            <p>O BioGestão 360 sinaliza automaticamente alimentos com classificação de risco pela <strong>Agência Internacional de Pesquisa sobre o Câncer (IARC/OMS)</strong>:</p>
-            <ul>
-                <li><span class="badge-highlight badge-oms1">🔴 GRUPO 1 – Cancerígeno confirmado</span> (carnes processadas, álcool)</li>
-                <li><span class="badge-highlight badge-oms2a">🟠 GRUPO 2A – Provavelmente cancerígeno</span> (carne vermelha)</li>
-                <li><span class="badge-highlight">🟣 GRUPO 2B – Possivelmente cancerígeno</span> (aspartame, bebidas >65°C)</li>
-            </ul>
-            <p>✔️ Todos os laudos (importador de cardápio, avaliação física, treino, plano alimentar) podem ser <strong>exportados em HTML/PDF ou CSV</strong> – botões disponíveis em cada seção.</p>
-            <p><span class="badge-highlight">🖨️ IMPRESSÃO</span> Use Ctrl+P ou extensão GoFullPage para capturar a página inteira com gráficos.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 8. POLÍTICA DE PRIVACIDADE DESTACADA
-    st.markdown("""
-    <div class="tour-step">
-        <div class="tour-header">
-            <span class="step-num">8</span>
-            <span>🔒 Política de Privacidade e Segurança</span>
-        </div>
-        <div class="tour-body">
-            <p>📌 <strong>Zero‑Footprint:</strong> Todos os cálculos são processados <strong>localmente no seu navegador</strong>. Ao fechar a aba, seus dados de saúde são permanentemente deletados.</p>
-            <p>🔐 <strong>Cadastro opcional:</strong> apenas nome de usuário, e‑mail e senha (hash SHA‑256) para controle de acesso às seções exclusivas (Importador, Avaliação Física).</p>
-            <p>🏦 <strong>Banco de dados:</strong> PostgreSQL no Supabase com SSL obrigatório.</p>
-            <p>🥦 <strong>Bases nutricionais:</strong> BioGestão 360 (Open Food Facts/ODbL) · TACO/UNICAMP 4ª Ed. · IBGE/POF 2008-2009.</p>
-            <p>💳 <strong>Pagamentos:</strong> via PIX ou PayPal – o app não armazena dados bancários.</p>
-            <p>📋 <strong>Licença CC BY-NC-ND 4.0:</strong> uso educacional permitido com atribuição. Proibida comercialização ou obra derivada.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ══════════════════════════════════════════════════════════════════════════
+    # 2. SEÇÃO 24 – DADOS DO PACIENTE E RESTRIÇÕES (simulação visual)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown("### 📋 Identificação da Consulta")
+        st.markdown("**Campos que você vai preencher:**")
+        st.markdown("- Nome do paciente")
+        st.markdown("- Telefone / E-mail")
+        st.markdown("- Profissional (CREF/CRN)")
+        st.markdown("- Clínica")
+        st.markdown("- Datas de início e retorno")
+    with col2:
+        st.info(
+            "⚠️ **Campo OBSERVAÇÕES – RESTRIÇÕES ALIMENTARES**\n\n"
+            "Escreva aqui alergias ou intolerâncias. Exemplo:\n"
+            "`alergia a camarão`, `não pode glúten`, `intolerância à lactose`.\n\n"
+            "O sistema alertará automaticamente ao adicionar alimentos com esses ingredientes."
+        )
+        st.markdown(
+            "<div class='demo-card'><span class='arrow'>👇</span> <strong>Exemplo real no cardápio:</strong> "
+            "Se você adicionar 'pão francês' com restrição de glúten, aparecerá um alerta vermelho.</div>",
+            unsafe_allow_html=True,
+        )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # PLANOS DE APOIO (mesmo estilo original)
+    # 3. SEÇÃO 24.1 – IMPORTADOR AUTOMÁTICO (demonstração com exemplo)
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown("## 💚 Apoie o projeto (colaboração voluntária)")
-    st.markdown("""
-    O BioGestão 360 é gratuito e sempre será. Sua contribuição ajuda a manter o servidor e evoluir o app.
-    Após 2 dias de teste, você pode continuar com qualquer valor.
-    """)
-    st.markdown("""
-    <div class="planos-grid">
-        <div class="plano-card"><div class="nome">☕ Café</div><div class="preco">R$ 5</div><div class="desc">Importador 30 dias</div></div>
-        <div class="plano-card"><div class="nome">🥗 Básico</div><div class="preco">R$ 15</div><div class="desc">Importador 1 ano</div></div>
-        <div class="plano-card"><div class="nome">💪 Pro</div><div class="preco">R$ 10</div><div class="desc">Avaliação Física 30 dias</div></div>
-        <div class="plano-card"><div class="nome">🏆 Combo Mensal</div><div class="preco">R$ 12</div><div class="desc">Importador + Avaliação 30 dias</div></div>
-        <div class="plano-card"><div class="nome">🌟 Combo Anual</div><div class="preco">R$ 25</div><div class="desc">Importador + Avaliação 1 ano</div></div>
-        <div class="plano-card"><div class="nome">♾️ Vitalício</div><div class="preco">R$ 49</div><div class="desc">Importador para sempre</div></div>
-        <div class="plano-card"><div class="nome">🏅 Combo Vitalício</div><div class="preco">R$ 79</div><div class="desc">Importador + Avaliação para sempre</div></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 📥 Importador Automático de Cardápio")
+    st.markdown("Cole o cardápio em texto → o sistema identifica tudo e busca valores nutricionais.")
 
+    # Exemplo interativo (apenas visual, mas com text_area real para copiar)
+    with st.expander("📋 Clique para ver um exemplo prático", expanded=False):
+        st.code(
+            """Segunda:
+Café da manhã: 2 fatias de pão integral, 200ml de leite desnatado
+Almoço: 150g de frango grelhado, 100g de arroz integral, 80g de feijão
+Jantar: 100g de ovos mexidos, 30g de alface""",
+            language="text",
+        )
+        st.caption("⬆️ Copie esse exemplo, cole no campo de texto e clique em 'Importar Cardápio'.")
+        st.markdown(
+            "<div class='demo-card'>✅ <strong>Resultado:</strong> Você verá uma tabela editável, com colunas Kcal, Proteínas, Carboidratos, Gorduras, "
+            "além de alertas OMS (Grupo 1,2A,2B) e restrições alimentares. Pode exportar CSV ou HTML com gráficos.</div>",
+            unsafe_allow_html=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 4. SEÇÃO 25 – AVALIAÇÃO FÍSICA (simulação de medições)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.markdown("### 📏 Avaliação Física Profissional")
+    st.markdown("Protocolo Jackson & Pollock (dobras cutâneas, circunferências, handgrip, wells)")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(
+            """
+            <div class="demo-card">
+                <span class="icone-grande">📐</span>
+                <strong>Exemplo de medições (adipômetro):</strong><br>
+                Tríceps: 12,0 mm<br>
+                Peitoral: 8,5 mm<br>
+                Abdome: 20,2 mm<br>
+                Coxa: 18,0 mm<br>
+                <span class="arrow">➡️</span> O sistema calcula % de gordura, massa magra e classificação.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_b:
+        st.markdown(
+            """
+            <div class="demo-card">
+                <span class="icone-grande">💪</span>
+                <strong>Circunferências e força:</strong><br>
+                Cintura: 82 cm<br>
+                Quadril: 96 cm → RCQ = 0,85<br>
+                Handgrip: 42 kg/f → força normal<br>
+                <span class="arrow">➡️</span> Laudo completo com gráficos de composição e comparação por idade.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.info(
+        "🔬 **Para profissionais de Educação Física:** exija CREF ativo. "
+        "Os resultados são mais precisos que a bioimpedância de balança."
+    )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 5. SEÇÃO 25.1 – MONTE SEU TREINO (simulação de seleção)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.markdown("### 🏋️ Monte Seu Treino")
+    st.markdown("Crie planos personalizados com anamnese, modalidade, MET e métodos avançados.")
+
+    # Simula uma pequena parte da interface de treino (apenas visual)
+    with st.expander("🎮 Veja como funciona (demonstração)", expanded=False):
+        st.selectbox("Categoria:", ["🏋️ Academia / Musculação", "🏃 Cardiovascular", "🏊 Aquáticas"], key="demo_cat")
+        st.selectbox("Atividade:", ["Musculação moderada (pesos livres)", "Corrida moderada (10 km/h)"], key="demo_act")
+        st.number_input("Duração (minutos):", 30, key="demo_dur")
+        st.metric("🔥 Calorias estimadas por sessão", "245 kcal", delta="baseado no MET")
+        st.markdown(
+            "<div class='demo-card'>✅ Após configurar, você pode escolher <strong>sugestão automática</strong> ou <strong>montagem livre</strong> "
+            "com mais de 120 exercícios e 15 métodos (superset, drop set, pirâmide, AMRAP...). Relatório HTML completo.</div>",
+            unsafe_allow_html=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 6. SEÇÃO 26 – PLANO ALIMENTAR (busca manual)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.markdown("### 🍏 Montagem do Plano Alimentar (busca manual)")
+    st.markdown("Adicione alimentos um a um, com escolha de marca, quantidade e unidade.")
+
+    # Simula os campos reais da seção 26
     col1, col2 = st.columns(2)
     with col1:
-        st.info("📱 **PIX:** f3e890da-fb72-4e8c-a0cd-d88177457a30\n\nADILSON GONCALVES XIMENES")
+        st.selectbox("Refeição:", ["Café da Manhã", "Almoço", "Lanches", "Jantar"], key="demo_ref")
+        st.selectbox("Alimento:", ["Frango grelhado", "Arroz integral", "Feijão carioca"], key="demo_alim")
     with col2:
-        st.info("💬 **WhatsApp:** (21) 97948-6731\n\nEnvie o comprovante para ativação em até 72h")
+        st.number_input("Quantidade:", 1.0, key="demo_qtd")
+        st.selectbox("Unidade:", ["g", "ml", "un"], key="demo_un")
+    st.button("➕ Adicionar ao Plano (demonstração)", key="demo_add", disabled=True, help="Apenas exemplo – funcional no app real")
+    st.markdown(
+        "<div class='demo-card'><span class='arrow'>⚠️</span> <strong>Regra de ouro:</strong> Para 'unidades', informe o peso real de uma unidade (ex: 1 biscoito = 5g). "
+        "Assim o cálculo fica preciso. O sistema alerta sobre alimentos OMS Grupo 1/2A/2B e restrições alimentares.</div>",
+        unsafe_allow_html=True,
+    )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # RODAPÉ COM ATRIBUIÇÕES E CONTATOS
+    # 7. ALERTAS OMS E RELATÓRIOS
     # ══════════════════════════════════════════════════════════════════════════
-    st.markdown("""
-    <div class="rodape-portal">
-        <strong>BioGestão 360 v5.0</strong> — Desenvolvido por Adilson Gonçalves Ximenes<br>
-        Bacharel em Educação Física (2005) | Técnico em Processamento de Dados (1996)<br><br>
-        🔗 Bases: BioGestão 360 (Open Food Facts/ODbL) · TACO/UNICAMP · IBGE/POF · OMS/IARC · IN 75/2020<br>
-        📄 Licença CC BY-NC-ND 4.0 — uso educacional permitido com atribuição. Proibida comercialização ou obra derivada.<br>
-        <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">🔗 Texto completo da licença</a>
-        &nbsp;|&nbsp;
-        <a href="https://t.me/biogestao360" target="_blank">📱 Telegram</a>
-        &nbsp;|&nbsp;
-        <a href="https://wa.me/5521979486731" target="_blank">💬 WhatsApp</a>
-        &nbsp;|&nbsp;
-        <a href="mailto:adilson.ximenes@gmail.com">📧 E-mail</a>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### ⚠️ Alertas Científicos (IARC/OMS) e Relatórios")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("""
+        <div class="demo-card">
+            <span class="icone-grande">🔴</span> <strong>Grupo 1 – Cancerígeno confirmado</strong><br>
+            Carnes processadas, bebidas alcoólicas
+        </div>
+        <div class="demo-card">
+            <span class="icone-grande">🟠</span> <strong>Grupo 2A – Provavelmente cancerígeno</strong><br>
+            Carne vermelha (acima de 500g/semana)
+        </div>
+        <div class="demo-card">
+            <span class="icone-grande">🟣</span> <strong>Grupo 2B – Possivelmente cancerígeno</strong><br>
+            Aspartame, bebidas >65°C
+        </div>
+        """, unsafe_allow_html=True)
+    with col_b:
+        st.markdown("""
+        <div class="demo-card">
+            <span class="icone-grande">📄</span> <strong>Exportação de laudos</strong><br>
+            • Cardápio importado → CSV / HTML com gráficos<br>
+            • Avaliação física → laudo técnico completo<br>
+            • Plano de treino → relatório com zonas de FC<br>
+            • Plano alimentar → resumo em CSV
+        </div>
+        <div class="demo-card">
+            <span class="icone-grande">🖨️</span> <strong>Impressão / PDF</strong><br>
+            Use Ctrl+P ou extensão GoFullPage para capturar toda a página com gráficos.
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 8. POLÍTICA DE PRIVACIDADE (em formato resumido e atraente)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    with st.expander("🔒 Política de Privacidade e Segurança (clique para expandir)", expanded=False):
+        st.markdown("""
+        - **Zero-Footprint:** cálculos processados localmente. Ao fechar a aba, seus dados de saúde são deletados.
+        - **Cadastro opcional:** apenas nome de usuário, e-mail e senha criptografada (hash SHA-256) para controle de acesso às seções exclusivas.
+        - **Banco de dados:** PostgreSQL no Supabase com SSL obrigatório.
+        - **Bases nutricionais:** BioGestão 360 (Open Food Facts/ODbL) · TACO/UNICAMP 4ª Ed. · IBGE/POF 2008-2009.
+        - **Pagamentos via PIX ou PayPal** – o app não armazena dados bancários.
+        - **Licença CC BY-NC-ND 4.0** – uso educacional permitido com atribuição. Proibida comercialização ou obra derivada.
+        """)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 9. PLANOS DE APOIO (mantido)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.markdown("## 💚 Colaboração voluntária")
+    st.markdown("O BioGestão 360 é gratuito e sempre será. Sua ajuda mantém o servidor no ar.")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info("📱 **PIX:** f3e890da-fb72-4e8c-a0cd-d88177457a30")
+    with col2:
+        st.info("💬 **WhatsApp:** (21) 97948-6731")
+    with col3:
+        st.info("📧 **E-mail:** adilson.ximenes@gmail.com")
+
+    # Rodapé simples
+    st.markdown(
+        "<div style='text-align: center; margin-top: 32px; font-size: 0.8rem; opacity: 0.7;'>"
+        "BioGestão 360 v5.0 – Use o menu à esquerda para navegar entre as seções reais do app.</div>",
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":
-    st.set_page_config(
-        page_title="BioGestão 360 — Portal de Ajuda",
-        page_icon="🏋️",
-        layout="wide",
-    )
+    st.set_page_config(page_title="BioGestão 360 – Guia Visual", layout="wide")
     tela_portal()
