@@ -1,0 +1,19 @@
+# ============================================
+# BioGestão 360 — Configuração do Streamlit
+# Arquivo: .streamlit/config.toml
+#
+# IMPORTANTE: A seção [theme] foi intencionalmente
+# removida para respeitar a preferência do usuário
+# (modo claro, escuro ou sistema).
+# ============================================
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+magicEnabled = true

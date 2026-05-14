@@ -1,0 +1,7372 @@
+# app.py
+import streamlit as st
+import pandas as pd
+import os
+import math
+import plotly.express as px
+import plotly.graph_objects as go
+import qrcode
+import io
+import unicodedata
+from PIL import Image
+import base64
+from datetime import datetime, timedelta
+import re
+import hashlib
+
+# ============================================
+# NOVOS IMPORTS - SISTEMA DE AUTENTICAÇÃO E IA
+# ============================================
+from auth import tela_login, verificar_acesso_ia, verificar_acesso_avaliacao
+from admin_panel import tela_admin_dashboard
+from database import init_db
+from treino_fisico import tela_treino_fisico
+from ia_gemini import (
+    configurar_gemini,
+    carregar_biogestao_foods,
+    buscar_na_biogestao,
+    buscar_na_biogestao_sql,
+    buscar_na_taco,        # ← precisa ter isso
+    buscar_na_ibge,        # ← e isso
+    estimativa_inteligente,
+    tratar_valor,
+    normalizar_texto_busca,
+    extrair_fator_quantidade,
+    buscar_porcao_n75,
+)
+from biogestao_helpers import (
+    preparar_lista_alimentos,
+    obter_marcas_disponiveis,
+    obter_item_selecionado,
+    obter_peso_unidade_item,
+)
+# ============================================
+# PORTAL — renderização condicional
+# ============================================
+from portal import tela_portal
+
+if "mostrar_portal" not in st.session_state:
+    st.session_state.mostrar_portal = False
+
+if st.session_state.mostrar_portal:
+    if st.button("← Voltar ao app", key="btn_fechar_portal"):
+        st.session_state.mostrar_portal = False
+        st.rerun()
+    tela_portal()
+    st.stop()
+
+# ============================================
+# 1. CONFIGURAÇÃO DE PÁGINA
+# ============================================
+st.set_page_config(
+    page_title="BioGestão 360 - Profissional", layout="wide", page_icon="🏋️"
+)
+
+# ============================================
+# 2. INICIALIZAÇÃO DO BANCO DE DADOS
+# ============================================
+init_db()
+
+# ============================================
+# 2.1 VERIFICAÇÃO DE MODO MANUTENÇÃO
+# ============================================
+from database import get_configuracao
+
+_em_manutencao = get_configuracao("modo_manutencao", "0") == "1"
+_usuario_logado = st.session_state.get("usuario_role")
+
+if _em_manutencao and _usuario_logado != "admin":
+    _msg = get_configuracao(
+        "mensagem_manutencao",
+        "O BioGestão 360 está em manutenção programada. Voltamos em breve! 🔧"
+    )
+    st.markdown("## 🔧 App em Manutenção")
+    st.warning(_msg)
+    st.info("Se você é administrador, faça login na sidebar para acessar normalmente.")
+    st.stop()
+
+# ============================================
+# 3. INICIALIZAÇÕES DE SESSÃO
+# ============================================
+if "modo_impressao" not in st.session_state:
+    st.session_state.modo_impressao = False
+if "planejamento_tipo" not in st.session_state:
+    st.session_state.planejamento_tipo = "Diário"
+if "cardapio_semanal" not in st.session_state:
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    st.session_state.cardapio_semanal = {
+        dia: {k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]}
+        for dia in dias_semana
+    }
+if "dia_atual" not in st.session_state:
+    st.session_state.dia_atual = "Segunda"
+if "cardapio" not in st.session_state:
+    st.session_state.cardapio = {
+        k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+    }
+if "fonte_dados" not in st.session_state:
+    st.session_state.fonte_dados = "BioGestão 360"
+if "metodo_get" not in st.session_state:
+    st.session_state.metodo_get = "Harris-Benedict (Peso Total)"
+if "sexo" not in st.session_state:
+    st.session_state.sexo = None
+
+if "dados_paciente" not in st.session_state:
+    st.session_state.dados_paciente = {
+        "nome": "",
+        "data_nascimento": "",
+        "telefone": "",
+        "email": "",
+    }
+if "dados_profissional" not in st.session_state:
+    st.session_state.dados_profissional = {
+        "nome": "",
+        "registro": "",
+        "especialidade": "Nutrição",
+    }
+if "dados_consulta" not in st.session_state:
+    st.session_state.dados_consulta = {
+        "clinica": "",
+        "data_inicio": datetime.now().strftime("%Y-%m-%d"),
+        "data_retorno": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+        "observacoes": "",
+    }
+
+# NOVAS INICIALIZAÇÕES - DADOS DO PACIENTE E PROFISSIONAL
+if "dados_paciente" not in st.session_state:
+    st.session_state.dados_paciente = {
+        "nome": "",
+        "data_nascimento": "",
+        "telefone": "",
+        "email": "",
+    }
+if "dados_profissional" not in st.session_state:
+    st.session_state.dados_profissional = {
+        "nome": "",
+        "registro": "",
+        "especialidade": "Nutrição",
+    }
+if "dados_consulta" not in st.session_state:
+    st.session_state.dados_consulta = {
+        "clinica": "",
+        "data_inicio": datetime.now().strftime("%Y-%m-%d"),
+        "data_retorno": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+        "observacoes": "",
+    }
+
+# NOVA INICIALIZAÇÃO - RESULTADO DA IA
+if "resultado_ia" not in st.session_state:
+    st.session_state.resultado_ia = None
+
+
+# ============================================
+# NOVA FUNÇÃO PARA GERAR HTML DO LAUDO
+# ============================================
+def gerar_html_laudo():
+    """Gera HTML para PDF com os dados atuais da tela"""
+    data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Laudo BioGestão 360</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+            h1 {{ color: #f59e0b; }}
+            .header {{ text-align: center; margin-bottom: 30px; }}
+            .section {{ margin-bottom: 25px; page-break-inside: avoid; }}
+            .section h2 {{ background: #1e3a5f; color: white; padding: 10px; border-radius: 5px; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background: #f59e0b; color: white; }}
+            .footer {{ text-align: center; margin-top: 40px; font-size: 10px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🏋️ BioGestão 360 - Laudo Técnico</h1>
+            <p>Gerado em {data_atual}</p>
+        </div>
+        
+        <div class="section">
+            <h2>📋 DADOS DA CONSULTA</h2>
+            <p><strong>Paciente:</strong> {st.session_state.dados_paciente.get('nome', '-')}</p>
+            <p><strong>Telefone:</strong> {st.session_state.dados_paciente.get('telefone', '-')}</p>
+            <p><strong>Profissional:</strong> {st.session_state.dados_profissional.get('nome', '-')} | Registro: {st.session_state.dados_profissional.get('registro', '-')}</p>
+            <p><strong>Clínica:</strong> {st.session_state.dados_consulta.get('clinica', '-')}</p>
+            <p><strong>Data Início:</strong> {st.session_state.dados_consulta.get('data_inicio', '-')} | <strong>Retorno:</strong> {st.session_state.dados_consulta.get('data_retorno', '-')}</p>
+        </div>
+    """
+
+    # Perfil (se disponível)
+    if dados_validos:
+        html += f"""
+        <div class="section">
+            <h2>⚡ PERFIL BIOLÓGICO</h2>
+            <p><strong>Peso:</strong> {peso_at:.1f} kg | <strong>Altura:</strong> {alt_cm} cm | <strong>Idade:</strong> {idade} anos | <strong>Sexo:</strong> {sexo}</p>
+            <p><strong>IMC:</strong> {composicao['imc']} | <strong>GET:</strong> {get_atual:.0f} kcal | <strong>TMB:</strong> {tmb_atual:.0f} kcal</p>
+            <p><strong>Objetivo:</strong> {objetivo} | <strong>Meta:</strong> {p_alvo:.1f} kg</p>
+        </div>
+        """
+
+    # Cardápio
+    html += f"""
+        <div class="section">
+            <h2>🍽️ CARDÁPIO - {st.session_state.planejamento_tipo}</h2>
+            <table>
+                <thead>
+                    <tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>🔥 Kcal</th><th>🥩 Prot(g)</th><th>🍞 Carb(g)</th><th>🥑 Gord(g)</th><th>🍬 Açúcar(g)</th><th>🧈 Sat(g)</th><th>🌾 Fibra(g)</th><th>🧂 Sódio(mg)</th></tr>
+                </thead>
+                <tbody>
+    """
+
+    if st.session_state.planejamento_tipo == "Diário":
+        for refeicao, itens in st.session_state.cardapio.items():
+            for item in itens:
+                html += f"<tr><td>Hoje</td><td>{refeicao}</td><td>{item['Ali']}</td><td>{item['Qtd']}</td><td>{item['Kcal']}</td><td>{item['P']}</td><td>{item['C']}</td><td>{item['G']}</td><td>{item.get('Acucar','---')}</td><td>{item.get('GSat','---')}</td><td>{item.get('Fibra','---')}</td><td>{item.get('SodioMg','---')}</td></tr>"
+    else:
+        for dia in [
+            "Segunda",
+            "Terça",
+            "Quarta",
+            "Quinta",
+            "Sexta",
+            "Sábado",
+            "Domingo",
+        ]:
+            for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+                for item in st.session_state.cardapio_semanal.get(dia, {}).get(
+                    refeicao, []
+                ):
+                    html += f"<tr><td>{dia}</td><td>{refeicao}</td><td>{item['Ali']}</td><td>{item['Qtd']}</td><td>{item['Kcal']}</td><td>{item['P']}</td><td>{item['C']}</td><td>{item['G']}</td><td>{item.get('Acucar','---')}</td><td>{item.get('GSat','---')}</td><td>{item.get('Fibra','---')}</td><td>{item.get('SodioMg','---')}</td></tr>"
+
+    html += """
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            BioGestão 360 | Este documento não substitui avaliação médica.
+        </div>
+    </body>
+    </html>
+    """
+
+    return html
+
+
+# ============================================
+# 3. FUNÇÃO PARA GERAR QR CODE PIX
+# ============================================
+def gerar_qr_code_pix():
+    pix_data = "00020126580014br.gov.bcb.pix0136f3e890da-fb72-4e8c-a0cd-d88177457a305204000053039865802BR5925ADILSON GONCALVES XIMENES6012BELFORD ROXO62180514AdilsonXimenes6304B1CB"
+    qr = qrcode.QRCode(version=1, box_size=5, border=2)
+    qr.add_data(pix_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_bytes = io.BytesIO()
+    img.save(img_bytes)
+    img_bytes.seek(0)
+    return img_bytes
+
+
+# ============================================
+# 4. FUNÇÃO PARA GERAR BOTÃO PAYPAL
+# ============================================
+def get_paypal_html():
+    return """
+    <div id="donate-button-container" style="text-align: left; margin-top: 0; padding-top: 0;">
+    <a href="#" id="custom-donate-link">
+        <img src="https://pics.paypal.com/00/s/YWQ5YTVhZWUtM2IwYy00MzI1LTg2MTctZTI2MDM0OGEwYTY5/file.PNG" 
+            alt="Faça doações com o botão do PayPal"
+            style="max-width: 100%; height: auto; cursor: pointer;">
+    </a>
+    </div>
+
+    <script>
+    document.getElementById('custom-donate-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var url = 'https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG';
+        window.open(url, '_blank');
+        
+        return false;
+    });
+    </script>
+    """
+
+
+# ============================================
+# 4.5. FUNÇÕES PARA NORMALIZAÇÃO DE TEXTO (NOVO - RESTRIÇÕES ALIMENTARES)
+# ============================================
+
+
+def normalizar_texto(texto):
+    """Normaliza texto para busca"""
+    if not texto:
+        return ""
+    texto = texto.lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ASCII", "ignore").decode("ASCII")
+    texto = re.sub(r"[^a-z0-9\s]", "", texto)
+    return texto.strip()
+
+
+# ========== FUNÇÃO DE PROCESSAMENTO LOCAL COM TABELAS ==========
+def processar_cardapio_local(texto):
+    """
+    Processa o texto do cardápio buscando valores PRIMEIRO nas tabelas
+    BioGestão 360 com estimativa inteligente como fallback.
+    Respeita o tipo de planejamento (diário ou semanal) da sidebar.
+    """
+    alimentos = []
+    dias_validos = [
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+    ]
+    refeicoes_validas = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+
+    # Detectar tipo de planejamento da sidebar
+    tipo_plano = st.session_state.get("planejamento_tipo", "Diário")
+    if tipo_plano == "Diário":
+        dia_atual = "Hoje"
+        detectar_dias = False
+    else:
+        dia_atual = "Segunda"
+        detectar_dias = True
+
+    refeicao_atual = "Café da Manhã"
+    linhas = texto.split("\n")
+
+    for linha in linhas:
+        linha = linha.strip()
+        if not linha:
+            continue
+
+        linha_lower = linha.lower()
+
+        # ── Pular linhas que são apenas nomes de dias da semana ──
+        linha_limpa = linha.rstrip(":").strip()
+        linha_limpa_norm = normalizar_texto(linha_limpa)
+
+        eh_dia_semana = False
+        for dia in dias_validos:
+            dia_norm = normalizar_texto(dia)
+            if linha_limpa_norm == dia_norm:
+                eh_dia_semana = True
+                if detectar_dias:
+                    dia_atual = dia
+                break
+
+        if eh_dia_semana:
+            continue  # Pula a linha do dia da semana
+
+        # ── Identificar refeição ──
+        if ":" in linha:
+            parte_refeicao = linha.split(":")[0].strip().lower()
+
+            if any(p in parte_refeicao for p in ["café", "cafe", "manhã", "manha"]):
+                refeicao_atual = "Café da Manhã"
+            elif any(p in parte_refeicao for p in ["almoço", "almoco"]):
+                refeicao_atual = "Almoço"
+            elif any(p in parte_refeicao for p in ["lanche", "tarde", "colação"]):
+                refeicao_atual = "Lanches"
+            elif "jantar" in parte_refeicao or "ceia" in parte_refeicao:
+                refeicao_atual = "Jantar"
+
+            # Extrair conteúdo após os dois pontos
+            conteudo = linha.split(":", 1)[1].strip()
+            if not conteudo:
+                continue
+        else:
+            # Linha não tem ":" - não é uma linha de refeição válida
+            continue
+
+        # ── Processar alimentos na linha ──
+        partes = re.split(r"[,;]", conteudo)
+
+        for parte in partes:
+            parte = parte.strip()
+            if len(parte) < 3:
+                continue
+
+            # ── Extrair quantidade e nome ──
+            qtd_match = re.search(
+                r"(\d+(?:[.,]\d+)?)\s*"
+                r"(g|ml|kg|l|litro[s]?|litros?|"
+                r"fatia[s]?|colher(?:es)?(?:\s+(?:de\s+)?(?:sopa|chá|sobremesa|café))?|"
+                r"copo[s]?|xícara[s]?|xicara[s]?|x[íi]cara[s]?|"
+                r"unidade[s]?|un\b|"
+                r"porção|porcao|porções|porcoes|"
+                r"concha[s]?|filé[s]?|file[s]?|bife[s]?|"
+                r"pedaço[s]?|pedaco[s]?|pedaços|pedacos|"
+                r"dose[s]?|"
+                r"ramo[s]?|maço[s]?|maco[s]?|"
+                r"pitada[s]?)",
+                parte.lower(),
+            )
+
+            if qtd_match:
+                quantidade_desc = qtd_match.group(0)
+                nome = parte[: qtd_match.start()].strip()
+                if not nome:
+                    nome = parte[qtd_match.end() :].strip()
+                # Limpeza do nome
+                nome = re.sub(
+                    r"^(de|da|do|dos|das|com|sem|em|para|por|um|uma|uns|umas|ao|à|aos|às)\s+",
+                    "",
+                    nome,
+                    flags=re.IGNORECASE,
+                )
+                nome = re.sub(r"\s+", " ", nome).strip()
+                if not nome or len(nome) < 3:
+                    nome = parte[qtd_match.end() :].strip()
+            else:
+                # Fallback: procura número no início
+                match_inicio = re.match(r"^(\d+(?:[.,]\d+)?)\s+(.+)", parte.strip())
+                if match_inicio:
+                    quantidade_desc = f"{match_inicio.group(1)} unidade(s)"
+                    nome = match_inicio.group(2).strip()
+                else:
+                    quantidade_desc = "1 porção"
+                    nome = parte.strip()
+
+            # Limpeza final do nome
+            nome = re.sub(r"\s+", " ", nome).strip()
+            nome = re.sub(r"^[-–•*]\s*", "", nome).strip()
+            nome = re.sub(r"\([^)]*\)", "", nome).strip()
+
+            if len(nome) < 3:
+                continue
+
+            # ── Calcular fator ──
+            fator = 1.0
+            volume_padrao_liquido = 200.0
+
+            qtd_calc = re.search(r"(\d+(?:[.,]\d+)?)\s*(\w*)", quantidade_desc.lower())
+            if qtd_calc:
+                try:
+                    num = float(qtd_calc.group(1).replace(",", "."))
+                    unidade = (
+                        qtd_calc.group(2)
+                        if qtd_calc.lastindex and qtd_calc.lastindex >= 2
+                        else ""
+                    )
+
+                    if unidade in ["kg"]:
+                        fator = num * 10
+                    elif unidade in ["g"]:
+                        fator = max(0.1, min(10, num / 100))
+                    elif unidade in ["ml"]:
+                        if num >= 10:
+                            fator = max(0.1, min(10, num / 100))
+                        else:
+                            fator = max(
+                                0.1, min(10, (num * volume_padrao_liquido) / 100)
+                            )
+                    elif unidade in ["l", "litro", "litros"]:
+                        fator = max(0.1, min(10, (num * 1000) / 100))
+                    elif any(
+                        p in unidade for p in ["copo", "xícara", "xicara", "xícara"]
+                    ):
+                        fator = max(0.2, min(5, (num * volume_padrao_liquido) / 100))
+                    elif any(p in unidade for p in ["colher", "sopa"]):
+                        fator = max(0.1, min(2, (num * 15) / 100))
+                    elif any(p in unidade for p in ["chá", "cha", "café", "cafe"]):
+                        fator = max(0.02, min(1, (num * 5) / 100))
+                    elif any(p in unidade for p in ["concha"]):
+                        fator = max(0.2, min(3, (num * 100) / 100))
+                    elif any(p in unidade for p in ["fatia"]):
+                        fator = max(0.2, min(3, (num * 50) / 100))
+                    elif any(
+                        p in unidade
+                        for p in ["unidade", r"un\b", "un$", r"un\s", "unidade(s)"]
+                    ):
+                        # Unidade: precisa do peso unitário do alimento
+                        peso_unitario = obter_peso_por_unidade(nome)
+                        if peso_unitario > 0:
+                            fator = max(0.1, min(5, (num * peso_unitario) / 100))
+                        else:
+                            # Se não encontrou peso unitário, usa 50g como padrão
+                            fator = max(0.1, min(5, (num * 50) / 100))
+                    elif any(
+                        p in unidade for p in ["porção", "porcao", "porções", "porcoes"]
+                    ):
+                        fator = max(0.5, min(5, num))
+                    elif any(
+                        p in unidade for p in ["pedaço", "pedaco", "pedaços", "pedacos"]
+                    ):
+                        fator = max(0.3, min(3, (num * 80) / 100))
+                    elif any(p in unidade for p in ["filé", "file", "bife"]):
+                        fator = max(0.5, min(5, (num * 100) / 100))
+                    elif unidade == "":
+                        if num <= 30:
+                            peso_unitario = obter_peso_por_unidade(nome)
+                            if peso_unitario > 0:
+                                fator = max(0.1, min(5, (num * peso_unitario) / 100))
+                            else:
+                                fator = max(0.5, min(5, num))
+                        else:
+                            fator = max(0.1, min(10, num / 100))
+                    else:
+                        fator = max(0.5, min(5, num))
+                except:
+                    fator = 1.0
+            else:
+                fator = 1.0
+
+            # ── Buscar valores nutricionais ──
+            # Hierarquia: TACO → IBGE → BioGestão 360 → estimativa_inteligente
+            valores = None
+            fonte = "estimativa"
+
+            # 1. TACO — alimentos in natura e preparações caseiras
+            if valores is None and df_taco is not None and not df_taco.empty:
+                valores = buscar_na_taco(nome, df_taco)
+                if valores:
+                    fonte = "TACO"
+
+            # 2. IBGE — alimentos com formas de preparo
+            if valores is None and df_ibge is not None and not df_ibge.empty:
+                valores = buscar_na_ibge(nome, df_ibge)
+                if valores:
+                    fonte = "IBGE"
+
+            # 3. BioGestão — produtos industrializados (SQL direto primeiro)
+            if valores is None:
+                valores = buscar_na_biogestao_sql(nome)
+                if valores:
+                    fonte = "BioGestão"
+
+            # 4. BioGestão em memória (fallback do SQL)
+            if valores is None and df_bio is not None and not df_bio.empty:
+                valores = buscar_na_biogestao(nome, df_bio)
+                if valores:
+                    fonte = "BioGestão"
+
+            # 5. Estimativa por categoria
+            if valores is None:
+                valores = estimativa_inteligente(nome)
+                fonte = "estimativa"
+
+            # Validação: dados zerados
+            if (
+                fonte != "estimativa"
+                and valores["kcal"] == 0
+                and valores["proteina"] == 0
+                and valores["carboidrato"] == 0
+                and valores["gordura"] == 0
+            ):
+                valores = estimativa_inteligente(nome)
+                fonte = "estimativa (dados zerados)"
+
+            # ── Adicionar ao resultado ──
+            alimentos.append(
+                {
+                    "nome": nome[:60],
+                    "quantidade": quantidade_desc,
+                    "refeicao": refeicao_atual,
+                    "dia": dia_atual,
+                    "kcal": round(valores["kcal"] * fator, 1),
+                    "proteina": round(valores["proteina"] * fator, 1),
+                    "carboidrato": round(valores["carboidrato"] * fator, 1),
+                    "gordura": round(valores["gordura"] * fator, 1),
+                    "acucar": round(valores["acucar"] * fator, 1) if valores.get("acucar") is not None else None,
+                    "gordura_saturada": round(valores["gordura_saturada"] * fator, 1) if valores.get("gordura_saturada") is not None else None,
+                    "gordura_trans": round(valores["gordura_trans"] * fator, 1) if valores.get("gordura_trans") is not None else None,
+                    "fibra": round(valores["fibra"] * fator, 1) if valores.get("fibra") is not None else None,
+                    "sodio_mg": round(valores["sodio_mg"] * fator, 1) if valores.get("sodio_mg") is not None else None,
+                    "fonte": fonte,
+                }
+            )
+
+    # ── Agrupar duplicatas do mesmo dia/refeição/alimento ──
+    agrupados = {}
+    for item in alimentos:
+        chave = f"{item['dia']}_{item['refeicao']}_{item['nome'].lower()}"
+        if chave in agrupados:
+            agrupados[chave]["kcal"] += item["kcal"]
+            agrupados[chave]["proteina"] += item["proteina"]
+            agrupados[chave]["carboidrato"] += item["carboidrato"]
+            agrupados[chave]["gordura"] += item["gordura"]
+        else:
+            agrupados[chave] = item
+
+    resultado = list(agrupados.values())
+
+    # ── Ordenar por dia e refeição ──
+    ordem_dias = {
+        "Segunda": 1,
+        "Terça": 2,
+        "Quarta": 3,
+        "Quinta": 4,
+        "Sexta": 5,
+        "Sábado": 6,
+        "Domingo": 7,
+        "Hoje": 0,
+    }
+    ordem_ref = {"Café da Manhã": 1, "Almoço": 2, "Lanches": 3, "Jantar": 4}
+    resultado.sort(
+        key=lambda x: (ordem_dias.get(x["dia"], 99), ordem_ref.get(x["refeicao"], 99))
+    )
+
+    return {"alimentos": resultado}
+
+
+def extrair_palavras_chave_restricao(observacoes):
+    """
+    Extrai palavras-chave de restrição alimentar das observações.
+    Retorna lista vazia se não houver observações (campo opcional).
+    """
+    if not observacoes or not isinstance(observacoes, str):
+        return []
+
+    observacoes_norm = normalizar_texto(observacoes)
+    if not observacoes_norm:
+        return []
+
+    # Palavras que indicam restrição (ignora textos genéricos)
+    indicadores = [
+        "sem",
+        "nao",
+        "não",
+        "alergia",
+        "alergi",
+        "intolerancia",
+        "intolerância",
+        "evitar",
+        "proibido",
+        "restrito",
+        "restrição",
+        "restricao",
+        "vedado",
+        "aversao",
+        "aversão",
+    ]
+
+    tem_indicador = any(ind in observacoes_norm for ind in indicadores)
+
+    # Alimentos comuns que podem ser restrições
+    alimentos_monitorados = [
+        # Glúten e derivados
+        "gluten",
+        "glúten",
+        "trigo",
+        "aveia",
+        "centeio",
+        # Leite, lactose e derivados
+        "lactose",
+        "leite",
+        "queijo",
+        "iogurte",
+        "requeijao",
+        "requeijão",
+        "manteiga",
+        "creme de leite",
+        "ricota",
+        "coalhada",
+        "kefir",
+        "nata",
+        # Proteínas animais
+        "frango",
+        "carne",
+        "peixe",
+        "ovo",
+        "porco",
+        "camarao",
+        "camarão",
+        # Oleaginosas e leguminosas
+        "soja",
+        "amendoim",
+        "nozes",
+        "castanha",
+        "amêndoa",
+        "amendoa",
+        # Frutos do mar
+        "frutos do mar",
+        "marisco",
+        "lula",
+        "polvo",
+        "ostra",
+        # Outros
+        "açúcar",
+        "acucar",
+        "sal",
+        "sódio",
+        "sodio",
+        "glicose",
+        "frutose",
+    ]
+
+    palavras_encontradas = []
+
+    if tem_indicador:
+        # Se tem indicador de restrição, extrai todos os alimentos mencionados
+        for alimento in alimentos_monitorados:
+            alimento_norm = normalizar_texto(alimento)
+            if alimento_norm in observacoes_norm:
+                palavras_encontradas.append(alimento_norm)
+
+        # Também pega palavras soltas após "sem", "alergia a", etc.
+        partes = re.split(r"[,;]", observacoes_norm)
+        for parte in partes:
+            parte = parte.strip()
+            for ind in [
+                "sem ",
+                "alergia a ",
+                "alergia ",
+                "intolerancia a ",
+                "intolerância a ",
+                "evitar ",
+            ]:
+                if ind in parte:
+                    palavra = parte.split(ind, 1)[-1].strip()
+                    palavra = re.sub(r"\s+", " ", palavra).strip()
+                    if len(palavra) >= 3:
+                        palavras_encontradas.append(palavra)
+
+    return list(set(palavras_encontradas))  # Remove duplicatas
+
+
+def verificar_restricao_alimento(nome_alimento, palavras_restritas):
+    """
+    Verifica se um alimento tem restrição baseado nas palavras-chave.
+    Inclui verificação por família alimentar:
+    restrição a 'leite' também alerta 'queijo minas', 'iogurte', etc.
+    """
+    if not nome_alimento or not palavras_restritas:
+        return None
+
+    nome_alimento_norm = normalizar_texto(nome_alimento)
+    if not nome_alimento_norm:
+        return None
+
+    # Mapa de famílias: se a pessoa tem restrição ao "pai",
+    # os "filhos" também disparam alerta.
+    # Chave = palavra que a pessoa pode escrever na observação
+    # Valor = lista de nomes de alimentos que são derivados/relacionados
+    familias = {
+        "leite": [
+            "queijo",
+            "queijo minas",
+            "queijo prato",
+            "queijo coalho",
+            "queijo cottage",
+            "queijo mussarela",
+            "queijo parmesao",
+            "requeijao",
+            "requeijão",
+            "iogurte",
+            "manteiga",
+            "creme de leite",
+            "leite condensado",
+            "doce de leite",
+            "ricota",
+            "cream cheese",
+            "chantilly",
+            "coalhada",
+            "kefir",
+            "nata",
+            "cafe com leite",
+            "achocolatado",
+            "vitamina de",
+            "mingau",
+        ],
+        "lactose": [
+            "leite",
+            "queijo",
+            "queijo minas",
+            "requeijao",
+            "requeijão",
+            "iogurte",
+            "manteiga",
+            "creme de leite",
+            "leite condensado",
+            "ricota",
+            "cream cheese",
+            "coalhada",
+            "kefir",
+        ],
+        "gluten": [
+            "pao",
+            "pão",
+            "torrada",
+            "biscoito",
+            "bolacha",
+            "macarrao",
+            "macarrão",
+            "espaguete",
+            "lasanha",
+            "farinha de trigo",
+            "bolo",
+            "cerveja",
+            "cream cracker",
+            "biscoito agua e sal",
+        ],
+        "trigo": [
+            "pao",
+            "pão",
+            "torrada",
+            "biscoito",
+            "macarrao",
+            "macarrão",
+            "bolo",
+            "farinha",
+            "cream cracker",
+        ],
+        "ovo": [
+            "omelete",
+            "ovo mexido",
+            "ovo cozido",
+            "ovo frito",
+            "ovo estrelado",
+            "maionese",
+        ],
+        "amendoim": [
+            "pasta de amendoim",
+            "manteiga de amendoim",
+            "pacoca",
+            "paçoca",
+            "pe de moleque",
+        ],
+        "soja": [
+            "tofu",
+            "leite de soja",
+            "proteina de soja",
+            "hamburguer de soja",
+            "shoyu",
+            "miso",
+        ],
+        "frutos do mar": [
+            "camarao",
+            "camarão",
+            "lagosta",
+            "siri",
+            "ostra",
+            "marisco",
+            "lula",
+            "polvo",
+        ],
+        "camarao": [
+            "frutos do mar",
+            "camarao",
+            "camarão",
+        ],
+        "porco": [
+            "presunto",
+            "bacon",
+            "linguica",
+            "linguiça",
+            "salsicha",
+            "pernil",
+            "costela de porco",
+            "lombo",
+        ],
+        "frango": [
+            "peito de frango",
+            "coxa de frango",
+            "sobrecoxa",
+            "frango grelhado",
+            "frango assado",
+            "frango desfiado",
+            "nugget",
+            "nuggets",
+        ],
+    }
+
+    for palavra_restrita in palavras_restritas:
+        if not palavra_restrita:
+            continue
+
+        palavra_norm = normalizar_texto(palavra_restrita)
+
+        # ── Verificação direta ──
+        # Verifica se a palavra restrita aparece diretamente no nome do alimento
+        if palavra_norm in nome_alimento_norm:
+            return (
+                f"⚠️ **ALERTA DE RESTRIÇÃO ALIMENTAR:** "
+                f"O alimento '{nome_alimento}' contém '{palavra_restrita}', "
+                f"que foi mencionado como restrição. "
+                f"Verifique se o paciente pode consumir este item."
+            )
+
+        # ── Verificação por família alimentar ──
+        # Verifica se a palavra restrita é um "pai" e o alimento é um "filho"
+        for familia_pai, filhos in familias.items():
+            familia_pai_norm = normalizar_texto(familia_pai)
+
+            # A palavra restrita bate com o pai da família?
+            if palavra_norm == familia_pai_norm or palavra_norm in familia_pai_norm:
+                # O alimento atual é um filho desta família?
+                for filho in filhos:
+                    filho_norm = normalizar_texto(filho)
+                    if (
+                        filho_norm in nome_alimento_norm
+                        or nome_alimento_norm in filho_norm
+                    ):
+                        return (
+                            f"⚠️ **ALERTA DE RESTRIÇÃO (DERIVADO):** "
+                            f"'{nome_alimento}' é derivado de '{palavra_restrita}'. "
+                            f"Verifique se o paciente pode consumir este item."
+                        )
+
+    return None
+
+
+# ============================================
+# 5. ALIMENTOS DE RISCO (Grupo OMS) - ATUALIZADO IARC 2024
+# ============================================
+def carregar_alimentos_risco():
+    return {
+        "grupo1": {
+            "alimentos": [
+                # Carnes processadas (Grupo 1 IARC)
+                "salsicha",
+                "presunto",
+                "linguiça",
+                "bacon",
+                "salame",
+                "mortadela",
+                "apresuntado",
+                "copa",
+                "paio",
+                "chouriço",
+                "calabresa",
+                "pepperoni",
+                "peito de peru",
+                "rosbife",
+                "pate",
+                "patê",
+                "hamburguer",
+                "hambúrguer",
+                "nuggets",
+                "nugget",
+                # Peixes salgados/defumados (estilo charque)
+                "peixe salgado",
+                "charque",
+                "carne seca",
+                "carne de sol",
+                # BEBIDAS ALCOÓLICAS (Grupo 1 IARC)
+                "cerveja",
+                "vinho",
+                "cachaça",
+                "vodka",
+                "whisky",
+                "gin",
+                "rum",
+                "bebida alcoólica",
+                "álcool",
+                "destilado",
+                "espumante",
+                "champagne",
+                "licor",
+                "coquetel alcoólico",
+                "aguardente",
+                "saquê",
+                "conhaque",
+            ],
+            "mensagem": (
+                "⚠️ GRUPO 1 OMS/IARC: CANCERÍGENO CONFIRMADO PARA HUMANOS! "
+                "Consumo diário de 50g de carne processada aumenta em 18% o risco de câncer colorretal. "
+                "Recomendação: evitar ou reduzir ao máximo."
+            ),
+        },
+        "grupo2a": {
+            "alimentos": [
+                # Carnes vermelhas (Grupo 2A IARC)
+                "carne bovina",
+                "bovina",
+                "picanha",
+                "contrafilé",
+                "alcatra",
+                "patinho",
+                "coxão",
+                "filé mignon",
+                "acém",
+                "costela",
+                "fraldinha",
+                "maminha",
+                "bisteca bovina",
+                "carne de porco",
+                "porco",
+                "pernil",
+                "lombo suíno",
+                "bisteca suína",
+                "carneiro",
+                "cordeiro",
+                "vitela",
+                "cabrito",
+                "javali",
+                "búfalo",
+                "carne vermelha",
+                "bife",
+                "carne moída",
+            ],
+            "mensagem": (
+                "⚠️ GRUPO 2A OMS/IARC: PROVAVELMENTE CANCERÍGENO! "
+                "Limite o consumo a no máximo 500g por semana. "
+                "Prefira métodos de preparo sem queima (cozido, vapor)."
+            ),
+        },
+        "grupo2b": {
+            "alimentos": [
+                # Adoçantes artificiais classificados como 2B pela IARC
+                "aspartame",
+                # Alimentos relacionados à Acrilamida (Grupo 2A) - colocamos aqui como alerta de possível risco
+                "batata frita",
+                "chips",
+                "biscoito",
+                "torrada",
+                "café",
+                "achocolatado em pó",
+                # Mantemos alguns itens de alto consumo para alerta, mas a mensagem agora é mais precisa
+            ],
+            "mensagem": (
+                "⚠️ GRUPO 2B OMS/IARC: POSSIVELMENTE CANCERÍGENO! "
+                "A classificação se aplica a substâncias como aspartame (adoçante) e acrilamida (presente em alimentos torrados/fritos). "
+                "Ingestão diária aceitável de aspartame: 40mg/kg de peso corporal. "
+                "Para outros riscos (como acrilamida), prefira métodos de preparo mais suaves e evite queimar os alimentos."
+            ),
+        },
+    }
+
+
+ALIMENTOS_RISCO = carregar_alimentos_risco()
+
+
+def verificar_risco_oms(nome_alimento):
+    """Versão CORRIGIDA com normalização de texto"""
+    if not nome_alimento:
+        return None
+
+    # Normaliza o nome do alimento (remove acentos, converte para minúsculas)
+    nome_norm = normalizar_texto(nome_alimento)
+
+    if not nome_norm:
+        return None
+
+    # Verifica grupo 1
+    for item in ALIMENTOS_RISCO["grupo1"]["alimentos"]:
+        item_norm = normalizar_texto(item)
+        if item_norm in nome_norm:
+            return ALIMENTOS_RISCO["grupo1"]["mensagem"]
+
+    # Verifica grupo 2a
+    for item in ALIMENTOS_RISCO["grupo2a"]["alimentos"]:
+        item_norm = normalizar_texto(item)
+        if item_norm in nome_norm:
+            return ALIMENTOS_RISCO["grupo2a"]["mensagem"]
+
+    # Verifica grupo 2b
+    # Para "café": só alerta se for café puro/torrado, não bebidas compostas
+    _EXCECOES_CAFE = {
+        "cafe com leite", "cafe preto", "cafe infusao",
+        "cafe coado", "cafe filtrado", "cafe americano",
+        "cafe descafeinado", "cafe longo",
+    }
+    for item in ALIMENTOS_RISCO["grupo2b"]["alimentos"]:
+        item_norm = normalizar_texto(item)
+        if item_norm == "cafe":
+            # Para café: só alerta se o nome for apenas "café" ou "café torrado"
+            # não alerta em bebidas compostas (café com leite, etc.)
+            if nome_norm in _EXCECOES_CAFE:
+                continue
+            # Alerta só se "cafe" aparece sem palavras que indicam bebida pronta
+            palavras_nome = set(nome_norm.split())
+            if "cafe" in palavras_nome and not any(
+                p in nome_norm for p in ["com leite", "com acucar", "infusao", "coado", "filtrado"]
+            ):
+                return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
+        else:
+            if item_norm in nome_norm:
+                return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
+
+    return None
+
+
+# ============================================
+# 6. FUNÇÃO PARA CALCULAR COMPOSIÇÃO CORPORAL
+# ============================================
+def calcular_composicao_corporal(peso, altura, idade, sexo):
+    if peso <= 0 or altura <= 0 or idade <= 0 or not sexo:
+        return None
+    altura_m = altura / 100
+    imc = peso / (altura_m**2)
+
+    if sexo == "Masculino":
+        percentual_gordura = (1.20 * imc) + (0.23 * idade) - 16.2
+    else:
+        percentual_gordura = (1.20 * imc) + (0.23 * idade) - 5.4
+
+    percentual_gordura = max(5, min(50, percentual_gordura))
+    massa_gordura = peso * (percentual_gordura / 100)
+    massa_magra = peso - massa_gordura
+
+    if sexo == "Masculino":
+        imc_ideal = 21.7
+    else:
+        imc_ideal = 21.3
+
+    peso_ideal = imc_ideal * (altura_m**2)
+
+    return {
+        "percentual_gordura": round(percentual_gordura, 1),
+        "massa_gordura": round(massa_gordura, 1),
+        "massa_magra": round(massa_magra, 1),
+        "peso_ideal": round(peso_ideal, 1),
+        "imc": round(imc, 1),
+    }
+
+
+# ============================================
+# 7. FUNÇÃO PARA CALCULAR TOTAIS
+# ============================================
+def calcular_totais_cardapio(cardapio, planejamento_tipo, cardapio_semanal=None):
+    if planejamento_tipo == "Diário":
+        total_kcal = sum(item["Kcal"] for ref in cardapio.values() for item in ref)
+        total_prot = sum(item["P"] for ref in cardapio.values() for item in ref)
+        total_carb = sum(item["C"] for ref in cardapio.values() for item in ref)
+        total_gord = sum(item["G"] for ref in cardapio.values() for item in ref)
+        dias = 1
+    else:
+        total_kcal = 0
+        total_prot = 0
+        total_carb = 0
+        total_gord = 0
+        dias = 7
+        for dia in cardapio_semanal:
+            for ref in cardapio_semanal[dia].values():
+                for item in ref:
+                    total_kcal += item["Kcal"]
+                    total_prot += item["P"]
+                    total_carb += item["C"]
+                    total_gord += item["G"]
+    return {
+        "total_kcal": total_kcal,
+        "total_prot": total_prot,
+        "total_carb": total_carb,
+        "total_gord": total_gord,
+        "media_diaria_kcal": total_kcal / dias if dias > 0 else 0,
+        "dias": dias,
+    }
+
+
+# ============================================
+# 8. FUNÇÕES DE LIMPEZA
+# ============================================
+def limpar_cardapio():
+    if st.session_state.planejamento_tipo == "Diário":
+        st.session_state.cardapio = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
+    else:
+        st.session_state.cardapio_semanal[st.session_state.dia_atual] = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
+    st.success("✅ Cardápio limpo com sucesso!")
+    st.rerun()
+
+
+def remover_item_semanal(dia, refeicao, idx):
+    st.session_state.cardapio_semanal[dia][refeicao].pop(idx)
+    st.rerun()
+
+
+def remover_item_diario(refeicao, idx):
+    st.session_state.cardapio[refeicao].pop(idx)
+    st.rerun()
+
+
+def limpar_dia_semanal(dia):
+    st.session_state.cardapio_semanal[dia] = {
+        k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+    }
+    st.success(f"✅ Cardápio de {dia} limpo!")
+    st.rerun()
+
+
+def limpar_semana_completa():
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    for dia in dias_semana:
+        st.session_state.cardapio_semanal[dia] = {
+            k: [] for k in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+        }
+    st.success("✅ Semana inteira limpa!")
+    st.rerun()
+
+
+# ============================================
+# 9. FUNÇÕES PARA TRATAR VALORES NUTRICIONAIS
+# ============================================
+def tratar_valor_nutricional(valor):
+    if valor is None:
+        return 0.0
+    if pd.isna(valor):
+        return 0.0
+    if isinstance(valor, str):
+        valor = valor.strip().upper()
+        if valor in ["NA", "N/A", "*", "TR", "-", ""]:
+            return 0.0
+        valor = valor.replace(",", ".")
+        try:
+            return float(valor)
+        except ValueError:
+            return 0.0
+    if isinstance(valor, (int, float)):
+        return float(valor) if not pd.isna(valor) else 0.0
+    return 0.0
+
+
+# ============================================
+# 10. FUNÇÕES PARA CARREGAR TABELAS
+# ============================================
+
+
+# ============================================
+# 11. FUNÇÃO PARA DETERMINAR PESO POR UNIDADE (ATUALIZADA IN 75/2020)
+# ============================================
+def obter_peso_por_unidade(descricao_alimento):
+    """
+    Retorna o peso estimado em gramas para UMA unidade do alimento,
+    baseado nas porções de referência da IN 75/2020 e conhecimento prático.
+    Para alimentos onde a IN 75 define porção (ex: 30g de biscoito),
+    usamos um peso unitário típico.
+    """
+    desc = descricao_alimento.lower() if descricao_alimento else ""
+
+    pesos_por_unidade = {
+        # ── Biscoitos e similares (Grupo VII - porção 30g) ──
+        "biscoito doce": 5,  # ~6 unidades em 30g
+        "biscoito recheado": 10,  # ~3 unidades em 30g
+        "biscoito salgado": 5,  # ~6 unidades em 30g
+        "cream cracker": 5,  # ~6 unidades em 30g
+        "água e sal": 5,
+        "wafer": 10,  # ~3 unidades em 30g
+        "maisena": 5,  # ~6 unidades em 30g
+        "biscoito de polvilho": 5,
+        "biscoito integral": 5,
+        "bolacha": 5,
+        "bolacha doce": 5,
+        "bolacha salgada": 5,
+        "cracker": 5,
+        "sequilho": 5,
+        "rosquinha": 6,
+        "torrada": 10,  # IN 75: porção 30g
+        "biscoito wafer": 10,
+        # ── Pães e produtos de panificação (Grupo I - porção 50g) ──
+        # ── Pães e produtos de panificação (Grupo I - porção 50g) ──
+        "pão francês": 50,  # 1 unidade = 50g
+        "pao frances": 50,  # sem acento (nome vindo do banco)
+        "pao francês": 50,
+        "pão frances": 50,
+        "pão de sal": 50,
+        "pao de sal": 50,
+        "pão de forma": 25,  # 1 fatia = ~25g (2 fatias = 50g)
+        "pão integral": 25,  # 1 fatia = ~25g
+        "pão de sanduíche": 25,
+        "torrada pão": 10,  # 1 unidade = ~10g
+        "croissant": 45,  # IN 75: porção 40g para croissant
+        "brioche": 40,
+        "pão de queijo": 30,  # IN 75: porção 40-50g, 1 unidade ≈ 30g
+        "pão de batata": 40,
+        "pão doce": 40,  # IN 75: porção 40g
+        "pão de hambúrguer": 50,
+        "pão de hot dog": 50,
+        "pão sírio": 50,
+        "panetone": 80,  # IN 75: porção 80g (1 fatia)
+        "bolo": 60,  # IN 75: porção 60g (1 fatia)
+        "brownie": 40,
+        # ── Frutas (Grupo III) ──
+        "maçã": 150,  # 1 unidade média
+        "banana": 100,  # 1 unidade média (nanica/prata)
+        "banana prata": 100,
+        "banana nanica": 100,
+        "banana da terra": 150,
+        "laranja": 120,  # 1 unidade média
+        "pera": 130,
+        "manga": 200,
+        "melão": 300,  # 1 fatia média
+        "melancia": 400,  # 1 fatia média
+        "abacaxi": 500,  # 1 fatia média
+        "uva": 5,  # 1 unidade
+        "morango": 12,  # 1 unidade média
+        "kiwi": 70,
+        "ameixa": 30,
+        "pêssego": 80,
+        "nectarina": 80,
+        "goiaba": 100,
+        "caqui": 100,
+        "abacate": 200,  # 1/2 unidade
+        "mamão": 150,  # 1 fatia média
+        "mamão papaia": 150,
+        "figo": 40,
+        "tangerina": 100,
+        "mexerica": 100,
+        "carambola": 100,
+        "cereja": 5,
+        "jabuticaba": 5,
+        # ── Ovos (Grupo V) ──
+        "ovo": 50,  # 1 unidade
+        "ovo de galinha": 50,
+        "ovo de codorna": 9,  # 1 unidade
+        "omelete": 80,  # 1 porção (2 ovos)
+        # ── Queijos (Grupo IV) ──
+        "queijo minas": 30,  # IN 75: porção 30g (1 fatia)
+        "queijo branco": 30,
+        "queijo prato": 20,  # 1 fatia fina
+        "queijo mussarela": 20,
+        "muçarela": 20,
+        "queijo coalho": 30,
+        "queijo provolone": 20,
+        "queijo parmesão": 15,  # 1 colher de sopa ralado
+        "queijo ralado": 10,  # IN 75: porção 10g
+        "ricota": 25,  # 1 fatia
+        "queijo cottage": 25,
+        "requeijão": 15,  # 1 colher de sopa
+        "queijo cremoso": 15,
+        "queijo gorgonzola": 20,
+        "queijo brie": 20,
+        "queijo camembert": 20,
+        # ── Frios e Embutidos (Grupo V) ──
+        "presunto": 15,  # 1 fatia fina
+        "apresuntado": 15,
+        "mortadela": 15,  # 1 fatia
+        "salame": 10,  # 1 fatia
+        "peito de peru": 15,  # 1 fatia
+        "blanquet de peru": 15,
+        "fiambre": 15,
+        "hambúrguer": 80,  # IN 75: porção 80g (1 unidade)
+        "linguiça": 60,  # IN 75: porção 50g (1 unidade ≈ 60g)
+        "salsicha": 50,  # IN 75: porção 50g (1 unidade)
+        "bacon": 10,  # 1 fatia
+        "linguiça calabresa": 60,
+        "linguiça toscana": 60,
+        "linguiça de frango": 60,
+        # ── Hortaliças e Vegetais (Grupo II) ──
+        "cenoura": 50,  # 1 unidade pequena
+        "beterraba": 60,  # 1 unidade pequena
+        "batata": 100,  # 1 unidade média
+        "batata inglesa": 100,
+        "batata doce": 100,
+        "tomate": 80,  # 1 unidade média
+        "cebola": 100,  # 1 unidade média
+        "pimentão": 100,  # 1 unidade média
+        "abobrinha": 150,  # 1 unidade pequena
+        "berinjela": 150,  # 1 unidade pequena
+        "chuchu": 150,  # 1 unidade
+        "couve-flor": 200,  # 1/4 de unidade
+        "brócolis": 200,  # 1/4 de maço
+        "pepino": 100,  # 1 unidade pequena
+        "vagem": 50,  # 1 punhado
+        "quiabo": 50,  # 1 punhado
+        "alface": 30,  # 3 folhas médias
+        "rúcula": 30,  # 1 punhado
+        "agrião": 30,  # 1 punhado
+        "espinafre": 30,  # 1 punhado
+        "couve": 30,  # 1 punhado (refogado)
+        "repolho": 30,  # 1 punhado (refogado)
+        "acelga": 30,  # 1 punhado
+        "almeirão": 30,  # 1 punhado
+        # ── Oleaginosas (Grupo VI - porção 15g) ──
+        "castanha do pará": 4,  # ~4 unidades em 15g
+        "castanha do brasil": 4,
+        "castanha de caju": 3,  # ~5 unidades em 15g
+        "amêndoa": 2,  # ~7-8 unidades em 15g
+        "nozes": 5,  # ~3 unidades em 15g
+        "avelã": 3,
+        "amendoim": 1,  # porção é em gramas
+        # ── Outros ──
+        "aipim": 100,  # 1 pedaço médio
+        "mandioca": 100,
+        "macaxeira": 100,
+        "inhame": 100,  # 1 pedaço médio
+        "cará": 100,
+        "batata baroa": 80,  # 1 unidade pequena
+        "mandioquinha": 80,
+        "milho": 100,  # 1 espiga
+        "milho verde": 100,
+        "chocolate": 25,  # IN 75: porção 25g (1 barra pequena)
+        "bombom": 25,  # IN 75: porção 25g
+        "barra de cereal": 25,  # IN 75: porção 20-30g
+        "sorvete": 60,  # IN 75: porção 60g (1 bola)
+        "picolé": 60,  # IN 75: porção 60g
+        "torrada integral": 10,
+        "torradas integrais": 10,
+        "castanha-do-pará": 4,
+        "castanha do pará": 4,
+        "castanhas-do-pará": 4,
+        "noz": 5,
+        "biscoito cream cracker": 5,
+        "biscoito recheado": 10,
+        "biscoito recheado de chocolate": 10,
+    }
+
+    # Procura correspondência exata primeiro
+    if desc in pesos_por_unidade:
+        return pesos_por_unidade[desc]
+
+    # Procura correspondência parcial (a chave está contida na descrição)
+    for chave, peso in pesos_por_unidade.items():
+        if chave in desc:
+            return peso
+
+    # Fallback genérico para alimentos que não têm correspondência
+    # Se contém "unidade" ou palavras típicas de alimentos unitários
+    palavras_unidade = [
+        "ovo",
+        "unidade",
+        "fatia",
+        "pão",
+        "fruta",
+        "queijo",
+        "biscoito",
+        "bolacha",
+        "bombom",
+        "salsicha",
+        "linguiça",
+    ]
+    if any(palavra in desc for palavra in palavras_unidade):
+        return 50  # valor médio genérico
+
+    return 0
+
+
+def obter_unidade_padrao(categoria, descricao_alimento):
+    """
+    Retorna a unidade padrão (g, ml ou un) e a quantidade padrão
+    baseado na categoria e descrição do alimento.
+    """
+    categoria_lower = categoria.lower() if categoria else ""
+    descricao_lower = descricao_alimento.lower() if descricao_alimento else ""
+
+    palavras_liquidas = [
+        "suco",
+        "leite",
+        "café",
+        "bebida",
+        "água",
+        "chá",
+        "refrigerante",
+        "cerveja",
+        "vinho",
+        "aguardente",
+        "caldo",
+        "achocolatado",
+        "óleo",
+        "azeite",
+        "iogurte",
+        "bebida láctea",
+        "leite fermentado",
+        "yakult",
+        "refresco",
+        "néctar",
+        "xarope",
+        "mel",
+        "melado",
+        "molho",
+        "creme de leite",
+        "leite de coco",
+        "chantilly",
+        "vinagre",
+    ]
+
+    palavras_unidade = [
+        "ovo",
+        "unidade",
+        "codorna",
+        "biscoito",
+        "pão",
+        "fruta",
+        "fatia",
+        "queijo",
+        "presunto",
+        "mortadela",
+        "salame",
+        "salsicha",
+        "linguiça",
+        "bombom",
+        "chocolate",
+        "barra",
+        "picolé",
+        "sorvete",
+        "torrada",
+        "hambúrguer",
+        "panetone",
+        "bolo",
+        "torta",
+        "empada",
+        "pastel",
+        "coxinha",
+        "croquete",
+        "quibe",
+        "esfirra",
+        "sanduíche",
+        "pizza",
+        "folha",
+        "tablete",
+        "cápsula",
+        "comprimido",
+        "drágea",
+        "pastilha",
+        "goma",
+        "chiclete",
+        "pirulito",
+        "bala",
+        "dropes",
+        "azeitona",
+        "amêndoa",
+        "castanha",
+        "nozes",
+        "avelã",
+    ]
+
+    is_liquido = any(palavra in descricao_lower for palavra in palavras_liquidas)
+    usa_unidade = any(palavra in descricao_lower for palavra in palavras_unidade)
+
+    if usa_unidade:
+        return "un", 1
+    elif is_liquido:
+        return "ml", 200  # IN 75: 200ml para bebidas
+    else:
+        return "g", 1
+
+
+
+# ============================================
+# 13. CSS PROFISSIONAL (MANTIDO IGUAL)
+# ============================================
+st.markdown(
+    """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    
+    .banner-profissional {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+        padding: 25px; border-radius: 20px; margin-bottom: 20px; text-align: center;
+        position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .banner-profissional::before {
+        content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        animation: shimmer 3s infinite;
+    }
+    @keyframes shimmer { 100% { left: 100%; } }
+    
+    .icones-esportes { font-size: 40px; margin-bottom: 10px; letter-spacing: 15px; }
+    .banner-profissional h1 { font-size: 45px; font-weight: 800; margin: 0;
+        background: linear-gradient(135deg, #ffd700, #ff8c00, #ff4500);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .slogan { font-size: 16px; color: #94a3b8; margin-top: 8px; letter-spacing: 1px; }
+    
+    .perfil-gigante {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+        border-radius: 20px; padding: 20px; margin: 15px 0; text-align: center;
+        border: 2px solid #ffd700; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    .perfil-gigante .titulo { font-size: 22px; font-weight: 800; color: #ffd700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+    .perfil-gigante .dados-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+    .perfil-gigante .dado-item { background: rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 15px; min-width: 120px; }
+    .perfil-gigante .dado-icon { font-size: 30px; margin-bottom: 5px; }
+    .perfil-gigante .dado-valor { font-size: 28px; font-weight: 800; color: white; line-height: 1; }
+    .perfil-gigante .dado-label { font-size: 12px; color: #94a3b8; margin-top: 5px; }
+    
+    .meta-gigante {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        border-radius: 20px; padding: 15px; margin-top: 10px; text-align: center;
+        border: 2px solid #ffd700;
+    }
+    .meta-gigante .meta-titulo { font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 10px; }
+    .meta-gigante .meta-valor { font-size: 50px; font-weight: 900; color: white; line-height: 1; margin: 5px 0; }
+    .meta-gigante .meta-mensagem { font-size: 16px; font-weight: 700; color: #ffd700; margin-top: 10px;
+        background: rgba(0,0,0,0.3); display: inline-block; padding: 5px 20px; border-radius: 50px; }
+    
+    .card-com-explicacao {
+        background: var(--bg-secondary); border-radius: 12px; padding: 12px; text-align: center;
+        border: 1px solid var(--border-color); height: 100%;
+    }
+    .card-icon { font-size: 28px; margin-bottom: 5px; }
+    .card-valor { font-size: 24px; font-weight: bold; }
+    .card-titulo { font-size: 14px; font-weight: 600; margin: 5px 0; }
+    .card-explicacao { font-size: 11px; color: var(--text-light); margin-top: 8px;
+        padding-top: 8px; border-top: 1px solid var(--border-color); }
+    
+    .header-cafe { background: linear-gradient(90deg, #f59e0b, #fbbf24); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-almoco { background: linear-gradient(90deg, #ef4444, #f87171); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-lanches { background: linear-gradient(90deg, #10b981, #34d399); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    .header-jantar { background: linear-gradient(90deg, #8b5cf6, #a78bfa); color: white; padding: 15px;
+        border-radius: 12px; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+    
+    .macro-tag-kcal { display: inline-block; background: #ef4444; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-proteina { display: inline-block; background: #3b82f6; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-carb { display: inline-block; background: #f59e0b; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    .macro-tag-gordura { display: inline-block; background: #10b981; color: white; padding: 5px 12px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; margin-right: 8px; }
+    
+    .dia-btn-selected { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
+        border: 2px solid #ffd700; text-align: center; padding: 10px; border-radius: 10px; font-weight: bold; }
+    
+    .alerta-oms-grupo1 { background-color: #dc2626; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #ffd700; }
+    .alerta-oms-grupo2a { background-color: #f59e0b; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #dc2626; }
+    .alerta-oms-grupo2b { background-color: #8b5cf6; color: white; padding: 12px; border-radius: 8px;
+        margin: 10px 0; font-size: 13px; border-left: 5px solid #f59e0b; }
+    
+    .aviso-cientifico { background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-left: 4px solid #f59e0b; padding: 10px 15px; border-radius: 8px;
+        margin-bottom: 15px; font-size: 12px; color: #cbd5e1; }
+    .privacidade-box { background-color: var(--bg-secondary); padding: 15px; border-radius: 10px;
+        border-left: 5px solid #10b981; margin: 15px 0; font-size: 12px; }
+    
+    .resumo-laudo {
+        background: linear-gradient(135deg, #1e293b, #0f172a) !important;
+        border: 2px solid #ffd700 !important; border-radius: 15px !important;
+        padding: 20px !important; margin: 15px 0 !important; color: #ffffff !important;
+    }
+    .resumo-laudo h4 { color: #ffd700 !important; margin-bottom: 15px !important; font-size: 18px !important; }
+    .resumo-laudo p { color: #ffffff !important; margin: 10px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
+    .resumo-laudo strong { color: #fbbf24 !important; }
+    
+    .equipamento-adipometro {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #3b82f6;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-adipometro strong { color: #fbbf24 !important; }
+    
+    .equipamento-fita {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #10b981;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-fita strong { color: #fbbf24 !important; }
+    
+    .equipamento-complementar {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-left: 5px solid #f59e0b;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 10px 0;
+        color: #ffffff !important;
+    }
+    .equipamento-complementar strong { color: #fbbf24 !important; }
+    
+    .seletor-fonte {
+        background: linear-gradient(135deg, #1e3a5f, #0f172a);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #ffd700;
+    }
+    
+    .metodo-selector {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: 12px;
+        padding: 15px;
+        margin: 15px 0;
+        border: 1px solid #ffd700;
+    }
+    .metodo-selector h4 {
+        color: #ffd700 !important;
+        margin-bottom: 10px;
+    }
+    
+    .aviso-peso-real {
+        background: linear-gradient(135deg, #fef3c7, #fffbeb);
+        border-left: 8px solid #f59e0b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .aviso-peso-real h3 {
+        color: #92400e !important;
+        margin: 0 0 8px 0;
+    }
+    .aviso-peso-real p {
+        color: #78350f !important;
+        margin: 0;
+        font-size: 15px;
+    }
+    .aviso-peso-real .grid-referencia {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 15px 0;
+    }
+    
+    .aviso-peso-real .card-peso {
+        background: #ffffff !important;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #fde68a;
+    }
+    .aviso-peso-real .card-peso strong {
+        color: #d97706 !important;
+    }
+    .aviso-peso-real .card-peso br {
+        display: block;
+        margin: 4px 0;
+    }
+    .aviso-peso-real .card-peso span {
+        color: #1e293b !important;
+    }
+    
+    .aviso-peso-real .obs {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #92400e !important;
+        background: #fffbeb;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #fde68a;
+    }
+    
+    .instrucao-cientifica {
+        background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+        border-left: 5px solid #0284c7;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+    }
+    .instrucao-cientifica h4 {
+        color: #0369a1 !important;
+        margin: 0 0 10px 0;
+    }
+    .instrucao-cientifica ol {
+        margin: 0;
+        padding-left: 20px;
+        color: #0c4a6e !important;
+    }
+    .instrucao-cientifica p {
+        margin-top: 10px;
+        font-size: 13px;
+        color: #0369a1 !important;
+    }
+    
+    @media print {
+        .stSidebar, [data-testid="stSidebarContent"] { display: none !important; }
+        * { color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body, .stApp, .main, .block-container, div, section, p, h1, h2, h3, h4, h5, h6, span, li, .stMarkdown, .stMetric,
+        .card-com-explicacao, .perfil-gigante, .meta-gigante, .header-cafe, .header-almoco, .header-lanches, .header-jantar,
+        .resumo-laudo, .aviso-cientifico, .privacidade-box, .equipamento-adipometro, .equipamento-fita, .equipamento-complementar,
+        .aviso-peso-real, .instrucao-cientifica, .metodo-selector { color: black !important; background: white !important; }
+        .banner-profissional h1 { background: none !important; -webkit-background-clip: unset !important; background-clip: unset !important;
+            -webkit-text-fill-color: black !important; color: black !important; text-shadow: none !important; }
+        table, .stDataFrame, .dataframe { border: 1px solid black !important; width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+        th, td { border: 1px solid black !important; padding: 8px !important; color: black !important; background: white !important; }
+        .js-plotly-plot .legend text, .plotly .legend text, .legend text, .g-legend text, .annotation-text { fill: black !important; color: black !important; font-weight: bold !important; }
+        .js-plotly-plot .xtick text, .js-plotly-plot .ytick text, .plotly .xtick text, .plotly .ytick text { fill: black !important; color: black !important; }
+        .js-plotly-plot .bar, .plotly .bar { opacity: 1 !important; }
+        .stMarkdown, .stMarkdown p, .stMarkdown div, .card-com-explicacao, .card-com-explicacao *,
+        .resumo-laudo, .resumo-laudo *, .aviso-cientifico, .aviso-cientifico *, .privacidade-box, .privacidade-box *,
+        .aviso-peso-real, .aviso-peso-real *, .instrucao-cientifica, .instrucao-cientifica *, .metodo-selector, .metodo-selector * {
+            color: black !important; background: white !important; }
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# ============================================
+# 14. SIDEBAR (MANTIDA IGUAL)
+# ============================================
+with st.sidebar:
+    st.markdown("### 👤 Perfil Biológico")
+    st.markdown("---")
+
+    peso_at = st.number_input(
+        "📊 Peso Atual (kg)", 0.0, 300.0, 0.0, step=0.5, format="%.1f", key="peso_atual"
+    )
+    alt_cm = st.number_input("📏 Altura (cm)", 0, 250, 0, step=1, key="altura_cm")
+    if alt_cm == 0:
+        st.caption("💡 Exemplo: 165 cm = 1,65 m")
+
+    idade = st.number_input("🎂 Idade (anos)", 0, 120, 0, step=1, key="idade_input")
+
+    st.markdown("**⚥ Sexo Biológico**")
+    col_sexo1, col_sexo2 = st.columns(2)
+    with col_sexo1:
+        if st.button("👨 Homem", key="btn_homem", use_container_width=True):
+            st.session_state.sexo = "Masculino"
+    with col_sexo2:
+        if st.button("👩 Mulher", key="btn_mulher", use_container_width=True):
+            st.session_state.sexo = "Feminino"
+
+    sexo = st.session_state.sexo
+    if sexo:
+        st.caption(f"✅ Selecionado: {sexo}")
+    else:
+        st.caption("⬅️ Clique em um dos botões acima")
+
+    st.markdown("---")
+    st.markdown("### 🎯 Objetivos")
+    objetivo = st.radio(
+        "🎯 Seu objetivo principal:",
+        ["Perda de peso", "Ganho de peso"],
+        horizontal=True,
+    )
+
+    p_alvo = st.number_input(
+        "🎯 Meta de Peso (kg)",
+        0.0,
+        300.0,
+        0.0,
+        step=0.5,
+        format="%.1f",
+        key="meta_peso",
+    )
+    if p_alvo > 0 and peso_at > 0:
+        if objetivo == "Perda de peso" and p_alvo >= peso_at:
+            st.warning(
+                f"⚠️ Para perda de peso, a meta deve ser menor que {peso_at:.1f} kg"
+            )
+        elif objetivo == "Ganho de peso" and p_alvo <= peso_at:
+            st.warning(
+                f"⚠️ Para ganho de peso, a meta deve ser maior que {peso_at:.1f} kg"
+            )
+
+    opcoes_naf = {
+        "Sedentário (Sem exercício)": 1.2,
+        "Leve (1-3 dias/sem)": 1.375,
+        "Moderado (3-5 dias/sem)": 1.55,
+        "Intenso (6-7 dias/sem)": 1.725,
+        "Atleta (Treino pesado 2x dia)": 1.9,
+    }
+    naf_label = st.selectbox(
+        "🏃 Frequência de Atividade Física:", list(opcoes_naf.keys())
+    )
+    naf_val = opcoes_naf[naf_label]
+
+    st.markdown("---")
+    planejamento_tipo = st.radio(
+        "📅 Tipo de Planejamento:", ["Diário", "Semanal"], horizontal=True
+    )
+    if planejamento_tipo != st.session_state.planejamento_tipo:
+        st.session_state.planejamento_tipo = planejamento_tipo
+
+    st.markdown("---")
+    st.markdown("### 📊 Fonte Nutricional — Seção 26")
+    fonte_tabela = st.radio(
+        "Tabela de referência:",
+        ["🥦 BioGestão 360", "🌿 TACO (UNICAMP)", "📊 IBGE (POF)"],
+        key="fonte_tabela_sidebar",
+        help=(
+            "**BioGestão 360** — 25 mil+ produtos industrializados brasileiros\n\n"
+            "**TACO** — Alimentos in natura e preparações caseiras (UNICAMP)\n\n"
+            "**IBGE** — Alimentos com 16 formas de preparo (POF 2008-2009)"
+        )
+    )
+    st.session_state.fonte_dados = fonte_tabela
+
+    # Descrição da fonte selecionada
+    if "TACO" in fonte_tabela:
+        st.caption("🌿 TACO — 613 alimentos | Ovo cozido, frango grelhado, arroz, feijão...")
+    elif "IBGE" in fonte_tabela:
+        st.caption("📊 IBGE — 1.962 itens | Ovo frito, assado, grelhado, ao molho...")
+    else:
+        st.caption("🥦 BioGestão 360 — Open Food Facts (ODbL) | Dados de rótulos reais")
+
+    st.markdown("---")
+
+    # ============================================
+    # SISTEMA DE AUTENTICAÇÃO
+    # ============================================
+    logado = tela_login()
+
+    if logado and st.session_state.get("usuario_role") == "admin":
+        st.markdown("---")
+        tela_admin_dashboard()
+    
+    # ============================================
+    # PORTAL — Aprenda a usar o BioGestão 360
+    # ============================================
+    st.markdown("---")
+    st.markdown("### 📚 Aprenda a usar")
+    if st.button(
+        "🏋️ Como funciona cada seção",
+        key="btn_portal",
+        use_container_width=True,
+        help="Abre o guia completo do BioGestão 360"
+    ):
+        st.session_state.mostrar_portal = True
+
+    st.caption("Dúvidas? Acesse o guia ou fale no WhatsApp.")
+
+    st.markdown("---")
+    st.info(
+        "🖨️ **IMPRESSÃO**\n1️⃣ Clique nos **3 pontinhos (⋮)** ao lado do botão Deploy\n2️⃣ Selecione **Imprimir**\n3️⃣ Mantenha as **margens padrão** do navegador\n4️⃣ Escolha **Salvar como PDF** 🌳"
+    )
+    st.caption("💡 **Dica:** Use a extensão GoFullPage para capturar a página inteira")
+
+    # Contatos
+    st.markdown("---")
+    st.markdown("### 📱 Contato")
+    st.markdown(
+        "[![WhatsApp](https://img.shields.io/badge/WhatsApp-Comprovante_PIX-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5521979486731)"
+    )
+    st.markdown(
+        "[![Telegram](https://img.shields.io/badge/Telegram-Tutoriais_PDF-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/biogestao360)"
+    )
+
+
+# ============================================
+# 15. CARGA DE DADOS
+# ============================================
+# BioGestão 360 é a única fonte de dados nutricional do app.
+# Carrega do Supabase (prioritário) ou CSV local (fallback automático).
+@st.cache_data
+def load_biogestao():
+    return carregar_biogestao_foods()
+
+
+df_bio = load_biogestao()
+
+
+@st.cache_data
+def load_taco():
+    try:
+        import pandas as pd
+        import os
+        if os.path.exists("taco_limpa.csv"):
+            df = pd.read_csv("taco_limpa.csv", encoding="utf-8", low_memory=False)
+            for col in ["kcal_100g","proteina_g","carboidrato_g","gordura_g",
+                        "fibra_g","sodio_mg"]:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+            # Mapear colunas para o padrão do app (sodio_mg → sodio_g em g)
+            df["sodio_g"]       = df["sodio_mg"] / 1000
+            df["marca"]         = None
+            df["porcao_num"]    = 100.0
+            df["porcao_uni"]    = "g"
+            return df
+    except Exception as e:
+        print(f"Erro ao carregar TACO: {e}")
+    return None
+
+
+@st.cache_data
+def load_ibge():
+    try:
+        import pandas as pd
+        import os
+        if os.path.exists("ibge_limpa.csv"):
+            df = pd.read_csv("ibge_limpa.csv", encoding="utf-8", low_memory=False)
+            for col in ["kcal_100g","proteina_g","carboidrato_g","gordura_g",
+                        "fibra_g","sodio_mg","gordura_saturada_g","gordura_trans_g","acucar_g"]:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+            # Mapear colunas para o padrão do app
+            df["sodio_g"]       = df["sodio_mg"] / 1000
+            df["marca"]         = None
+            df["porcao_num"]    = 100.0
+            df["porcao_uni"]    = "g"
+            # campo_busca para IBGE é nome_busca (já normalizado)
+            return df
+    except Exception as e:
+        print(f"Erro ao carregar IBGE: {e}")
+    return None
+
+
+df_taco = load_taco()
+df_ibge = load_ibge()
+
+# ============================================
+# 16. HEADER
+# ============================================
+st.markdown(
+    """
+<div class='banner-profissional'>
+    <div class='icones-esportes'>🏋️‍♂️ 🏊‍♂️ 🚴‍♂️ 🏃‍♂️ 🧘‍♀️</div>
+    <h1>BioGestão 360</h1>
+    <div class='slogan'>Evolua seu treino junto com os nutrientes que movem o seu corpo</div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# ============================================
+# 17. APOIE ESTE PROJETO
+# ============================================
+with st.expander("💚 Apoie este projeto - Colaboração voluntária", expanded=False):
+
+    st.markdown("""
+    ### 🙏 Por que apoiar?
+    O **BioGestão 360** é gratuito e sempre será. Seu apoio voluntário permite:
+    - 🖥️ Manter o servidor sempre no ar
+    - 📊 Ampliar as tabelas nutricionais
+    - 🚀 Desenvolver novas funcionalidades
+    - 📚 Criar tutoriais e materiais educativos
+    """)
+
+    st.markdown("---")
+    st.markdown("### 🎯 Planos de Apoio")
+    st.info(
+        "💡 Após o PIX, envie o comprovante no WhatsApp **(21) 97948-6731**. "
+        "Ativação em até 72 horas. Cada plano é individual."
+    )
+
+    # Linha 1 — Importador
+    st.markdown("#### 📋 Importador Automático de Cardápio")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("""
+        **☕ Café**
+        - Importador por 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 5,00**
+        """)
+    with col2:
+        st.markdown("""
+        **🥗 Básico**
+        - Importador por 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 15,00**
+        """)
+    with col3:
+        st.markdown("""
+        **♾️ Vitalício**
+        - Importador para sempre
+        - 1 acesso simultâneo
+        
+        **R$ 49,00**
+        """)
+
+    st.markdown("---")
+
+    # Linha 2 — Avaliação
+    st.markdown("#### 📏 Avaliação Física *(para profissionais habilitados)*")
+    col4, col5 = st.columns(2)
+    with col4:
+        st.markdown("""
+        **💪 Pro**
+        - Avaliação Física por 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 10,00**
+        """)
+    with col5:
+        st.markdown("""
+        **💪 Pro Anual**
+        - Avaliação Física por 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 20,00**
+        """)
+
+    st.markdown("---")
+
+    # Linha 3 — Combo
+    st.markdown("#### 🏆 Combo — Importador + Avaliação Física")
+    col6, col7, col8 = st.columns(3)
+    with col6:
+        st.markdown("""
+        **🏆 Combo Mensal**
+        - Importador + Avaliação 30 dias
+        - 1 acesso simultâneo
+        
+        **R$ 12,00**
+        """)
+    with col7:
+        st.markdown("""
+        **🌟 Combo Anual**
+        - Importador + Avaliação 1 ano
+        - 1 acesso simultâneo
+        
+        **R$ 25,00**
+        """)
+    with col8:
+        st.markdown("""
+        **🏅 Combo Vitalício**
+        - Importador + Avaliação para sempre
+        - 1 acesso simultâneo
+        
+        **R$ 79,00**
+        """)
+
+    st.markdown("---")
+    st.markdown("### 💳 Como apoiar")
+
+    col_pix, col_paypal = st.columns(2)
+    with col_pix:
+        st.markdown("#### 📱 PIX")
+        st.image(gerar_qr_code_pix(), width=150)
+        st.markdown("**Chave PIX (Aleatória):**")
+        st.code("f3e890da-fb72-4e8c-a0cd-d88177457a30", language="text")
+        st.caption("ADILSON GONCALVES XIMENES")
+    with col_paypal:
+        st.markdown("#### 💳 PayPal")
+        st.iframe(get_paypal_html(), height=100)
+        st.caption(
+            "Link: https://www.paypal.com/donate/?hosted_button_id=LQTE48R8SLWRG"
+        )
+
+    st.markdown("---")
+    st.markdown("### 🖨️ Dica de Impressão")
+    st.info("""
+    ⚠️ A impressão nativa (Ctrl+P) pode cortar gráficos e tabelas.
+    ✅ **Para melhor resultado:** Use a extensão **GoFullPage** (Chrome/Edge)
+    """)
+    st.caption("🌳 A natureza agradece o uso consciente do papel!")
+
+# ============================================
+# 18. POLÍTICA DE PRIVACIDADE
+# ============================================
+st.markdown(
+    """
+<div class='privacidade-box'>
+    <b>🔒 POLÍTICA DE PRIVACIDADE:</b><br>
+    ✅ Cálculos e dados nutricionais processados localmente no seu navegador<br>
+    ✅ Ao fechar a aba, seus dados de saúde são permanentemente deletados<br>
+    🔐 <b>Cadastro opcional:</b> Apenas nome de usuário, e-mail e senha (criptografada)
+    são armazenados para controle de acesso às seções exclusivas<br>
+    🏦 <b>Banco de dados:</b> Hospedado com segurança na nuvem (Supabase/PostgreSQL com SSL)<br>
+    🥦 <b>Bases nutricionais:</b> Open Food Facts (ODbL) | TACO/UNICAMP (4ª Ed.) | IBGE/POF 2008-2009<br>
+    💳 <b>Pagamentos:</b> Realizados via PIX ou PayPal — o app não armazena dados bancários<br>
+    📱 <b>Suporte e tutoriais:</b> <b>t.me/biogestao360</b><br>
+    📋 <b>Seus direitos:</b> Solicite exclusão da sua conta a qualquer momento pelo WhatsApp
+    <b>(21) 97948-6731</b>
+    <br><br>
+    <b>📋 LICENÇA DE USO (Creative Commons):</b><br>
+    🚫 <b>CC BY-NC-ND 4.0:</b> Este projeto está protegido por direitos autorais. Não é permitida
+    a reprodução total ou parcial sem a citação expressa da fonte. É terminantemente proibida a
+    comercialização deste software ou a criação de obras derivadas para fins de distribuição ou venda.
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# ============================================
+# 19. AVISO CIENTÍFICO
+# ============================================
+st.markdown(
+    """
+<div class='aviso-cientifico'>
+    <strong>📋 METODOLOGIA:</strong> Cálculos baseados em equações científicas validadas
+    (Harris-Benedict, Katch-McArdle, Jackson &amp; Pollock, Siri) e dados nutricionais das bases
+    <strong>TACO/UNICAMP</strong> (4ª Ed.), <strong>IBGE/POF 2008-2009</strong> e
+    <strong>BioGestão 360</strong> (Open Food Facts — ODbL).<br>
+    <strong>⚠️ Importador de Cardápio:</strong> Ferramenta de preenchimento automático.
+    Hierarquia de busca: TACO → IBGE → BioGestão 360 → estimativa inteligente.
+    A coluna <b>Fonte</b> indica a origem de cada valor.
+    Não substitui orientação de nutricionista habilitado.<br>
+    <strong>💪 Avaliação Física:</strong> Para profissionais de Educação Física habilitados (CREF ativo).
+    Use os resultados em conjunto com orientação nutricional para melhores resultados.<br>
+    <strong>🏋️ Monte Seu Treino:</strong> Ferramenta educacional. Não substitui prescrição
+    presencial de profissional de Educação Física. Exija CREF ativo e SBV do seu profissional.<br>
+    <strong>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERROS</strong>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# ============================================
+# 20. CÁLCULOS BIOMÉTRICOS
+# ============================================
+if peso_at > 0 and alt_cm > 0 and idade > 0 and sexo:
+    alt_m = alt_cm / 100
+    imc = peso_at / (alt_m**2)
+    if sexo == "Masculino":
+        tmb_harris = 66.47 + (13.75 * peso_at) + (5.0 * alt_cm) - (6.75 * idade)
+    else:
+        tmb_harris = 655.1 + (9.56 * peso_at) + (1.85 * alt_cm) - (4.67 * idade)
+    get_harris = tmb_harris * naf_val
+    composicao = calcular_composicao_corporal(peso_at, alt_cm, idade, sexo)
+
+    if p_alvo > 0:
+        diferenca_meta = p_alvo - peso_at
+        if objetivo == "Perda de peso":
+            if diferenca_meta > 0:
+                texto_meta = f"🏆 Você já está abaixo da sua meta! Faltam {abs(diferenca_meta):.1f} kg para manter."
+            elif diferenca_meta < 0:
+                texto_meta = f"🎯 Você precisa perder {abs(diferenca_meta):.1f} kg para atingir sua meta!"
+            else:
+                texto_meta = "🎉 Parabéns! Meta alcançada!"
+        else:
+            if diferenca_meta > 0:
+                texto_meta = f"🎯 Você precisa ganhar {abs(diferenca_meta):.1f} kg para atingir sua meta!"
+            elif diferenca_meta < 0:
+                texto_meta = f"🏆 Você já está acima da sua meta! Faltam {abs(diferenca_meta):.1f} kg para manter."
+            else:
+                texto_meta = "🎉 Parabéns! Meta alcançada!"
+    else:
+        texto_meta = "📝 Defina sua meta de peso acima"
+        diferenca_meta = 0
+
+    dados_validos = True
+else:
+    dados_validos = False
+    composicao = None
+    diferenca_meta = 0
+    texto_meta = "📝 Preencha seus dados na barra lateral"
+
+# ============================================
+# 21. PERFIL GIGANTE (MANTIDO)
+# ============================================
+if dados_validos:
+    st.markdown(
+        f"""
+    <div class='perfil-gigante'>
+        <div class='titulo'>📋 SEU PERFIL</div>
+        <div class='dados-container'>
+            <div class='dado-item'><div class='dado-icon'>⚖️</div><div class='dado-valor'>{peso_at:.1f} kg</div><div class='dado-label'>Peso</div></div>
+            <div class='dado-item'><div class='dado-icon'>📏</div><div class='dado-valor'>{alt_cm} cm</div><div class='dado-label'>Altura</div></div>
+            <div class='dado-item'><div class='dado-icon'>🎂</div><div class='dado-valor'>{idade} anos</div><div class='dado-label'>Idade</div></div>
+            <div class='dado-item'><div class='dado-icon'>⚥</div><div class='dado-valor'>{sexo}</div><div class='dado-label'>Sexo</div></div>
+        </div>
+        <div class='meta-gigante'>
+            <div class='meta-titulo'>🎯 META DE PESO - {objetivo.upper()}</div>
+            <div class='meta-valor'>{p_alvo:.1f} kg</div>
+            <div class='meta-mensagem'>{texto_meta}</div>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        """
+    <div class='perfil-gigante'>
+        <div class='titulo'>📋 SEU PERFIL</div>
+        <div class='dados-container'>
+            <div class='dado-item'><div class='dado-icon'>⚖️</div><div class='dado-valor'>-- kg</div><div class='dado-label'>Peso</div></div>
+            <div class='dado-item'><div class='dado-icon'>📏</div><div class='dado-valor'>-- cm</div><div class='dado-label'>Altura</div></div>
+            <div class='dado-item'><div class='dado-icon'>🎂</div><div class='dado-valor'>-- anos</div><div class='dado-label'>Idade</div></div>
+            <div class='dado-item'><div class='dado-icon'>⚥</div><div class='dado-valor'>--</div><div class='dado-label'>Sexo</div></div>
+        </div>
+        <div class='meta-gigante'>
+            <div class='meta-titulo'>🎯 META DE PESO</div>
+            <div class='meta-valor'>-- kg</div>
+            <div class='meta-mensagem'>📝 Preencha seus dados na barra lateral</div>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+# ============================================
+# 22. DASHBOARD (MANTIDO)
+# ============================================
+st.markdown("## ⚡ Metabolismo e Gasto Energético")
+
+if dados_validos:
+    get_atual = get_harris
+    tmb_atual = tmb_harris
+    metodo_atual_nome = "Harris-Benedict (Peso Total)"
+    st.session_state.get_calculado = get_atual          # ←
+    st.session_state.tmb_calculado = tmb_atual          # ←
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>⚡</div>
+        <div class='card-valor'>{get_atual:.0f} kcal</div><div class='card-titulo'>Gasto Total (GET)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Total de calorias que seu corpo gasta por dia.<br>📊 <strong>Como usar:</strong> Para manter o peso, consuma esta quantidade.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col2:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>🔥</div>
+        <div class='card-valor'>{tmb_atual:.0f} kcal</div><div class='card-titulo'>Metabolismo Basal (TMB)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Calorias queimadas em repouso total.<br>📊 <strong>Como usar:</strong> É o mínimo que seu corpo precisa para viver.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col3:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>📊</div>
+        <div class='card-valor'>{composicao['imc']}</div><div class='card-titulo'>Índice de Massa Corporal (IMC)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Relação entre peso e altura.<br>📊 <strong>Referência:</strong> 18.5-25 = Saudável | 25-30 = Sobrepeso | >30 = Obesidade</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col4:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>🎯</div>
+        <div class='card-valor'>{composicao['peso_ideal']} kg</div><div class='card-titulo'>Peso Ideal Estimado</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso considerado mais saudável para sua altura.<br>📊 <strong>Como usar:</strong> Meta de longo prazo baseada em estudos científicos.</div></div>""",
+            unsafe_allow_html=True,
+        )
+else:
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>⚡</div>
+        <div class='card-valor'>-- kcal</div><div class='card-titulo'>Gasto Total (GET)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Total de calorias que seu corpo gasta por dia.<br>📊 <strong>Como usar:</strong> Para manter o peso, consuma esta quantidade.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col2:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>🔥</div>
+        <div class='card-valor'>-- kcal</div><div class='card-titulo'>Metabolismo Basal (TMB)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Calorias queimadas em repouso total.<br>📊 <strong>Como usar:</strong> É o mínimo que seu corpo precisa para viver.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col3:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>📊</div>
+        <div class='card-valor'>--</div><div class='card-titulo'>Índice de Massa Corporal (IMC)</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Relação entre peso e altura.<br>📊 <strong>Referência:</strong> 18.5-25 = Saudável | 25-30 = Sobrepeso | >30 = Obesidade</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col4:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>🎯</div>
+        <div class='card-valor'>-- kg</div><div class='card-titulo'>Peso Ideal Estimado</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso considerado mais saudável para sua altura.<br>📊 <strong>Como usar:</strong> Meta de longo prazo baseada em estudos científicos.</div></div>""",
+            unsafe_allow_html=True,
+        )
+
+# ============================================
+# 23. COMPOSIÇÃO CORPORAL (MANTIDO)
+# ============================================
+st.markdown("---")
+st.markdown("## 🧬 Composição Corporal (Estimativa por IMC)")
+
+if dados_validos:
+    col_g1, col_g2, col_g3 = st.columns(3)
+    with col_g1:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>🎯</div>
+        <div class='card-valor'>{composicao['percentual_gordura']}%</div><div class='card-titulo'>Percentual de Gordura</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Porcentagem do seu corpo que é gordura.<br>📊 <strong>Referência:</strong> Homens: 10-25% | Mulheres: 18-32%</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col_g2:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>⚖️</div>
+        <div class='card-valor'>{composicao['massa_gordura']} kg</div><div class='card-titulo'>Massa de Gordura</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso total da gordura no seu corpo.<br>📊 <strong>Como usar:</strong> Acompanhe a redução para perder peso saudável.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col_g3:
+        st.markdown(
+            f"""<div class='card-com-explicacao'><div class='card-icon'>💪</div>
+        <div class='card-valor'>{composicao['massa_magra']} kg</div><div class='card-titulo'>Massa Magra</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Músculos + ossos + órgãos.<br>📊 <strong>Como usar:</strong> Quanto maior, melhor para o metabolismo!</div></div>""",
+            unsafe_allow_html=True,
+        )
+else:
+    col_g1, col_g2, col_g3 = st.columns(3)
+    with col_g1:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>🎯</div>
+        <div class='card-valor'>--%</div><div class='card-titulo'>Percentual de Gordura</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Porcentagem do seu corpo que é gordura.<br>📊 <strong>Referência:</strong> Homens: 10-25% | Mulheres: 18-32%</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col_g2:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>⚖️</div>
+        <div class='card-valor'>-- kg</div><div class='card-titulo'>Massa de Gordura</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Peso total da gordura no seu corpo.<br>📊 <strong>Como usar:</strong> Acompanhe a redução para perder peso saudável.</div></div>""",
+            unsafe_allow_html=True,
+        )
+    with col_g3:
+        st.markdown(
+            """<div class='card-com-explicacao'><div class='card-icon'>💪</div>
+        <div class='card-valor'>-- kg</div><div class='card-titulo'>Massa Magra</div>
+        <div class='card-explicacao'>💡 <strong>O que é?</strong> Músculos + ossos + órgãos.<br>📊 <strong>Como usar:</strong> Quanto maior, melhor para o metabolismo!</div></div>""",
+            unsafe_allow_html=True,
+        )
+
+st.markdown("---")
+
+# ============================================
+# 24. NOVA SEÇÃO: DADOS DO PACIENTE E PROFISSIONAL
+# ============================================
+st.markdown("## 📋 IDENTIFICAÇÃO DA CONSULTA")
+
+with st.expander("📝 Dados do Paciente e Profissional", expanded=True):
+    col_pac1, col_pac2 = st.columns(2)
+
+    with col_pac1:
+        st.markdown("### 👤 Dados do Paciente")
+        nome_paciente = st.text_input(
+            "Nome completo do paciente",
+            value=st.session_state.dados_paciente.get("nome", ""),
+            key="nome_paciente_novo",
+        )
+
+        from datetime import date
+
+        data_nascimento_default = None
+        if st.session_state.dados_paciente.get("data_nascimento"):
+            try:
+                data_nascimento_default = datetime.strptime(
+                    st.session_state.dados_paciente.get("data_nascimento"), "%Y-%m-%d"
+                ).date()
+            except:
+                data_nascimento_default = date(1970, 1, 1)
+        else:
+            data_nascimento_default = date(1970, 1, 1)
+
+        data_nascimento = st.date_input(
+            "Data de nascimento",
+            value=data_nascimento_default,
+            min_value=date(1900, 1, 1),
+            max_value=date.today(),
+            key="data_nascimento_novo",
+        )
+
+        if data_nascimento:
+            hoje = date.today()
+            idade_calculada = (
+                hoje.year
+                - data_nascimento.year
+                - (
+                    (hoje.month, hoje.day)
+                    < (data_nascimento.month, data_nascimento.day)
+                )
+            )
+            st.caption(f"📊 **Idade calculada: {idade_calculada} anos**")
+
+        telefone_paciente = st.text_input(
+            "Telefone para contato",
+            value=st.session_state.dados_paciente.get("telefone", ""),
+            key="telefone_paciente_novo",
+        )
+        email_paciente = st.text_input(
+            "E-mail",
+            value=st.session_state.dados_paciente.get("email", ""),
+            key="email_paciente_novo",
+        )
+
+    with col_pac2:
+        st.markdown("### 👨‍⚕️ Dados do Profissional Responsável")
+        nome_profissional = st.text_input(
+            "Nome do profissional (Nutricionista/Médico)",
+            value=st.session_state.dados_profissional.get("nome", ""),
+            key="nome_profissional_novo",
+        )
+        registro_profissional = st.text_input(
+            "Nº de Registro (CREF/CRN/CRM)",
+            value=st.session_state.dados_profissional.get("registro", ""),
+            key="registro_profissional_novo",
+        )
+        especialidade = st.selectbox(
+            "Especialidade",
+            ["Nutrição", "Nutrição Esportiva", "Medicina", "Educação Física", "Outro"],
+            index=[
+                "Nutrição",
+                "Nutrição Esportiva",
+                "Medicina",
+                "Educação Física",
+                "Outro",
+            ].index(
+                st.session_state.dados_profissional.get("especialidade", "Nutrição")
+            ),
+            key="especialidade_novo",
+        )
+
+        st.markdown("### 🏢 Local da Consulta")
+        nome_clinica = st.text_input(
+            "Clínica/Consultório",
+            value=st.session_state.dados_consulta.get("clinica", ""),
+            key="nome_clinica_novo",
+        )
+
+    st.markdown("### 📅 Datas da Consulta")
+    col_data1, col_data2 = st.columns(2)
+    with col_data1:
+        data_inicio = st.date_input(
+            "Data de início do plano",
+            value=(
+                datetime.strptime(
+                    st.session_state.dados_consulta.get(
+                        "data_inicio", datetime.now().strftime("%Y-%m-%d")
+                    ),
+                    "%Y-%m-%d",
+                )
+                if st.session_state.dados_consulta.get("data_inicio")
+                else datetime.now()
+            ),
+            key="data_inicio_novo",
+        )
+    with col_data2:
+        data_retorno = st.date_input(
+            "Data prevista para retorno",
+            value=(
+                datetime.strptime(
+                    st.session_state.dados_consulta.get(
+                        "data_retorno",
+                        (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+                    ),
+                    "%Y-%m-%d",
+                )
+                if st.session_state.dados_consulta.get("data_retorno")
+                else (datetime.now() + timedelta(days=30))
+            ),
+            key="data_retorno_novo",
+        )
+
+    observacoes = st.text_area(
+        "Observações gerais (opcional)",
+        value=st.session_state.dados_consulta.get("observacoes", ""),
+        key="observacoes_consulta_novo",
+        height=80,
+        help="💡 Informe aqui restrições alimentares, alergias, intolerâncias (ex: 'alergia a camarão', 'intolerância a leite', 'não pode glúten')",
+    )
+
+    # Salvar no session_state
+    st.session_state.dados_paciente = {
+        "nome": nome_paciente,
+        "data_nascimento": (
+            data_nascimento.strftime("%Y-%m-%d") if data_nascimento else ""
+        ),
+        "telefone": telefone_paciente,
+        "email": email_paciente,
+    }
+    st.session_state.dados_profissional = {
+        "nome": nome_profissional,
+        "registro": registro_profissional,
+        "especialidade": especialidade,
+    }
+    st.session_state.dados_consulta = {
+        "clinica": nome_clinica,
+        "data_inicio": data_inicio.strftime("%Y-%m-%d"),
+        "data_retorno": data_retorno.strftime("%Y-%m-%d"),
+        "observacoes": observacoes,
+    }
+
+st.markdown("---")
+
+# ============================================
+# 24.1 IMPORTADOR AUTOMÁTICO DE CARDÁPIO
+# ============================================
+st.markdown("---")
+
+tem_acesso_ia, msg_acesso_ia = verificar_acesso_ia()
+
+st.markdown("## 📋 Importador Automático de Cardápio")
+st.markdown(
+    "*Cole seu cardápio em texto e o sistema preenche automaticamente o plano alimentar com dados nutricionais reais da base BioGestão 360*"
+)
+
+with st.expander("📖 Como usar o Importador Automático", expanded=not tem_acesso_ia):
+    st.markdown("**🔹 PASSO A PASSO:**")
+    st.markdown("1. Cole seu cardápio no campo abaixo no formato indicado")
+    st.markdown("2. Clique em **📥 Importar Cardápio**")
+    st.markdown(
+        "3. O sistema busca os valores seguindo a hierarquia: "
+        "**TACO/UNICAMP → IBGE/POF → BioGestão 360 → estimativa inteligente**"
+    )
+    st.markdown(
+        "4. Revise os itens — a coluna **Fonte** mostra a origem: "
+        "TACO / IBGE / BioGestão / estimativa"
+    )
+    st.markdown("5. Marque ou desmarque itens conforme necessário")
+    st.markdown(
+        "6. Exporte em **CSV** (planilha) ou **HTML** (relatório completo com gráficos)"
+    )
+    st.markdown("---")
+    st.markdown("**🔹 ALERTAS AUTOMÁTICOS:**")
+    st.info(
+        "⚠️ **OMS/IARC:** O sistema sinaliza alimentos com classificação de risco "
+        "(Grupo 1 — cancerígeno confirmado, Grupo 2A/2B — possível risco). "
+        "O alerta é baseado na composição e processamento, não só no nome do alimento.\n\n"
+        "⚠️ **Restrições alimentares:** Se você informou restrições na seção "
+        "Identificação da Consulta, o sistema alerta automaticamente quando "
+        "o alimento contém o ingrediente restrito."
+    )
+    st.markdown("**🔹 SOBRE OS VALORES NUTRICIONAIS:**")
+    st.caption(
+        "Os valores são buscados em ordem de prioridade: "
+        "🌿 TACO/UNICAMP (in natura e preparações caseiras) → "
+        "📊 IBGE/POF 2008-2009 (alimentos com forma de preparo) → "
+        "🥦 BioGestão 360 (25 mil+ produtos do mercado brasileiro) → "
+        "estimativa inteligente por categoria. "
+        "A coluna Fonte indica qual base foi usada. "
+        "Sempre confira com o profissional responsável."
+    )
+    st.markdown("**🔹 FORMATO RECOMENDADO:**")
+    st.code(
+        """Segunda:
+Café da manhã: 2 fatias de pão integral, 200ml de leite desnatado
+Almoço: 100g de arroz integral cozido, 80g de feijão carioca cozido, 150g de frango grelhado, 30g de alface
+Jantar: 100g de ovos mexidos, 30g de alface, 50g de tomate cereja
+
+Terça:
+Café da manhã: 3 torradas integrais, 170g de iogurte natural
+Almoço: 100g de macarrão integral cozido, 150g de peixe grelhado
+Lanche: 100g de banana prata
+Jantar: 100g de omelete""",
+        language="text",
+    )
+    st.markdown(
+        "💡 **Dicas importantes:**\n"
+        "- Use **gramas (g)** ou **mililitros (ml)** sempre que possível\n"
+        "- Especifique o **tipo e preparo** (ex: 'frango grelhado', 'ovo cozido')\n"
+        "- Evite medidas caseiras como '1 copo', '1 xícara'\n"
+        "- Separe cada alimento por **vírgula**\n"
+        "- **Plano diário:** informe apenas um dia. **Semanal:** de Segunda a Domingo."
+    )
+
+# Status de acesso
+if not tem_acesso_ia:
+    if not st.session_state.get("logado", False):
+        st.warning("🔐 Faça login na barra lateral para usar o Importador Automático")
+    else:
+        st.error(msg_acesso_ia)
+
+# Campo de texto
+texto_receita = st.text_area(
+    "📝 Cole aqui seu cardápio:",
+    key="texto_receita_ia_input",
+    height=200,
+    disabled=not tem_acesso_ia,
+    placeholder="""Segunda:
+Café da manhã: 2 fatias de pão integral, 200ml de leite desnatado
+Almoço: 100g de arroz integral cozido, 80g de feijão carioca cozido, 150g de frango grelhado, 30g de alface, 50g de tomate
+Jantar: 100g de ovos mexidos, 30g de alface
+
+Terça:
+Café da manhã: 3 torradas integrais, 170g de iogurte natural
+Almoço: 100g de macarrão integral cozido, 150g de peixe grelhado
+Lanche: 100g de banana prata
+Jantar: 100g de omelete""",
+)
+
+col1_ia, col2_ia = st.columns(2)
+with col1_ia:
+    analisar_btn = st.button(
+        "📥 Importar Cardápio", disabled=not tem_acesso_ia, use_container_width=True
+    )
+with col2_ia:
+    if st.session_state.resultado_ia:
+        if st.button("🧹 Limpar Importação", use_container_width=True):
+            st.session_state.resultado_ia = None
+
+            st.rerun()
+
+
+# ========== FUNÇÃO DE PROCESSAMENTO LOCAL COM TABELAS ==========
+def processar_cardapio_local(texto):
+    """
+    Processa o texto do cardápio buscando valores PRIMEIRO nas tabelas
+    BioGestão 360 com estimativa inteligente como fallback.
+    Respeita o tipo de planejamento (diário ou semanal) da sidebar.
+    """
+    alimentos = []
+    dias_validos = [
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+    ]
+    refeicoes_validas = ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+
+    # Detectar tipo de planejamento da sidebar
+    tipo_plano = st.session_state.get("planejamento_tipo", "Diário")
+    if tipo_plano == "Diário":
+        dia_atual = "Hoje"
+        # No modo diário, processa tudo como "Hoje" sem tentar detectar dias
+        detectar_dias = False
+    else:
+        dia_atual = "Segunda"
+        detectar_dias = True
+
+    refeicao_atual = "Café da Manhã"
+    linhas = texto.split("\n")
+
+    for linha in linhas:
+        linha = linha.strip()
+        if not linha:
+            continue
+
+        linha_lower = linha.lower()
+
+        # ── Identificar dia da semana ──
+        if detectar_dias:  # Só tenta detectar dias no modo semanal
+            for dia in dias_validos:
+                dia_norm = normalizar_texto(dia)
+                linha_limpa = linha.rstrip(":").strip()
+                linha_limpa_norm = normalizar_texto(linha_limpa)
+                if linha_limpa_norm == dia_norm:
+                    dia_atual = dia
+                    break
+        else:
+            # No modo diário, ignora linhas que são apenas nomes de dias
+            # para não processá-las como alimentos
+            linha_limpa = linha.rstrip(":").strip()
+            linha_limpa_norm = normalizar_texto(linha_limpa)
+            for dia in dias_validos:
+                dia_norm = normalizar_texto(dia)
+                if linha_limpa_norm == dia_norm:
+                    # É uma linha de dia - pular
+                    linha = ""  # Esvazia para não processar
+                    break
+
+        # ── Identificar refeição ──
+        if any(p in linha_lower for p in ["café", "cafe", "manhã", "manha"]):
+            refeicao_atual = "Café da Manhã"
+        elif any(p in linha_lower for p in ["almoço", "almoco"]):
+            refeicao_atual = "Almoço"
+        elif any(p in linha_lower for p in ["lanche", "tarde", "colação"]):
+            refeicao_atual = "Lanches"
+        elif "jantar" in linha_lower or "ceia" in linha_lower:
+            refeicao_atual = "Jantar"
+
+        # ── Extrair alimentos após dois pontos ──
+        if ":" in linha:
+            conteudo = linha.split(":", 1)[1].strip()
+            if not conteudo:
+                continue
+
+            partes = re.split(r"[,;]", conteudo)
+
+            for parte in partes:
+                parte = parte.strip()
+                if len(parte) < 3:
+                    continue
+
+                # ── Extrair quantidade e nome ──
+                qtd_match = re.search(
+                    r"(\d+(?:[.,]\d+)?)\s*"
+                    r"(g|ml|kg|l|litro[s]?|litros?|"
+                    r"fatia[s]?|colher(?:es)?(?:\s+(?:de\s+)?(?:sopa|chá|sobremesa|café))?|"
+                    r"copo[s]?|xícara[s]?|xicara[s]?|x[íi]cara[s]?|"
+                    r"unidade[s]?|un\b|"
+                    r"porção|porcao|porções|porcoes|"
+                    r"concha[s]?|filé[s]?|file[s]?|bife[s]?|"
+                    r"pedaço[s]?|pedaco[s]?|pedaços|pedacos|"
+                    r"dose[s]?|"
+                    r"ramo[s]?|maço[s]?|maco[s]?|"
+                    r"pitada[s]?)",
+                    parte.lower(),
+                )
+
+                if qtd_match:
+                    quantidade_desc = qtd_match.group(0)
+                    nome = parte[: qtd_match.start()].strip()
+                    if not nome:
+                        nome = parte[qtd_match.end() :].strip()
+                    # Limpeza do nome
+                    nome = re.sub(
+                        r"^(de|da|do|dos|das|com|sem|em|para|por|um|uma|uns|umas|ao|à|aos|às)\s+",
+                        "",
+                        nome,
+                        flags=re.IGNORECASE,
+                    )
+                    nome = re.sub(r"\s+", " ", nome).strip()
+                    if not nome or len(nome) < 3:
+                        nome = parte[qtd_match.end() :].strip()
+                else:
+                    # Fallback: procura número no início
+                    match_inicio = re.match(r"^(\d+(?:[.,]\d+)?)\s+(.+)", parte.strip())
+                    if match_inicio:
+                        quantidade_desc = f"{match_inicio.group(1)} unidade(s)"
+                        nome = match_inicio.group(2).strip()
+                    else:
+                        quantidade_desc = "1 porção"
+                        nome = parte.strip()
+
+                # Limpeza final do nome
+                nome = re.sub(r"\s+", " ", nome).strip()
+                nome = re.sub(r"^[-–•*]\s*", "", nome).strip()
+                nome = re.sub(r"\([^)]*\)", "", nome).strip()
+
+                if len(nome) < 3:
+                    continue
+
+                # ── Calcular fator ──
+                fator = 1.0
+                volume_padrao_liquido = 200.0
+
+                qtd_calc = re.search(
+                    r"(\d+(?:[.,]\d+)?)\s*(\w*)", quantidade_desc.lower()
+                )
+                if qtd_calc:
+                    try:
+                        num = float(qtd_calc.group(1).replace(",", "."))
+                        unidade = (
+                            qtd_calc.group(2)
+                            if qtd_calc.lastindex and qtd_calc.lastindex >= 2
+                            else ""
+                        )
+
+                        # Tratamento especial para "unidade(s)"
+                        if "unidade" in unidade or unidade == "un)":
+                            unidade = "unidade"
+
+                        if unidade in ["kg"]:
+                            fator = num * 10
+                        elif unidade in ["g"]:
+                            fator = max(0.1, min(10, num / 100))
+                        elif unidade in ["ml"]:
+                            if num >= 10:
+                                fator = max(0.1, min(10, num / 100))
+                            else:
+                                fator = max(
+                                    0.1, min(10, (num * volume_padrao_liquido) / 100)
+                                )
+                        elif unidade in ["l", "litro", "litros"]:
+                            fator = max(0.1, min(10, (num * 1000) / 100))
+                        elif any(
+                            p in unidade for p in ["copo", "xícara", "xicara", "xícara"]
+                        ):
+                            fator = max(
+                                0.2, min(5, (num * volume_padrao_liquido) / 100)
+                            )
+                        elif any(p in unidade for p in ["colher", "sopa"]):
+                            fator = max(0.1, min(2, (num * 15) / 100))
+                        elif any(p in unidade for p in ["chá", "cha", "café", "cafe"]):
+                            fator = max(0.02, min(1, (num * 5) / 100))
+                        elif any(p in unidade for p in ["concha"]):
+                            fator = max(0.2, min(3, (num * 100) / 100))
+                        elif any(p in unidade for p in ["fatia"]):
+                            fator = max(0.2, min(3, (num * 50) / 100))
+                        elif any(
+                            p in unidade for p in ["unidade", r"un\b", "un$", r"un\s"]
+                        ):
+                            peso_unitario = obter_peso_por_unidade(nome)
+                            if peso_unitario > 0:
+                                fator = max(0.1, min(5, (num * peso_unitario) / 100))
+                            else:
+                                fator = max(0.5, min(5, num))
+                        elif any(
+                            p in unidade
+                            for p in ["porção", "porcao", "porções", "porcoes"]
+                        ):
+                            fator = max(0.5, min(5, num))
+                        elif any(
+                            p in unidade
+                            for p in ["pedaço", "pedaco", "pedaços", "pedacos"]
+                        ):
+                            fator = max(0.3, min(3, (num * 80) / 100))
+                        elif any(p in unidade for p in ["filé", "file", "bife"]):
+                            fator = max(0.5, min(5, (num * 100) / 100))
+                        elif unidade == "":
+                            # Sem unidade explícita - tenta adivinhar
+                            if num <= 30:
+                                peso_unitario = obter_peso_por_unidade(nome)
+                                if peso_unitario > 0:
+                                    fator = max(
+                                        0.1, min(5, (num * peso_unitario) / 100)
+                                    )
+                                else:
+                                    fator = max(0.5, min(5, num))
+                            else:
+                                fator = max(0.1, min(10, num / 100))
+                        else:
+                            fator = max(0.5, min(5, num))
+                    except:
+                        fator = 1.0
+                else:
+                    fator = 1.0
+
+                # ── Buscar valores nutricionais ──
+                # Hierarquia: TACO → IBGE → BioGestão 360 → estimativa_inteligente
+                valores = None
+                fonte = "estimativa"
+
+                # 1. TACO — alimentos in natura e preparações caseiras
+                if valores is None and df_taco is not None and not df_taco.empty:
+                    valores = buscar_na_taco(nome, df_taco)
+                    if valores:
+                        fonte = "TACO"
+
+                # 2. IBGE — alimentos com formas de preparo
+                if valores is None and df_ibge is not None and not df_ibge.empty:
+                    valores = buscar_na_ibge(nome, df_ibge)
+                    if valores:
+                        fonte = "IBGE"
+
+                # 3. BioGestão em memória
+                if valores is None and df_bio is not None and not df_bio.empty:
+                    valores = buscar_na_biogestao(nome, df_bio)
+                    if valores:
+                        fonte = "BioGestão"
+
+                # 4. Estimativa por categoria
+                if valores is None:
+                    valores = estimativa_inteligente(nome)
+                    fonte = "estimativa"
+
+                # Validação: dados zerados
+                if (
+                    fonte != "estimativa"
+                    and valores["kcal"] == 0
+                    and valores["proteina"] == 0
+                    and valores["carboidrato"] == 0
+                    and valores["gordura"] == 0
+                ):
+                    valores = estimativa_inteligente(nome)
+                    fonte = "estimativa (dados zerados)"
+
+                # ── Adicionar ao resultado ──
+                # NOTA: O fator já foi calculado no bloco 'qtd_calc' acima.
+                # Usamos 'quantidade_desc' (extraído no início) em vez de 'quantidade'.
+                alimentos.append(
+                    {
+                        "nome": nome[:60],
+                        "quantidade": quantidade_desc,  # ← Usar quantidade_desc!
+                        "refeicao": refeicao_atual,
+                        "dia": dia_atual,
+                        "kcal": round(valores["kcal"] * fator, 1),
+                        "proteina": round(valores["proteina"] * fator, 1),
+                        "carboidrato": round(valores["carboidrato"] * fator, 1),
+                        "gordura": round(valores["gordura"] * fator, 1),
+                        "acucar": round(valores["acucar"] * fator, 1) if valores.get("acucar") is not None else None,
+                        "gordura_saturada": round(valores["gordura_saturada"] * fator, 1) if valores.get("gordura_saturada") is not None else None,
+                        "gordura_trans": round(valores["gordura_trans"] * fator, 1) if valores.get("gordura_trans") is not None else None,
+                        "fibra": round(valores["fibra"] * fator, 1) if valores.get("fibra") is not None else None,
+                        "sodio_mg": round(valores["sodio_mg"] * fator, 1) if valores.get("sodio_mg") is not None else None,
+                        "fonte": fonte,
+                    }
+                )
+
+    # ── Agrupar duplicatas do mesmo dia/refeição/alimento ──
+    agrupados = {}
+    for item in alimentos:
+        chave = f"{item['dia']}_{item['refeicao']}_{item['nome'].lower()}"
+        if chave in agrupados:
+            agrupados[chave]["kcal"] += item["kcal"]
+            agrupados[chave]["proteina"] += item["proteina"]
+            agrupados[chave]["carboidrato"] += item["carboidrato"]
+            agrupados[chave]["gordura"] += item["gordura"]
+        else:
+            agrupados[chave] = item
+
+    resultado = list(agrupados.values())
+
+    # ── Ordenar por dia e refeição ──
+    ordem_dias = {
+        "Segunda": 1,
+        "Terça": 2,
+        "Quarta": 3,
+        "Quinta": 4,
+        "Sexta": 5,
+        "Sábado": 6,
+        "Domingo": 7,
+    }
+    ordem_ref = {"Café da Manhã": 1, "Almoço": 2, "Lanches": 3, "Jantar": 4}
+    resultado.sort(
+        key=lambda x: (ordem_dias.get(x["dia"], 99), ordem_ref.get(x["refeicao"], 99))
+    )
+
+    return {"alimentos": resultado}
+
+
+# ========== PROCESSAR CLIQUE DO BOTÃO IMPORTAR ==========
+if analisar_btn and tem_acesso_ia:
+    if texto_receita and len(texto_receita) >= 20:
+        with st.spinner(
+            "🔍 Identificando alimentos e buscando na base BioGestão 360..."
+        ):
+            try:
+                resultado_local = processar_cardapio_local(texto_receita)
+                if resultado_local and resultado_local.get("alimentos"):
+                    total = len(resultado_local["alimentos"])
+                    bio_count = sum(
+                        1
+                        for a in resultado_local["alimentos"]
+                        if a.get("fonte") == "BioGestão"
+                    )
+                    est_count = total - bio_count
+                    st.success(
+                        f"✅ {total} alimentos identificados! "
+                        f"BioGestão 360: {bio_count} | Estimativa: {est_count}"
+                    )
+                    st.session_state.resultado_ia = resultado_local
+                    if "resultado_ia_editado" in st.session_state:
+                        del st.session_state.resultado_ia_editado
+                    st.rerun()
+                else:
+                    st.error(
+                        "❌ Nenhum alimento identificado. "
+                        "Verifique o formato do cardápio."
+                    )
+            except Exception as e:
+                st.error(f"❌ Erro ao processar: {str(e)}")
+    else:
+        st.warning("⚠️ Cole o cardápio no campo acima (mínimo 20 caracteres).")
+elif analisar_btn and not tem_acesso_ia:
+    st.error("🔒 Faça login e verifique seu acesso para usar o Importador.")
+
+# ========== EXIBIR RESULTADOS ==========
+if st.session_state.resultado_ia and tem_acesso_ia:
+    st.markdown("---")
+
+    itens_ia = st.session_state.resultado_ia.get("alimentos", [])
+
+    if itens_ia:
+        # ── Pegar restrições alimentares da consulta ──
+        palavras_restritas = []
+        observacoes_consulta = st.session_state.get("dados_consulta", {}).get(
+            "observacoes", ""
+        )
+        if observacoes_consulta:
+            palavras_restritas = extrair_palavras_chave_restricao(observacoes_consulta)
+
+        # ── Montar DataFrame com colunas iguais à seção 31 ──
+        dados_tabela = []
+        for idx, item in enumerate(itens_ia):
+            nome = item.get("nome", "-")
+            kcal = float(item.get("kcal", 0))
+            prot = float(item.get("proteina", 0))
+            carb = float(item.get("carboidrato", 0))
+            gord = float(item.get("gordura", 0))
+            fonte = item.get("fonte", "estimativa")
+
+            alerta_oms = verificar_risco_oms(nome) or ""
+            alerta_restricao = ""
+            if palavras_restritas:
+                if verificar_restricao_alimento(nome, palavras_restritas):
+                    alerta_restricao = "⚠️ RESTRIÇÃO"
+
+            # Determinar label OMS
+            if "GRUPO 1" in alerta_oms:
+                oms_label = "🔴 Grupo 1"
+            elif "GRUPO 2A" in alerta_oms:
+                oms_label = "🟠 Grupo 2A"
+            elif "GRUPO 2B" in alerta_oms:
+                oms_label = "🟣 Grupo 2B"
+            else:
+                oms_label = ""
+
+            # Combinar ambos os alertas quando existirem
+            if alerta_restricao and oms_label:
+                alerta_final = f"{alerta_restricao} | {oms_label}"
+            elif alerta_restricao:
+                alerta_final = alerta_restricao
+            elif oms_label:
+                alerta_final = oms_label
+            else:
+                alerta_final = "-"
+
+            def _fmt_anvisa(v):
+                return f"{v:.1f}" if v is not None else "---"
+
+            dados_tabela.append(
+                {
+                    "✅": True,
+                    "Dia": item.get("dia", "-"),
+                    "Refeição": item.get("refeicao", "-"),
+                    "Alimento": nome,
+                    "Quantidade": item.get("quantidade", "1 porção"),
+                    "Kcal": kcal,
+                    "Proteínas(g)": prot,
+                    "Carboidratos(g)": carb,
+                    "Gorduras(g)": gord,
+                    "Açúcares(g)": _fmt_anvisa(item.get("acucar")),
+                    "G.Saturada(g)": _fmt_anvisa(item.get("gordura_saturada")),
+                    "G.Trans(g)": _fmt_anvisa(item.get("gordura_trans")),
+                    "Fibras(g)": _fmt_anvisa(item.get("fibra")),
+                    "Sódio(mg)": _fmt_anvisa(item.get("sodio_mg")),
+                    "Fonte": fonte,
+                    "Alerta OMS": alerta_final,
+                }
+            )
+
+        df_ia = pd.DataFrame(dados_tabela)
+
+        # ── Alertas críticos no topo ──
+        alertas_restricao = [
+            d for d in dados_tabela if "RESTRIÇÃO" in d.get("Alerta OMS", "")
+        ]
+        alertas_g1 = [d for d in dados_tabela if "Grupo 1" in d.get("Alerta OMS", "")]
+        alertas_g2a = [d for d in dados_tabela if "Grupo 2A" in d.get("Alerta OMS", "")]
+        alertas_g2b = [d for d in dados_tabela if "Grupo 2B" in d.get("Alerta OMS", "")]
+        if alertas_restricao:
+            nomes = ", ".join([a["Alimento"] for a in alertas_restricao])
+            st.error(
+                f"🚨 **ALERTA DE RESTRIÇÃO ALIMENTAR:** {nomes}\n\n"
+                "Verifique com o profissional responsável!"
+            )
+        if alertas_g1:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g1])
+            st.error(
+                f"🔴 **ALERTA OMS GRUPO 1 — CANCERÍGENO CONFIRMADO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo1']['mensagem']}"
+            )
+        if alertas_g2a:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g2a])
+            st.warning(
+                f"🟠 **ALERTA OMS GRUPO 2A — PROVAVELMENTE CANCERÍGENO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo2a']['mensagem']}"
+            )
+        if alertas_g2b:
+            nomes = ", ".join([a["Alimento"] for a in alertas_g2b])
+            st.warning(
+                f"🟣 **ALERTA OMS GRUPO 2B — POSSIVELMENTE CANCERÍGENO:** {nomes}\n\n"
+                f"{ALIMENTOS_RISCO['grupo2b']['mensagem']}"
+            )
+
+        # ── Tabela editável com estado persistente ──
+        st.markdown("#### 📋 Cardápio identificado")
+        st.caption(
+            "Marque ou desmarque os itens. "
+            "Coluna **Fonte**: BioGestão = dado real do produto | estimativa = valor por categoria alimentar. "
+            "🔴 Grupo 1 = cancerígeno confirmado (OMS/IARC) | 🟠 Grupo 2A = provável | 🟣 Grupo 2B = possível | ⚠️ RESTRIÇÃO = restrição informada na consulta."
+        )
+
+        # Chave única baseada no conteúdo para detectar novo cardápio importado
+        chave_cardapio = str(len(itens_ia)) + str(
+            itens_ia[0].get("nome", "") if itens_ia else ""
+        )
+
+        # Inicializar ou resetar o estado quando o cardápio muda
+        if st.session_state.get("_chave_cardapio_anterior") != chave_cardapio:
+            st.session_state._chave_cardapio_anterior = chave_cardapio
+            st.session_state._df_ia_estado = df_ia.copy()
+
+        # Usar sempre o DataFrame do estado persistente
+        df_estado = st.session_state._df_ia_estado.copy()
+
+        st.markdown(
+    f"""
+<div class='aviso-peso-real'>
+    <div style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid #fde68a;">
+        <strong style="color:#d97706;">🔍 O que significam os ícones do cardápio?</strong><br><br>
+        <span style="display:inline-block; background:#ef4444; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🔥 Kcal</span> <span style="color:#1e293b;">= calorias do alimento</span><br>
+        <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥩 Proteínas</span> <span style="color:#1e293b;">= constroem e reparam músculos — combustível do treino de força</span><br>
+        <span style="display:inline-block; background:#f59e0b; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍞 Carboidratos</span> <span style="color:#1e293b;">= principal fonte de energia para o treino</span><br>
+        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span><br>
+        <span style="display:inline-block; background:#8b5cf6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍬 Açúcar</span> <span style="color:#1e293b;">= açúcares totais (evitar excesso)</span><br>
+        <span style="display:inline-block; background:#ec489a; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧈 Sat</span> <span style="color:#1e293b;">= gorduras saturadas (limitar a 22g/dia)</span><br>
+        <span style="display:inline-block; background:#dc2626; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">⚠️ Trans</span> <span style="color:#1e293b;">= gorduras trans (evitar ao máximo)</span><br>
+        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🌾 Fibra</span> <span style="color:#1e293b;">= fibras alimentares (prefira ≥25g/dia)</span><br>
+        <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧂 Sódio</span> <span style="color:#1e293b;">= sódio (limite diário: 2400mg)</span>
+    </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+        # Renderizar o editor com o DataFrame do estado
+        df_editado = st.data_editor(
+            df_estado,
+            column_config={
+                "✅": st.column_config.CheckboxColumn("✅", default=True, width="small"),
+                "Kcal": st.column_config.NumberColumn(label="🔥 Kcal", format="%.1f"),
+                "Proteínas(g)": st.column_config.NumberColumn(label="🥩 Prot(g)", format="%.1f"),
+                "Carboidratos(g)": st.column_config.NumberColumn(label="🍞 Carb(g)", format="%.1f"),
+                "Gorduras(g)": st.column_config.NumberColumn(label="🥑 Gord(g)", format="%.1f"),
+                "Açúcares(g)": st.column_config.TextColumn(label="🍬 Açúcar(g)", width="small"),
+                "G.Saturada(g)": st.column_config.TextColumn(label="🧈 Sat(g)", width="small"),
+                "G.Trans(g)": st.column_config.TextColumn(label="⚠️ Trans(g)", width="small"),
+                "Fibras(g)": st.column_config.TextColumn(label="🌾 Fibra(g)", width="small"),
+                "Sódio(mg)": st.column_config.TextColumn(label="🧂 Sódio(mg)", width="small"),
+                "Fonte": st.column_config.TextColumn(label="Fonte", width="small"),
+                "Alerta OMS": st.column_config.TextColumn(label="⚠️ Alerta", width="medium"),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="tabela_ia_editor",
+            disabled=[
+                "Dia", "Refeição", "Alimento", "Quantidade",
+                "Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)",
+                "Açúcares(g)", "G.Saturada(g)", "G.Trans(g)", "Fibras(g)", "Sódio(mg)",
+                "Fonte", "Alerta OMS",
+            ],
+        )
+
+        # NÃO salvar automaticamente — deixa o data_editor gerenciar seu próprio estado
+        # O salvamento só ocorre ao clicar em Recalcular
+
+        # Persistir as edições manuais feitas pelo usuário na tabela
+        st.session_state._df_ia_estado = df_editado.copy()
+
+        # ── Botões de seleção ──
+        col_b1, col_b2, col_b3 = st.columns(3)
+        with col_b1:
+            if st.button(
+                "✅ Selecionar Todos", use_container_width=True, key="sel_todos_ia"
+            ):
+                novo_df = df_ia.copy()
+                novo_df["✅"] = True
+                st.session_state._df_ia_estado = novo_df
+                st.rerun()
+        with col_b2:
+            if st.button(
+                "❌ Desmarcar Todos", use_container_width=True, key="desm_todos_ia"
+            ):
+                novo_df = df_ia.copy()
+                novo_df["✅"] = False
+                st.session_state._df_ia_estado = novo_df
+                st.rerun()
+        with col_b3:
+            if st.button(
+                "🔄 Recalcular Totais", use_container_width=True, key="recalcular_ia"
+            ):
+                # Salva o estado atual do editor e recalcula
+                st.session_state._df_ia_estado = df_editado.copy()
+                st.rerun()
+
+        # ── Filtrar selecionados do editor atual ──
+        df_sel = df_editado[df_editado["✅"] == True].copy()
+
+        if df_sel.empty:
+            st.warning("Nenhum alimento selecionado.")
+        else:
+            st.markdown(
+                f"**📊 Selecionados: {len(df_sel)} de {len(df_editado)} itens**"
+            )
+
+            # ── Totais por dia ──
+            st.markdown("---")
+            st.markdown("#### 📅 Totais por Dia")
+            ordem_dias = {
+                "Segunda": 1,
+                "Terça": 2,
+                "Quarta": 3,
+                "Quinta": 4,
+                "Sexta": 5,
+                "Sábado": 6,
+                "Domingo": 7,
+            }
+
+            # Lista de colunas numéricas a somar (incluindo os novos campos)
+            _cols_num = [
+                "Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)",
+                "Açúcares(g)", "G.Saturada(g)", "G.Trans(g)", "Fibras(g)", "Sódio(mg)"
+            ]
+
+            # Calcular totais por dia (valores já são numéricos ou "---" – convertemos "---" para 0)
+            df_soma = df_sel.copy()
+            for col in _cols_num:
+                df_soma[col] = pd.to_numeric(df_soma[col], errors="coerce").fillna(0)
+
+            totais_dia = df_soma.groupby("Dia")[_cols_num].sum().round(1)
+
+            # Renomear para exibição amigável
+            totais_dia.rename(
+                columns={
+                    "Kcal": "🔥 Kcal",
+                    "Proteínas(g)": "🥩 Prot(g)",
+                    "Carboidratos(g)": "🍞 Carb(g)",
+                    "Gorduras(g)": "🥑 Gord(g)",
+                    "Açúcares(g)": "🍬 Açúcar(g)",
+                    "G.Saturada(g)": "🧈 Sat(g)",
+                    "G.Trans(g)": "⚠️ Trans(g)",
+                    "Fibras(g)": "🌾 Fibra(g)",
+                    "Sódio(mg)": "🧂 Sódio(mg)",
+                },
+                inplace=True,
+            )
+            totais_dia["_ord"] = [ordem_dias.get(d, 99) for d in totais_dia.index]
+            totais_dia = totais_dia.sort_values("_ord").drop(columns="_ord")
+            st.dataframe(totais_dia, use_container_width=True)
+
+            # ── Totais gerais (apenas 4 macros principais) ──
+            total_kcal = df_soma["Kcal"].sum()
+            total_prot = df_soma["Proteínas(g)"].sum()
+            total_carb = df_soma["Carboidratos(g)"].sum()
+            total_gord = df_soma["Gorduras(g)"].sum()
+
+            # Mantém os totais dos outros nutrientes para o gráfico (mas não exibe como métrica)
+            total_acucar = df_soma["Açúcares(g)"].sum()
+            total_sat = df_soma["G.Saturada(g)"].sum()
+            total_trans = df_soma["G.Trans(g)"].sum()
+            total_fibra = df_soma["Fibras(g)"].sum()
+            total_sodio = df_soma["Sódio(mg)"].sum()
+
+            dias_unicos = df_sel["Dia"].nunique()
+            media_kcal_dia = total_kcal / max(dias_unicos, 1)
+
+            tipo_planejamento = st.session_state.get("planejamento_tipo", "Diário")
+
+            st.markdown("#### 🔥 Totais Gerais")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("🔥 Total Kcal", f"{total_kcal:.0f}")
+            with col2:
+                st.metric("🥩 Proteínas", f"{total_prot:.0f}g")
+            with col3:
+                st.metric("🍞 Carboidratos", f"{total_carb:.0f}g")
+            with col4:
+                st.metric("🥑 Gorduras", f"{total_gord:.0f}g")
+
+            # ── Gráfico 3: Micronutrientes (referência ANVISA) ──
+            st.markdown("#### 📊 Consumo de Micronutrientes e Outros Componentes")
+
+            referencias = {
+                "Açúcares (g)": (total_acucar, None),
+                "Gord. Saturada (g)": (total_sat, 22),
+                "Gord. Trans (g)": (total_trans, None),
+                "Fibras (g)": (total_fibra, 25),
+                "Sódio (mg)": (total_sodio, 2400)
+            }
+
+            dados_barras = []
+            for nome, (consumo, ref) in referencias.items():
+                if consumo > 0:
+                    percentual = (consumo / ref * 100) if ref else 0
+                    dados_barras.append({"Nutriente": nome, "Consumo": consumo, "Referência": ref or 0, "% VD": percentual})
+
+            if dados_barras:
+                df_micro = pd.DataFrame(dados_barras)
+                fig_micro = px.bar(
+                    df_micro,
+                    x="Nutriente",
+                    y="Consumo",
+                    title="Consumo Total no Período vs. Referência Diária (IN 75/2020)",
+                    color="Nutriente",
+                    text="Consumo",
+                    labels={"Consumo": "Consumo total (g ou mg)"}
+                )
+                for _, row in df_micro.iterrows():
+                    if row["Referência"] > 0:
+                        fig_micro.add_hline(y=row["Referência"], line_dash="dash", line_color="red",
+                                            annotation_text=f"Ref: {row['Referência']:.0f}", annotation_position="top right")
+                fig_micro.update_layout(height=400, showlegend=False)
+                st.plotly_chart(fig_micro, use_container_width=True)
+
+                st.markdown("**Percentual da Recomendação Diária (para referências definidas):**")
+                df_pct = df_micro[df_micro["Referência"] > 0][["Nutriente", "% VD"]].copy()
+                df_pct["% VD"] = df_pct["% VD"].round(0).astype(int)
+                st.dataframe(df_pct, use_container_width=True, hide_index=True)
+            else:
+                st.info("Consumo de micronutrientes não disponível para os itens selecionados.")
+
+            # ── Análise energética ──
+            st.markdown("---")
+            st.markdown("#### ⚖️ Análise Energética")
+            saldo_dia = 0
+            variacao_30d = 0
+            if dados_validos and get_atual > 0:
+                saldo_dia = get_atual - media_kcal_dia
+                variacao_30d = abs(saldo_dia) * 30 / 7700
+                col_e1, col_e2, col_e3 = st.columns(3)
+                with col_e1:
+                    st.metric(
+                        "⚡ GET (seu gasto)",
+                        f"{get_atual:.0f} kcal/dia",
+                        delta=f"TMB: {tmb_atual:.0f} kcal",
+                    )
+                with col_e2:
+                    st.metric(
+                        "🍽️ Média consumo/dia",
+                        f"{media_kcal_dia:.0f} kcal",
+                        delta=(
+                            f"Total {dias_unicos}d: {total_kcal:.0f} kcal"
+                            if dias_unicos > 1
+                            else None
+                        ),
+                    )
+                with col_e3:
+                    st.metric(
+                        "💪 Saldo diário",
+                        f"{saldo_dia:+.0f} kcal",
+                        delta=(
+                            "Déficit ✅"
+                            if saldo_dia > 0
+                            else "Superávit 📈" if saldo_dia < 0 else "Manutenção ⚖️"
+                        ),
+                    )
+                if saldo_dia > 0:
+                    st.success(
+                        f"✅ **Déficit calórico:** você consome menos do que gasta. "
+                        f"Projeção: perda de ~{variacao_30d:.1f}kg em 30 dias."
+                    )
+                    if saldo_dia > 1000:
+                        st.warning(
+                            f"⚠️ **Déficit muito elevado ({saldo_dia:.0f} kcal/dia).**\n\n"
+                            "Déficits acima de **1.000 kcal/dia** podem causar perda de "
+                            "massa magra e carências nutricionais.\n\n"
+                            "👨‍⚕️ *Consulte sempre um profissional de saúde.*"
+                        )
+                elif saldo_dia < 0:
+                    st.info(
+                        f"📈 **Superávit calórico:** você consome mais do que gasta. "
+                        f"Projeção: ganho de ~{variacao_30d:.1f}kg em 30 dias."
+                    )
+                else:
+                    st.info("⚖️ **Manutenção:** consumo igual ao gasto energético.")
+            else:
+                st.info(
+                    "💡 Preencha peso, altura, idade e nível de atividade na "
+                    "barra lateral para ver a análise de déficit/superávit."
+                )
+
+            # ── Gráficos ──
+            if total_kcal > 0:
+                st.markdown("---")
+                st.markdown("#### 📊 Análise Nutricional")
+                
+                # Gráfico 1: Distribuição dos Macronutrientes (pizza)
+                macros = pd.DataFrame({
+                    "Macronutriente": ["Proteínas", "Carboidratos", "Gorduras"],
+                    "Calorias": [total_prot * 4, total_carb * 4, total_gord * 9]
+                })
+                fig_pizza = px.pie(
+                    macros,
+                    values="Calorias",
+                    names="Macronutriente",
+                    title="Distribuição Calórica dos Macronutrientes",
+                    color_discrete_sequence=["#f59e0b", "#3b82f6", "#ef4444"]
+                )
+                fig_pizza.update_layout(height=350)
+                
+                # Gráfico 2: Balanço Energético (GET vs consumo médio)
+                try:
+                    get_val = get_atual if 'get_atual' in locals() or 'get_atual' in globals() else 0
+                    media_val = media_kcal_dia if 'media_kcal_dia' in locals() or 'media_kcal_dia' in globals() else 0
+                    saldo_val = saldo_diario if 'saldo_diario' in locals() or 'saldo_diario' in globals() else 0
+                except NameError:
+                    get_val = media_val = saldo_val = 0
+
+                if get_val > 0 and media_val > 0:
+                    balanco_data = pd.DataFrame({
+                        "Categoria": ["Gasto Total (GET)", "Consumo Médio", "Diferença"],
+                        "Valor (kcal)": [get_val, media_val, abs(saldo_val)]
+                    })
+                    fig_balanco = px.bar(
+                        balanco_data,
+                        x="Categoria",
+                        y="Valor (kcal)",
+                        title="Balanço Energético",
+                        color="Categoria",
+                        color_discrete_map={
+                            "Gasto Total (GET)": "#ef4444",
+                            "Consumo Médio": "#10b981",
+                            "Diferença": "#f59e0b"
+                        }
+                    )
+                    fig_balanco.update_layout(height=350)
+                    tem_balanco = True
+                else:
+                    tem_balanco = False
+
+                col_graf1, col_graf2 = st.columns(2)
+                with col_graf1:
+                    st.plotly_chart(fig_pizza, use_container_width=True)
+                with col_graf2:
+                    if tem_balanco:
+                        st.plotly_chart(fig_balanco, use_container_width=True)
+                    else:
+                        st.info("💡 Preencha os dados do perfil (peso, altura, idade, sexo) na barra lateral para ver o gráfico de balanço energético.")
+
+                # ── NOVO: Indicadores de micronutrientes (em cards, sem criar seção extra) ──
+                st.markdown("##### 🧪 Consumo de Outros Nutrientes vs. Referência Diária")
+                # Verificar se os totais dos novos campos existem
+                try:
+                    total_acucar = total_acucar if 'total_acucar' in locals() else 0
+                    total_sat = total_sat if 'total_sat' in locals() else 0
+                    total_fibra = total_fibra if 'total_fibra' in locals() else 0
+                    total_sodio = total_sodio if 'total_sodio' in locals() else 0
+                    total_trans = total_trans if 'total_trans' in locals() else 0
+                except NameError:
+                    total_acucar = total_sat = total_fibra = total_sodio = total_trans = 0
+
+                # Definir referências diárias (IN 75/2020)
+                ref_acucar = 50      # açúcares adicionados (não temos, mas exibimos como referência)
+                ref_sat = 22         # gorduras saturadas (g)
+                ref_fibra = 25       # fibras (g)
+                ref_sodio = 2400     # sódio (mg)
+
+                col_met1, col_met2, col_met3, col_met4 = st.columns(4)
+                with col_met1:
+                    if total_acucar > 0:
+                        perc_acucar = min(100, (total_acucar / ref_acucar) * 100)
+                        st.metric("🍬 Açúcares Totais", f"{total_acucar:.0f}g", delta=f"{perc_acucar:.0f}% da ref. (50g)")
+                        st.progress(perc_acucar/100, text="")
+                    else:
+                        st.metric("🍬 Açúcares Totais", "---")
+                with col_met2:
+                    if total_sat > 0:
+                        perc_sat = min(100, (total_sat / ref_sat) * 100)
+                        st.metric("🧈 Gord. Saturada", f"{total_sat:.0f}g", delta=f"{perc_sat:.0f}% da ref. (22g)")
+                        st.progress(perc_sat/100)
+                    else:
+                        st.metric("🧈 Gord. Saturada", "---")
+                with col_met3:
+                    if total_fibra > 0:
+                        perc_fibra = min(100, (total_fibra / ref_fibra) * 100)
+                        st.metric("🌾 Fibras", f"{total_fibra:.0f}g", delta=f"{perc_fibra:.0f}% da ref. (25g)")
+                        st.progress(perc_fibra/100)
+                    else:
+                        st.metric("🌾 Fibras", "---")
+                with col_met4:
+                    if total_sodio > 0:
+                        perc_sodio = min(100, (total_sodio / ref_sodio) * 100)
+                        st.metric("🧂 Sódio", f"{total_sodio:.0f}mg", delta=f"{perc_sodio:.0f}% da ref. (2400mg)")
+                        st.progress(perc_sodio/100)
+                    else:
+                        st.metric("🧂 Sódio", "---")
+
+                # Se houver gorduras trans, exibe um aviso separado (não tem %VD)
+                if total_trans > 0:
+                    st.warning(f"⚠️ Gorduras trans totais: {total_trans:.0f}g. Recomendação: evitar ao máximo.")
+
+            # ── Exportar ──
+            st.markdown("---")
+            st.markdown("#### 💾 Exportar Cardápio")
+
+            col_d1, col_d2 = st.columns(2)
+
+            # ── DADOS REAIS DA CONSULTA ──
+            nome_consulta = (
+                st.session_state.get("dados_paciente", {}).get("nome", "")
+                or "Não informado"
+            )
+            tel_consulta = st.session_state.get("dados_paciente", {}).get(
+                "telefone", "-"
+            )
+            prof_consulta = st.session_state.get("dados_profissional", {}).get(
+                "nome", "-"
+            )
+            reg_consulta = st.session_state.get("dados_profissional", {}).get(
+                "registro", "-"
+            )
+            clinica_consulta = st.session_state.get("dados_consulta", {}).get(
+                "clinica", "-"
+            )
+            data_ini_consulta = st.session_state.get("dados_consulta", {}).get(
+                "data_inicio", "-"
+            )
+            data_ret_consulta = st.session_state.get("dados_consulta", {}).get(
+                "data_retorno", "-"
+            )
+            obs_consulta = (
+                st.session_state.get("dados_consulta", {}).get("observacoes", "")
+                or "Nenhuma observação registrada"
+            )
+
+            # Dados adicionais da consulta
+            data_nasc = st.session_state.get("dados_paciente", {}).get(
+                "data_nascimento", "-"
+            )
+            # Calcula idade
+            if data_nasc != "-" and data_nasc:
+                try:
+                    from datetime import date
+
+                    nasc = datetime.strptime(data_nasc, "%Y-%m-%d").date()
+                    hoje = date.today()
+                    idade_pac = (
+                        hoje.year
+                        - nasc.year
+                        - ((hoje.month, hoje.day) < (nasc.month, nasc.day))
+                    )
+                except:
+                    idade_pac = "-"
+            else:
+                idade_pac = "-"
+
+            # Após definir email_paciente normalmente
+            email_paciente = st.session_state.get("dados_paciente", {}).get("email", "").strip()
+            if not email_paciente or email_paciente in [
+                "-",
+                "seuemail@email.com.br",
+                "[email protected]",
+            ]:
+                email_paciente = "Não informado"
+            # email_paciente permanece com @ normal para exibição na tela e no CSV
+            # A versão com &#64; só é usada dentro do HTML do laudo
+            email_paciente_html = email_paciente.replace("@", "&#64;") if email_paciente != "Não informado" else "Não informado"
+
+            especialidade_prof = st.session_state.get("dados_profissional", {}).get(
+                "especialidade", "-"
+            )
+
+            # Totais gerais
+            total_kcal = df_sel["Kcal"].sum()
+            total_prot = df_sel["Proteínas(g)"].sum()
+            total_carb = df_sel["Carboidratos(g)"].sum()
+            total_gord = df_sel["Gorduras(g)"].sum()
+            dias_unicos = df_sel["Dia"].nunique()
+            media_kcal_dia = total_kcal / max(dias_unicos, 1)
+
+            # Determinar tipo automaticamente
+            tipo_automatico = "Semanal" if dias_unicos > 1 else "Diário"
+
+            # Parâmetros do perfil (se disponíveis)
+            perfil_preenchido = False
+            if peso_at > 0 and alt_cm > 0 and idade > 0 and sexo:
+                perfil_preenchido = True
+                get_atual = get_harris
+                tmb_atual = tmb_harris
+                imc_val = imc
+                composicao_val = composicao
+                # Classificação IMC local
+                if imc_val < 18.5:
+                    class_imc = "Abaixo do peso"
+                elif imc_val < 25:
+                    class_imc = "Peso normal"
+                elif imc_val < 30:
+                    class_imc = "Sobrepeso"
+                elif imc_val < 35:
+                    class_imc = "Obesidade Grau I"
+                elif imc_val < 40:
+                    class_imc = "Obesidade Grau II"
+                else:
+                    class_imc = "Obesidade Grau III"
+                classificacao_imc_val = class_imc
+                peso_ideal_val = composicao_val["peso_ideal"]
+                perc_gordura_val = composicao_val["percentual_gordura"]
+                massa_gorda_val = composicao_val["massa_gordura"]
+                massa_magra_val = composicao_val["massa_magra"]
+                # Saldo e projeções
+                saldo_dia = get_atual - media_kcal_dia
+                if saldo_dia > 0:
+                    status_saldo = "Déficit (perda de peso)"
+                    saldo_msg = f"Déficit calórico - Consumindo {abs(saldo_dia):.1f} kcal a menos por dia"
+                elif saldo_dia < 0:
+                    status_saldo = "Superávit (ganho de peso)"
+                    saldo_msg = f"Superávit calórico - Consumindo {abs(saldo_dia):.1f} kcal a mais por dia"
+                else:
+                    status_saldo = "Manutenção"
+                    saldo_msg = "Manutenção - consumo igual ao gasto"
+                proj_7dias = abs(saldo_dia) * 7 / 7700
+                proj_30dias = abs(saldo_dia) * 30 / 7700
+                if p_alvo > 0 and diferenca_meta != 0:
+                    semanas_meta = (
+                        (abs(diferenca_meta) / (proj_30dias / 4.3))
+                        if proj_30dias > 0
+                        else 0
+                    )
+                    tempo_meta = (
+                        f"{max(1, int(semanas_meta))} semanas"
+                        if semanas_meta > 0
+                        else "Indeterminado"
+                    )
+                else:
+                    tempo_meta = "Defina meta"
+                # Mensagem da meta
+                if p_alvo > 0:
+                    if objetivo == "Perda de peso":
+                        if p_alvo < peso_at:
+                            msg_meta = f"Faltam {peso_at - p_alvo:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+                        else:
+                            msg_meta = f"Meta de {p_alvo:.1f} kg está acima do peso atual. Ajuste para perda de peso."
+                    else:
+                        if p_alvo > peso_at:
+                            msg_meta = f"Faltam {p_alvo - peso_at:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+                        else:
+                            msg_meta = f"Meta de {p_alvo:.1f} kg está abaixo do peso atual. Ajuste para ganho de peso."
+                else:
+                    msg_meta = "Defina sua meta de peso para acompanhamento"
+                aviso_cientifico = "⚠️ ATENÇÃO: Projeção de 7 dias é uma estimativa teórica. Variações diárias de peso são normais (retenção hídrica 1-2kg, horário da pesagem, conteúdo intestinal). O resultado real pode diferir. A consistência e a tendência de 30 dias são mais confiáveis."
+
+                # Macros
+                perc_prot = (total_prot * 4 / total_kcal * 100) if total_kcal else 0
+                perc_carb = (total_carb * 4 / total_kcal * 100) if total_kcal else 0
+                perc_gord = (total_gord * 9 / total_kcal * 100) if total_kcal else 0
+
+            # ──────────────────────────────
+            # CSV ESTRUTURADO
+            # ──────────────────────────────
+            linhas_csv = []
+
+            # ── Cabeçalho do relatório ──
+            linhas_csv.append("BIOGESTÃO 360 - RELATÓRIO DE CARDÁPIO IMPORTADO")
+            linhas_csv.append(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            linhas_csv.append("")
+
+            # ── Dados da consulta ──
+            linhas_csv.append("=== DADOS DA CONSULTA ===")
+            linhas_csv.append(f"Paciente: {nome_consulta}")
+            linhas_csv.append(f"Nascimento: {data_nasc}")
+            linhas_csv.append(f"Idade: {idade_pac} anos")
+            linhas_csv.append(f"Telefone: {tel_consulta}")
+            # 👇 Cria uma versão do e‑mail SEM escape para o CSV (não altera a original)
+            email_para_csv = email_paciente
+            if isinstance(email_para_csv, str):
+                email_para_csv = email_para_csv.replace("&#64;", "@")
+            linhas_csv.append(
+                f"E-mail: {email_para_csv if email_para_csv not in ['-', '', 'seuemail@email.com.br', '[email protected]'] else 'Não informado'}"
+            )
+            linhas_csv.append(f"Profissional: {prof_consulta}")
+            linhas_csv.append(f"Registro: {reg_consulta}")
+            linhas_csv.append(f"Especialidade: {especialidade_prof}")
+            linhas_csv.append(f"Clínica: {clinica_consulta}")
+            linhas_csv.append(f"Data Início: {data_ini_consulta}")
+            linhas_csv.append(f"Data Retorno: {data_ret_consulta}")
+            linhas_csv.append(f"Observações/Restrições: {obs_consulta}")
+            linhas_csv.append(f"Tipo de Planejamento: {tipo_automatico}")
+            linhas_csv.append("")
+
+            if perfil_preenchido:
+                linhas_csv.append("=== PERFIL DO AVALIADO ===")
+                linhas_csv.append(
+                    f"Peso: {peso_at:.1f} kg | Altura: {alt_cm} cm | Idade: {idade} anos | Sexo: {sexo}"
+                )
+                linhas_csv.append(f"Objetivo: {objetivo} | Meta: {p_alvo:.1f} kg")
+                linhas_csv.append(f"Status da Meta: {msg_meta}")
+                linhas_csv.append(f"Atividade Física: {naf_label}")
+                linhas_csv.append("")
+                linhas_csv.append("=== METABOLISMO ===")
+                linhas_csv.append(
+                    f"GET: {get_atual:.0f} kcal/dia | TMB: {tmb_atual:.0f} kcal/dia"
+                )
+                linhas_csv.append(
+                    f"IMC: {composicao_val['imc']} ({classificacao_imc_val}) | Peso Ideal: {peso_ideal_val:.1f} kg"
+                )
+                linhas_csv.append(
+                    f"% Gordura: {perc_gordura_val:.1f}% | Massa Gorda: {massa_gorda_val:.1f} kg | Massa Magra: {massa_magra_val:.1f} kg"
+                )
+                linhas_csv.append("")
+                linhas_csv.append("=== CONSUMO E SALDO ===")
+                linhas_csv.append(
+                    f"Total Kcal: {total_kcal:.0f} | Média/dia: {media_kcal_dia:.0f} kcal"
+                )
+                linhas_csv.append(
+                    f"Saldo Diário: {saldo_dia:+.0f} kcal ({status_saldo})"
+                )
+                linhas_csv.append(
+                    f"Proteínas: {total_prot:.0f}g ({perc_prot:.1f}%) | Carboidratos: {total_carb:.0f}g ({perc_carb:.1f}%) | Gorduras: {total_gord:.0f}g ({perc_gord:.1f}%)"
+                )
+                linhas_csv.append(
+                    f"Projeção 7 dias: {proj_7dias:.2f} kg | Projeção 30 dias: {proj_30dias:.2f} kg"
+                )
+                linhas_csv.append(f"Tempo para meta: {tempo_meta}")
+                linhas_csv.append("")
+
+            # ── Alertas ──
+            tem_alerta = False
+            alertas_csv = []
+            for d in dados_tabela:
+                a = d.get("Alerta OMS", "-")
+                if a != "-" and a:
+                    alertas_csv.append(f"  {d['Alimento']}: {a}")
+                    tem_alerta = True
+            if tem_alerta:
+                linhas_csv.append("=== ALERTAS IDENTIFICADOS ===")
+                for linha_alerta in alertas_csv:
+                    linhas_csv.append(linha_alerta)
+                linhas_csv.append("")
+
+            # ── Tabela de alimentos ──
+            linhas_csv.append("=== CARDÁPIO DETALHADO ===")
+            linhas_csv.append("")
+
+            # Cabeçalho da tabela com separador ;
+            cab = "Dia;Refeição;Alimento;Quantidade;Kcal;Proteínas(g);Carboidratos(g);Gorduras(g);Açúcares(g);G.Saturada(g);G.Trans(g);Fibras(g);Sódio(mg);Fonte;Alerta OMS/Restrição"
+            linhas_csv.append(cab)
+
+            dia_ant = ""
+            for _, row in df_sel.iterrows():
+                if row["Dia"] != dia_ant:
+                    dia_ant = row["Dia"]
+                linhas_csv.append(
+                    f"{row['Dia']};"
+                    f"{row['Refeição']};"
+                    f"{row['Alimento']};"
+                    f"{row['Quantidade']};"
+                    f"{row['Kcal']:.1f};"
+                    f"{row['Proteínas(g)']:.1f};"
+                    f"{row['Carboidratos(g)']:.1f};"
+                    f"{row['Gorduras(g)']:.1f};"
+                    f"{row.get('Açúcares(g)', '---')};"
+                    f"{row.get('G.Saturada(g)', '---')};"
+                    f"{row.get('G.Trans(g)', '---')};"
+                    f"{row.get('Fibras(g)', '---')};"
+                    f"{row.get('Sódio(mg)', '---')};"
+                    f"{row.get('Fonte', '-')};"
+                    f"{row.get('Alerta OMS', '-')}"
+                )
+
+            csv_bytes = "\n".join(linhas_csv).encode("utf-8-sig")
+
+            with col_d1:
+                st.download_button(
+                    "📊 Baixar CSV",
+                    data=csv_bytes,
+                    file_name=f"cardapio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+            # ──────────────────────────────
+            # HTML COMPLETO (com todos os elementos da interface)
+            # ──────────────────────────────
+            import matplotlib.pyplot as plt
+            import io
+            import base64
+
+            # Garantir que totais dos micronutrientes estejam definidos
+            try:
+                total_acucar = total_acucar if 'total_acucar' in locals() else 0
+                total_sat = total_sat if 'total_sat' in locals() else 0
+                total_trans = total_trans if 'total_trans' in locals() else 0
+                total_fibra = total_fibra if 'total_fibra' in locals() else 0
+                total_sodio = total_sodio if 'total_sodio' in locals() else 0
+            except NameError:
+                total_acucar = total_sat = total_trans = total_fibra = total_sodio = 0
+
+            # Gráficos principais (composição, balanço, macros)
+            if perfil_preenchido:
+                fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+                axes[0].pie(
+                    [perc_gordura_val, 100 - perc_gordura_val],
+                    labels=["Massa Gorda", "Massa Magra"],
+                    colors=["#ef4444", "#3b82f6"],
+                    autopct="%1.1f%%",
+                    startangle=90,
+                )
+                axes[0].set_title("Composição Corporal", fontweight="bold")
+                axes[1].bar(
+                    ["GET", "Consumo", "Diferença"],
+                    [get_atual, media_kcal_dia, abs(saldo_dia)],
+                    color=["#ef4444", "#10b981", "#f59e0b"],
+                )
+                axes[1].set_title("Balanço Energético (kcal/dia)", fontweight="bold")
+                axes[2].pie(
+                    [total_prot * 4, total_carb * 4, total_gord * 9],
+                    labels=["Proteínas", "Carboidratos", "Gorduras"],
+                    colors=["#ef4444", "#3b82f6", "#f59e0b"],
+                    autopct="%1.1f%%",
+                    startangle=90,
+                )
+                axes[2].set_title("Distribuição dos Macronutrientes", fontweight="bold")
+                plt.tight_layout()
+                buf = io.BytesIO()
+                plt.savefig(buf, format="png", dpi=200, bbox_inches="tight", facecolor="white")
+                buf.seek(0)
+                graficos_b64 = base64.b64encode(buf.read()).decode()
+                plt.close()
+            else:
+                graficos_b64 = None
+
+            # Gráfico de barras dos micronutrientes (se houver consumo > 0)
+            grafico_micro_b64 = None
+            if total_acucar > 0 or total_sat > 0 or total_fibra > 0 or total_sodio > 0:
+                fig_micro, ax_micro = plt.subplots(figsize=(10, 5))
+                nutrientes = []
+                consumos = []
+                referencias = []
+                if total_acucar > 0:
+                    nutrientes.append("Açúcares (g)")
+                    consumos.append(total_acucar)
+                    referencias.append(50)
+                if total_sat > 0:
+                    nutrientes.append("Gord. Saturada (g)")
+                    consumos.append(total_sat)
+                    referencias.append(22)
+                if total_fibra > 0:
+                    nutrientes.append("Fibras (g)")
+                    consumos.append(total_fibra)
+                    referencias.append(25)
+                if total_sodio > 0:
+                    nutrientes.append("Sódio (mg)")
+                    consumos.append(total_sodio)
+                    referencias.append(2400)
+                bars = ax_micro.bar(nutrientes, consumos, color="#3b82f6", alpha=0.7)
+                for i, (nome, ref) in enumerate(zip(nutrientes, referencias)):
+                    ax_micro.axhline(y=ref, linestyle='--', color='red', alpha=0.7)
+                    ax_micro.text(i, ref + (max(consumos)*0.02), f"Ref: {ref:.0f}", ha='center', fontsize=9, color='red')
+                ax_micro.set_ylabel("Consumo total (g ou mg)")
+                ax_micro.set_title("Consumo de Micronutrientes vs. Referência Diária (IN 75/2020)")
+                plt.tight_layout()
+                buf_micro = io.BytesIO()
+                plt.savefig(buf_micro, format="png", dpi=150, bbox_inches="tight", facecolor="white")
+                buf_micro.seek(0)
+                grafico_micro_b64 = base64.b64encode(buf_micro.getvalue()).decode()
+                plt.close()
+
+            # Preparar totais por dia com todas as colunas
+            cols_totais = ["Kcal", "Proteínas(g)", "Carboidratos(g)", "Gorduras(g)",
+                        "Açúcares(g)", "G.Saturada(g)", "G.Trans(g)", "Fibras(g)", "Sódio(mg)"]
+            df_totais_dia = df_sel[cols_totais].copy()
+            for col in cols_totais:
+                df_totais_dia[col] = pd.to_numeric(df_totais_dia[col], errors='coerce').fillna(0)
+            df_totais_dia['Dia'] = df_sel['Dia']
+            totais_dia_html = df_totais_dia.groupby('Dia')[cols_totais].sum().round(1)
+            ordem_dias = {"Segunda":1, "Terça":2, "Quarta":3, "Quinta":4, "Sexta":5, "Sábado":6, "Domingo":7}
+            totais_dia_html['_ord'] = [ordem_dias.get(d, 99) for d in totais_dia_html.index]
+            totais_dia_html = totais_dia_html.sort_values('_ord').drop(columns='_ord')
+
+            linhas_totais_dia = ""
+            for dia, row in totais_dia_html.iterrows():
+                linhas_totais_dia += f"""
+                <tr>
+                    <td><b>{dia}</b></td>
+                    <td>{row['Kcal']:.0f} kcal</td>
+                    <td>{row['Proteínas(g)']:.1f}g</td>
+                    <td>{row['Carboidratos(g)']:.1f}g</td>
+                    <td>{row['Gorduras(g)']:.1f}g</td>
+                    <td>{row['Açúcares(g)']:.1f}g</td>
+                    <td>{row['G.Saturada(g)']:.1f}g</td>
+                    <td>{row['G.Trans(g)']:.1f}g</td>
+                    <td>{row['Fibras(g)']:.1f}g</td>
+                    <td>{row['Sódio(mg)']:.1f}mg</td>
+                </tr>
+                """
+
+            # Mensagens de saldo e aviso
+            if saldo_dia > 0:
+                saldo_texto = "Déficit calórico"
+                saldo_cor = "success-box"
+                if saldo_dia > 1000:
+                    exibir_aviso_deficit = True
+                else:
+                    exibir_aviso_deficit = False
+            elif saldo_dia < 0:
+                saldo_texto = "Superávit calórico"
+                saldo_cor = "warning-box"
+                exibir_aviso_deficit = False
+            else:
+                saldo_texto = "Manutenção"
+                saldo_cor = "info-box"
+                exibir_aviso_deficit = False
+
+            aviso_deficit_html = ""
+            if exibir_aviso_deficit:
+                aviso_deficit_html = f"""
+                <div class='warning-box' style='background:#fef3c7; border-left-color:#dc2626;'>
+                    <strong>⚠️ DÉFICIT MUITO ELEVADO ({saldo_dia:.0f} kcal/dia)</strong><br>
+                    Déficits acima de <strong>1.000 kcal/dia</strong> podem causar perda de massa magra e carências nutricionais.<br>
+                    👨‍⚕️ <strong>Consulte sempre um profissional de saúde.</strong>
+                </div>
+                """
+
+            saldo_msg = f"Consumindo {abs(saldo_dia):.1f} kcal {'a menos' if saldo_dia > 0 else 'a mais'} por dia." if saldo_dia != 0 else ""
+
+            # Cards de micronutrientes (estilo igual à interface)
+            cards_micro_html = f"""
+            <h2>🧪 Consumo de Outros Nutrientes vs. Referência Diária</h2>
+            <div class='grid-4'>
+                <div class='card' style='text-align:center;'>
+                    <div class='card-title'>🍬 Açúcares</div>
+                    <div class='card-value'>{total_acucar:.0f}g</div>
+                    <div style='background:#e2e8f0; border-radius:10px; margin:8px 0; height:8px;'>
+                        <div style='background:#f59e0b; width:{min(100, (total_acucar/50)*100)}%; height:8px; border-radius:10px;'></div>
+                    </div>
+                    <div class='card-label'>{min(100, (total_acucar/50)*100):.0f}% da ref. (50g)</div>
+                </div>
+                <div class='card' style='text-align:center;'>
+                    <div class='card-title'>🧈 Gord. Saturada</div>
+                    <div class='card-value'>{total_sat:.0f}g</div>
+                    <div style='background:#e2e8f0; border-radius:10px; margin:8px 0; height:8px;'>
+                        <div style='background:#ec489a; width:{min(100, (total_sat/22)*100)}%; height:8px; border-radius:10px;'></div>
+                    </div>
+                    <div class='card-label'>{min(100, (total_sat/22)*100):.0f}% da ref. (22g)</div>
+                </div>
+                <div class='card' style='text-align:center;'>
+                    <div class='card-title'>🌾 Fibras</div>
+                    <div class='card-value'>{total_fibra:.0f}g</div>
+                    <div style='background:#e2e8f0; border-radius:10px; margin:8px 0; height:8px;'>
+                        <div style='background:#10b981; width:{min(100, (total_fibra/25)*100)}%; height:8px; border-radius:10px;'></div>
+                    </div>
+                    <div class='card-label'>{min(100, (total_fibra/25)*100):.0f}% da ref. (25g)</div>
+                </div>
+                <div class='card' style='text-align:center;'>
+                    <div class='card-title'>🧂 Sódio</div>
+                    <div class='card-value'>{total_sodio:.0f}mg</div>
+                    <div style='background:#e2e8f0; border-radius:10px; margin:8px 0; height:8px;'>
+                        <div style='background:#3b82f6; width:{min(100, (total_sodio/2400)*100)}%; height:8px; border-radius:10px;'></div>
+                    </div>
+                    <div class='card-label'>{min(100, (total_sodio/2400)*100):.0f}% da ref. (2400mg)</div>
+                </div>
+            </div>
+            """
+            if total_trans > 0:
+                cards_micro_html += f"<div class='warning-box'>⚠️ <strong>Gorduras trans totais:</strong> {total_trans:.0f}g. Recomendação: evitar ao máximo.</div>"
+
+            # Legenda dos ícones (igual à seção 26)
+            legenda_html = """
+            <div class='aviso-peso-real'>
+                <div style="background:#ffffff; border-radius:10px; padding:12px; margin-top:12px; border:1px solid #fde68a;">
+                    <strong style="color:#d97706;">🔍 O que significam os ícones do cardápio?</strong><br>
+                    <span style="display:inline-block; background:#ef4444; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🔥 Kcal</span> <span style="color:#1e293b;">= calorias do alimento</span><br>
+                    <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥩 Proteínas</span> <span style="color:#1e293b;">= constroem e reparam músculos — combustível do treino de força</span><br>
+                    <span style="display:inline-block; background:#f59e0b; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍞 Carboidratos</span> <span style="color:#1e293b;">= principal fonte de energia para o treino</span><br>
+                    <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span><br>
+                    <span style="display:inline-block; background:#8b5cf6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍬 Açúcar</span> <span style="color:#1e293b;">= açúcares totais (evitar excesso)</span><br>
+                    <span style="display:inline-block; background:#ec489a; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧈 Sat</span> <span style="color:#1e293b;">= gorduras saturadas (limitar a 22g/dia)</span><br>
+                    <span style="display:inline-block; background:#dc2626; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">⚠️ Trans</span> <span style="color:#1e293b;">= gorduras trans (evitar ao máximo)</span><br>
+                    <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🌾 Fibra</span> <span style="color:#1e293b;">= fibras alimentares (prefira ≥25g/dia)</span><br>
+                    <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧂 Sódio</span> <span style="color:#1e293b;">= sódio (limite diário: 2400mg)</span>
+                </div>
+            </div>
+            """
+
+            # HTML final
+            html_export = f"""<!DOCTYPE html>
+            <html lang='pt-BR'>
+            <head>
+            <meta charset='UTF-8'>
+            <title>Cardápio BioGestão 360</title>
+            <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; background: white; color: #1e293b; padding: 15px; font-size: 11pt; }}
+            .container {{ max-width: 1200px; margin: 0 auto; }}
+            h1 {{ color: #f59e0b; font-size: 20pt; text-align: center; border-bottom: 2px solid #f59e0b; padding-bottom: 8px; }}
+            h2 {{ background: linear-gradient(135deg, #1e3a5f, #0f172a); color: white; padding: 6px 10px; margin: 20px 0 12px 0; font-size: 14pt; border-radius: 6px; }}
+            .subheader {{ text-align: center; color: #64748b; font-size: 9pt; margin-top: 5px; }}
+            .grid-2 {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0; }}
+            .grid-3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }}
+            .grid-4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }}
+            .card {{ border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+            .card-title {{ font-size: 9pt; color: #64748b; }}
+            .card-value {{ font-size: 14pt; font-weight: bold; color: #1e293b; }}
+            .card-label {{ font-size: 8pt; color: #64748b; margin-top: 5px; }}
+            .metric-card {{ text-align: center; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+            .metric-icon {{ font-size: 22pt; }}
+            .metric-value {{ font-size: 16pt; font-weight: bold; color: #f59e0b; }}
+            .metric-label {{ font-size: 9pt; color: #64748b; }}
+            .metric-desc {{ font-size: 7pt; color: #94a3b8; margin-top: 5px; }}
+            .success-box {{ background: #dcfce7; border-left: 4px solid #10b981; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+            .warning-box {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+            .info-box {{ background: #e0f2fe; border-left: 4px solid #0284c7; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 8pt; }}
+            th, td {{ border: 1px solid #cbd5e1; padding: 5px 6px; text-align: left; }}
+            th {{ background: #f59e0b; color: white; }}
+            tr:nth-child(even) {{ background: #f8fafc; }}
+            .graficos-container {{ text-align: center; margin: 15px 0; }}
+            .graficos-container img {{ max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 12px; }}
+            .footer {{ text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; }}
+            .aviso-peso-real {{ margin-bottom: 20px; }}
+            @media print {{
+                body {{ padding: 0; margin: 0; }}
+                h2 {{ background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+                th {{ background: #666 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            }}
+            </style>
+            </head>
+            <body>
+            <div class='container'>
+            <h1>📋 BioGestão 360 — Relatório Completo</h1>
+            <div class='subheader'>Gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}</div>
+
+            <h2>📋 DADOS DA CONSULTA</h2>
+            <div class='grid-3'>
+            <div class='card'><div class='card-title'>👤 Paciente</div><div class='card-value'>{nome_consulta}</div></div>
+            <div class='card'><div class='card-title'>🎂 Nascimento</div><div class='card-value'>{data_nasc}</div></div>
+            <div class='card'><div class='card-title'>📊 Idade</div><div class='card-value'>{idade_pac} anos</div></div>
+            <div class='card'><div class='card-title'>📞 Telefone</div><div class='card-value'>{tel_consulta}</div></div>
+            <div class='card'><div class='card-title'>📧 E-mail</div><div class='card-value'>{email_paciente_html}</div></div>
+            <div class='card'><div class='card-title'>👨‍⚕️ Profissional</div><div class='card-value'>{prof_consulta}</div></div>
+            <div class='card'><div class='card-title'>📜 Registro</div><div class='card-value'>{reg_consulta}</div></div>
+            <div class='card'><div class='card-title'>🎯 Especialidade</div><div class='card-value'>{especialidade_prof}</div></div>
+            <div class='card'><div class='card-title'>🏥 Clínica</div><div class='card-value'>{clinica_consulta}</div></div>
+            <div class='card'><div class='card-title'>📅 Início</div><div class='card-value'>{data_ini_consulta}</div></div>
+            <div class='card'><div class='card-title'>🔄 Retorno</div><div class='card-value'>{data_ret_consulta}</div></div>
+            <div class='card'><div class='card-title'>📝 Observações</div><div class='card-value'>{obs_consulta}</div></div>
+            </div>
+            """
+
+            if perfil_preenchido:
+                html_export += f"""
+            <h2>👤 PERFIL BIOLÓGICO</h2>
+            <div class='grid-3'>
+                <div class='metric-card'><div class='metric-icon'>⚖️</div><div class='metric-value'>{peso_at:.1f} kg</div><div class='metric-label'>Peso</div></div>
+                <div class='metric-card'><div class='metric-icon'>📏</div><div class='metric-value'>{alt_cm} cm</div><div class='metric-label'>Altura</div></div>
+                <div class='metric-card'><div class='metric-icon'>🎂</div><div class='metric-value'>{idade} anos</div><div class='metric-label'>Idade</div></div>
+                <div class='metric-card'><div class='metric-icon'>⚥</div><div class='metric-value'>{sexo}</div><div class='metric-label'>Sexo</div></div>
+                <div class='metric-card'><div class='metric-icon'>🎯</div><div class='metric-value'>{objetivo}</div><div class='metric-label'>Objetivo</div></div>
+                <div class='metric-card'><div class='metric-icon'>🏆</div><div class='metric-value'>{p_alvo:.1f} kg</div><div class='metric-label'>Meta de Peso</div></div>
+            </div>
+
+            <h2>⚡ METABOLISMO</h2>
+            <div class='grid-4'>
+                <div class='metric-card'><div class='metric-icon'>⚡</div><div class='metric-value'>{get_atual:.0f} kcal</div><div class='metric-label'>GET</div><div class='metric-desc'>Total de calorias que seu corpo gasta por dia.</div></div>
+                <div class='metric-card'><div class='metric-icon'>🔥</div><div class='metric-value'>{tmb_atual:.0f} kcal</div><div class='metric-label'>TMB</div><div class='metric-desc'>Calorias queimadas em repouso total.</div></div>
+                <div class='metric-card'><div class='metric-icon'>📊</div><div class='metric-value'>{composicao_val['imc']}</div><div class='metric-label'>IMC ({classificacao_imc_val})</div></div>
+                <div class='metric-card'><div class='metric-icon'>🎯</div><div class='metric-value'>{peso_ideal_val:.1f} kg</div><div class='metric-label'>Peso Ideal</div></div>
+            </div>
+
+            <h2>🧬 COMPOSIÇÃO CORPORAL</h2>
+            <div class='grid-3'>
+                <div class='metric-card'><div class='metric-icon'>🎯</div><div class='metric-value'>{perc_gordura_val:.1f}%</div><div class='metric-label'>% Gordura</div><div class='metric-desc'>Homens: 10-25% | Mulheres: 18-32%</div></div>
+                <div class='metric-card'><div class='metric-icon'>⚖️</div><div class='metric-value'>{massa_gorda_val:.1f} kg</div><div class='metric-label'>Massa Gorda</div></div>
+                <div class='metric-card'><div class='metric-icon'>💪</div><div class='metric-value'>{massa_magra_val:.1f} kg</div><div class='metric-label'>Massa Magra</div></div>
+            </div>
+
+            <div class='graficos-container'>
+                <img src="data:image/png;base64,{graficos_b64}" alt="Gráficos">
+            </div>
+
+            <h2>📊 ANÁLISE ENERGÉTICA</h2>
+            <div class='grid-3'>
+                <div class='metric-card'><div class='metric-icon'>⚡</div><div class='metric-value'>{get_atual:.0f} kcal</div><div class='metric-label'>Gasto Total (GET)</div></div>
+                <div class='metric-card'><div class='metric-icon'>🍽️</div><div class='metric-value'>{media_kcal_dia:.0f} kcal</div><div class='metric-label'>Média consumo/dia</div></div>
+                <div class='metric-card'><div class='metric-icon'>💪</div><div class='metric-value'>{saldo_dia:+.0f} kcal</div><div class='metric-label'>Saldo diário</div></div>
+            </div>
+            <div class='{saldo_cor}'>
+                <strong>{saldo_texto}</strong><br>{saldo_msg}
+            </div>
+            {aviso_deficit_html}
+            <div class='warning-box'>
+                ⚠️ ATENÇÃO: Projeção de 7 dias é uma estimativa teórica. Variações diárias de peso são normais (retenção hídrica 1-2kg, horário da pesagem, conteúdo intestinal). O resultado real pode diferir. A consistência e a tendência de 30 dias são mais confiáveis.
+            </div>
+            """
+
+            html_export += cards_micro_html
+
+            if grafico_micro_b64:
+                html_export += f"""
+            <div class='graficos-container'>
+                <img src="data:image/png;base64,{grafico_micro_b64}" alt="Gráfico de Micronutrientes">
+            </div>
+            """
+
+            # Alertas OMS
+            html_alertas = ""
+            for idx, row in df_sel.iterrows():
+                a = row.get("Alerta OMS", "-")
+                if "RESTRIÇÃO" in str(a):
+                    html_alertas += f"<div style='background:#fee2e2;border-left:4px solid #ef4444;padding:10px;border-radius:8px;margin:8px 0'>🚨 <b>RESTRIÇÃO ALIMENTAR:</b> {row['Alimento']} — verifique com o profissional responsável!</div>"
+                elif "Grupo 1" in str(a):
+                    html_alertas += f"<div style='background:#fee2e2;border-left:4px solid #ef4444;padding:10px;border-radius:8px;margin:8px 0'>🔴 <b>OMS GRUPO 1 — CANCERÍGENO CONFIRMADO:</b> {row['Alimento']}<br><small>{ALIMENTOS_RISCO['grupo1']['mensagem']}</small></div>"
+                elif "Grupo 2A" in str(a):
+                    html_alertas += f"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:8px;margin:8px 0'>🟠 <b>OMS GRUPO 2A — PROVAVELMENTE CANCERÍGENO:</b> {row['Alimento']}<br><small>{ALIMENTOS_RISCO['grupo2a']['mensagem']}</small></div>"
+                elif "Grupo 2B" in str(a):
+                    html_alertas += f"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:8px;margin:8px 0'>🟣 <b>OMS GRUPO 2B — POSSIVELMENTE CANCERÍGENO:</b> {row['Alimento']}<br><small>{ALIMENTOS_RISCO['grupo2b']['mensagem']}</small></div>"
+
+            if html_alertas:
+                html_export += f"<h2>⚠️ ALERTAS IDENTIFICADOS</h2>{html_alertas}"
+            
+            html_export += f"{legenda_html}"
+            # Tabela do cardápio com legenda
+            html_export += f"""
+            <h2>🍽️ CARDÁPIO - {tipo_planejamento}</h2>            
+            <table>
+            <thead>
+            <tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>🔥 Kcal</th><th>🥩 Prot(g)</th><th>🍞 Carb(g)</th><th>🥑 Gord(g)</th><th>🍬 Açúcar(g)</th><th>🧈 Sat(g)</th><th>⚠️ Trans(g)</th><th>🌾 Fibra(g)</th><th>🧂 Sódio(mg)</th><th>Fonte</th><th>⚠️ Alerta</th></tr>
+            </thead>
+            <tbody>
+            """
+            for _, row in df_sel.iterrows():
+                alerta_val = row.get("Alerta OMS", "-")
+                cor_linha = "background:#fee2e2" if ("Grupo 1" in str(alerta_val) or "RESTRIÇÃO" in str(alerta_val)) else ("background:#fef9c3" if "Grupo 2" in str(alerta_val) else "")
+                html_export += f"""
+            <tr style='{cor_linha}'>
+                <td>{row['Dia']}</td>
+                <td>{row['Refeição']}</td>
+                <td>{row['Alimento']}</td>
+                <td>{row['Quantidade']}</td>
+                <td>{row['Kcal']:.1f}</td>
+                <td>{row['Proteínas(g)']:.1f}</td>
+                <td>{row['Carboidratos(g)']:.1f}</td>
+                <td>{row['Gorduras(g)']:.1f}</td>
+                <td>{row.get('Açúcares(g)', '---')}</td>
+                <td>{row.get('G.Saturada(g)', '---')}</td>
+                <td>{row.get('G.Trans(g)', '---')}</td>
+                <td>{row.get('Fibras(g)', '---')}</td>
+                <td>{row.get('Sódio(mg)', '---')}</td>
+                <td>{row.get('Fonte', '-')}</td>
+                <td>{alerta_val}</td>
+            </tr>
+            """
+
+            html_export += f"""
+            </tbody>
+            </table>
+
+            <h2>📅 TOTAIS POR DIA</h2>
+            <table style='width:auto'>
+            <thead>
+            <tr>
+                <th>Dia</th>
+                <th>🔥 Kcal</th>
+                <th>🥩 Proteínas</th>
+                <th>🍞 Carboidratos</th>
+                <th>🥑 Gorduras</th>
+                <th>🍬 Açúcares</th>
+                <th>🧈 Sat</th>
+                <th>⚠️ Trans</th>
+                <th>🌾 Fibras</th>
+                <th>🧂 Sódio</th>
+            </tr>
+            </thead>
+            <tbody>
+            {linhas_totais_dia}
+            </tbody>
+            </table>
+
+            <h2>🔥 TOTAIS GERAIS ({len(df_sel)} itens selecionados)</h2>
+            <div class='grid-4'>
+                <div class='metric-card'><div class='metric-value'>{total_kcal:.0f}</div><div class='metric-label'>🔥 Total Kcal</div></div>
+                <div class='metric-card'><div class='metric-value'>{total_prot:.0f}g</div><div class='metric-label'>🥩 Proteínas</div></div>
+                <div class='metric-card'><div class='metric-value'>{total_carb:.0f}g</div><div class='metric-label'>🍞 Carboidratos</div></div>
+                <div class='metric-card'><div class='metric-value'>{total_gord:.0f}g</div><div class='metric-label'>🥑 Gorduras</div></div>
+            </div>
+
+            <div class='footer'>
+                BioGestão 360 | Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')} |
+                {len(df_sel)} alimentos selecionados | Base BioGestão 360 |
+                ⚠️ Não substitui orientação de profissional de saúde habilitado.
+            </div>
+            </div>
+            </body></html>
+            """
+
+            with col_d2:
+                st.download_button(
+                    "📄 Baixar Relatório HTML",
+                    data=html_export,
+                    file_name=f"cardapio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html",
+                    use_container_width=True,
+                )
+
+# ============================================
+# 25. AVALIAÇÃO FÍSICA PROFISSIONAL
+# ============================================
+st.markdown("---")
+# Verificar acesso
+tem_acesso_av, msg_acesso_av = verificar_acesso_avaliacao()
+
+st.markdown("## 📏 Avaliação Física Profissional")
+st.markdown("*Protocolo de Dobras Cutâneas - Jackson & Pollock (1980)*")
+
+# Status de acesso
+if not tem_acesso_av:
+    if not st.session_state.get("logado", False):
+        st.warning("🔐 Faça login na barra lateral para usar o Importador Automático")
+    else:
+        st.error(msg_acesso_av)
+
+# ========== INICIALIZAÇÃO DAS VARIÁVEIS (FORA DO BLOCO) ==========
+# Isso evita NameError quando o checkbox não está marcado
+nome_avaliado = ""
+frequencia_cardiaca = 0
+pressao_sistolica = 0
+pressao_diastolica = 0
+classif_pressao = "-"
+triceps_media = 0
+biceps_media = 0
+peitoral = 0
+subescapular = 0
+abdominal = 0
+axilar = 0
+suprailiaca = 0
+coxa_media = 0
+panturrilha_media = 0
+braco_media_cm = 0
+peitoral_cm = 0
+cintura = 0
+quadril = 0
+coxa_media_cm = 0
+panturrilha_media_cm = 0
+rcq = 0
+risco_rcq = "-"
+handgrip_media = 0
+wells = 0
+nivel_forca = ""
+nivel_flex = ""
+percentual_gordura_jp = 0
+massa_gordura_jp = 0
+massa_magra_jp = 0
+classif_gordura = ""
+grau_obesidade = ""
+risco_saude = ""
+biotipo = ""
+desc_biotipo = ""
+recomendacao_biotipo = ""
+soma_dobras = 0
+densidade = 0
+usar_7_dobras = False
+referencia_saudavel = 17
+referencia_atleta = 12
+referencia_obesidade = 25
+referencia_essencial = 5
+sexo_avaliacao = "Masculino"
+# ============================================
+
+with st.expander("📋 Sobre esta avaliação (clique para expandir)"):
+    st.markdown("""
+    ### 🧪 Métodos de Avaliação
+    
+    | Método | Equipamento | O que avalia | Unidade |
+    |--------|-------------|--------------|---------|
+    | **Dobras Cutâneas** | Adipômetro (plicômetro) | Gordura subcutânea → % de gordura corporal | mm (milímetros) |
+    | **Circunferências** | Fita métrica inelástica | Perímetros musculares e cintura | cm (centímetros) |
+    | **Força** | Handgrip (dinamômetro) | Força de preensão palmar | kg/f |
+    | **Flexibilidade** | Banco de Wells | Alongamento e flexibilidade | cm |
+    
+    ---
+    
+    ### 🫀 Pressão Arterial - Classificação (Ministério da Saúde 2024)
+    
+    | Classificação | Sistólica (mmHg) | Diastólica (mmHg) |
+    |---------------|------------------|-------------------|
+    | **Ótima** | < 120 | < 80 |
+    | **Normal** | 120-129 | 80-84 |
+    | **Pré-hipertensão** | 130-139 | 85-89 |
+    | **Hipertensão Estágio 1** | 140-159 | 90-99 |
+    | **Hipertensão Estágio 2** | 160-179 | 100-109 |
+    | **Hipertensão Estágio 3** | ≥ 180 | ≥ 110 |
+    
+    > ⚠️ A partir de 130/85 mmHg já é considerado pré-hipertensão. Consulte um médico regularmente.
+    
+    ---
+    
+    ### 🧬 Sobre o Protocolo de Dobras (3 ou 7 dobras)
+    
+    | Protocolo | Dobras utilizadas | Precisão | Tempo de coleta |
+    |-----------|-------------------|----------|-----------------|
+    | **3 dobras** | Tríceps, Peitoral/Subescapular*, Abdome/Supra-ilíaca* | Boa (erro ~3-4%) | Rápido (~5 min) |
+    | **7 dobras** | Todas as 7 dobras principais | Alta (erro ~2-3%) | Demorado (~15 min) |
+    
+    *Depende do sexo: Homens (Peitoral + Abdome) | Mulheres (Subescapular + Supra-ilíaca)
+    
+    **Recomendação:** Utilize 7 dobras para maior precisão clínica. 3 dobras é suficiente para triagem rápida.
+    
+    ---
+    
+    ### 📊 Sobre o GET por Katch-McArdle
+    
+    **Harris-Benedict (Método Padrão):**
+    - Fórmula: TMB = 66.47 + (13.75 × peso) + (5.0 × altura) - (6.75 × idade)
+    - Baseado no **PESO TOTAL** (gordura + massa magra)
+    - Menos preciso para pessoas com alto % de gordura
+    
+    **Katch-McArdle (Método Alternativo):**
+    - Fórmula: TMB = 370 + (21.6 × Massa Magra em kg)
+    - Baseado apenas na **MASSA MAGRA** (músculos + ossos + órgãos)
+    - **Mais preciso** porque a gordura não consome energia
+    
+    **Comparação:**
+    | Método | Base | Quando usar |
+    |--------|------|-------------|
+    | Harris-Benedict | Peso total | Padrão, para todos |
+    | Katch-McArdle | Massa magra | Para quem tem % de gordura elevado ou busca máxima precisão |
+    
+    ---
+    
+    ### ⚠️ **Importante:**
+    
+    Esta seção é **recomendada para profissionais de Educação Física, Nutrição e Saúde**.
+    
+    - ✅ Os resultados são **mais precisos** que a estimativa por IMC
+    - ✅ Utiliza o **Protocolo de Jackson & Pollock** (referência científica)
+    - ✅ Para cada dobra, realize **3 medições** e o sistema calcula automaticamente a média
+    - ✅ Medidas sempre no **lado direito** do corpo (hemicorpo direito)
+    - ⚠️ **Para resultado válido, as medidas devem ser feitas por um profissional qualificado**
+    
+    ---
+    
+    ### 🧬 Classificação do Percentual de Gordura e Riscos à Saúde
+    
+    | Classificação | Homens | Mulheres | Riscos à Saúde |
+    |--------------|--------|----------|----------------|
+    | **Gordura Essencial** | 2-5% | 10-13% | Mínimo necessário para sobrevivência |
+    | **Atleta** | 6-13% | 14-20% | Baixo risco, alta performance |
+    | **Saudável** | 14-17% | 21-24% | Risco muito baixo |
+    | **Aceitável** | 18-21% | 25-31% | Risco moderado |
+    | **Obesidade** | >22% | >32% | Alto risco cardiovascular, diabetes, hipertensão |
+    
+    ---
+    
+    ### 🏃 Biotipos Corporais (Heath-Carter)
+    
+    | Biotipo | Características | % Gordura típico | Recomendação |
+    |---------|-----------------|------------------|--------------|
+    | **Endomorfo** | Tendência a acumular gordura, corpo mais arredondado | Acima de 22% (H) / 28% (M) | Foco em déficit calórico + treino de força |
+    | **Mesomorfo** | Estrutura atlética natural, facilidade para ganhar músculos | 10-18% (H) / 18-25% (M) | Treino equilibrado, fácil manutenção |
+    | **Ectomorfo** | Metabolismo acelerado, dificuldade para ganhar peso | Abaixo de 10% (H) / 18% (M) | Foco em superávit calórico + treino de força |
+    
+    > **Fonte:** Organização Mundial da Saúde (OMS) e American College of Sports Medicine (ACSM)
+    
+    ---
+    
+    ### 📊 Base de Dados Nutricional
+    
+    | Base | Cobertura | Característica |
+    |------|-----------|----------------|
+    | **BioGestão 360** | 25.000+ produtos do mercado brasileiro | Dados reais de rótulos — **fonte principal** |
+    
+    🔗 **Atribuição (licença ODbL):**
+    - **Open Food Facts:** https://br.openfoodfacts.org
+    - **Licença:** Open Database License (ODbL) — dados abertos para uso livre com atribuição
+    
+    > Este sistema é uma **plataforma de apoio ao profissional de saúde e atividade física** 
+    > e não substitui a consulta a nutricionista, médico ou profissional de Educação Física habilitado.
+    
+    ---
+    
+    ### 🥗 Recomendações práticas (OMS)
+    
+    - ✅ Prefira carnes brancas (frango, peixe)
+    - ✅ Cozinhe em temperaturas mais baixas (vapor, cozido)
+    - ✅ Evite frituras e churrascos em excesso
+    - ✅ Aumente consumo de fibras (frutas, verduras, legumes)
+    
+    **Fonte:** Agência Internacional de Pesquisa sobre o Câncer (IARC/OMS)
+    """)
+
+usar_avaliacao = st.checkbox(
+    "📊 Deseja realizar avaliação física completa?",
+    value=False,
+    disabled=not tem_acesso_av,  # Já está correto
+)
+
+if usar_avaliacao:
+    if not dados_validos:
+        st.warning(
+            "⚠️ Preencha primeiro os dados do Perfil Biológico na barra lateral (Peso, Altura, Idade e Sexo)."
+        )
+    else:
+        # ========== FUNÇÃO PARA CRIAR 3 MEDIÇÕES ==========
+        def criar_medicao_tripla(nome, key_prefix="", disabled=False):
+            st.markdown(f"**{nome}**")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                m1 = st.number_input(
+                    f"Medição 1 (mm)",
+                    0.0,
+                    80.0,
+                    0.0,
+                    step=0.5,
+                    key=f"{key_prefix}_{nome}_m1",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
+                )
+            with col2:
+                m2 = st.number_input(
+                    f"Medição 2 (mm)",
+                    0.0,
+                    80.0,
+                    0.0,
+                    step=0.5,
+                    key=f"{key_prefix}_{nome}_m2",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
+                )
+            with col3:
+                m3 = st.number_input(
+                    f"Medição 3 (mm)",
+                    0.0,
+                    80.0,
+                    0.0,
+                    step=0.5,
+                    key=f"{key_prefix}_{nome}_m3",
+                    disabled=disabled,  # ✅ ADICIONAR ESTA LINHA
+                )
+            media = (m1 + m2 + m3) / 3
+            if media > 0:
+                st.caption(f"📊 **Média: {media:.1f} mm**")
+            return media
+
+        st.markdown("---")
+
+        # ========== DADOS DO AVALIADO ==========
+        st.markdown("### 📋 Dados do Avaliado")
+        col_nome, col_fc = st.columns(2)
+        with col_nome:
+            nome_avaliado = st.text_input(
+                "📝 Nome do avaliado",
+                placeholder="Ex: João Silva",
+                key="nome_avaliado",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
+            )
+        with col_fc:
+            frequencia_cardiaca = st.number_input(
+                "❤️ Frequência Cardíaca (pulsações/min)",
+                0,
+                200,
+                0,
+                step=1,
+                key="freq_cardiaca",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
+            )
+
+        st.markdown("### 🫀 Pressão Arterial")
+        col_pas, col_pad = st.columns(2)
+        with col_pas:
+            pressao_sistolica = st.number_input(
+                "Pressão Sistólica (máxima) - mmHg",
+                0,
+                250,
+                0,
+                step=1,
+                key="pressao_sistolica",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
+            )
+        with col_pad:
+            pressao_diastolica = st.number_input(
+                "Pressão Diastólica (mínima) - mmHg",
+                0,
+                150,
+                0,
+                step=1,
+                key="pressao_diastolica",
+                disabled=not tem_acesso_av,  # ✅ ADICIONAR
+            )
+
+        # Classificação da Pressão
+        if pressao_sistolica > 0 and pressao_diastolica > 0:
+            if pressao_sistolica < 120 and pressao_diastolica < 80:
+                classif_pressao = "🟢 Ótima"
+            elif pressao_sistolica < 130 and pressao_diastolica < 85:
+                classif_pressao = "🟡 Normal"
+            elif pressao_sistolica < 140 and pressao_diastolica < 90:
+                classif_pressao = "🟠 Pré-hipertensão"
+            elif pressao_sistolica < 160 and pressao_diastolica < 100:
+                classif_pressao = "🔴 Hipertensão Estágio 1"
+            elif pressao_sistolica < 180 and pressao_diastolica < 110:
+                classif_pressao = "🔴 Hipertensão Estágio 2"
+            else:
+                classif_pressao = "🔴 Hipertensão Estágio 3"
+            st.caption(f"Classificação: {classif_pressao} (Ministério da Saúde 2024)")
+
+        st.markdown("---")
+
+        # SEÇÃO 1: ADIPÔMETRO
+        st.markdown("## 📏 SEÇÃO 1: DOBRAS CUTÂNEAS (ADIPÔMETRO)")
+        st.markdown(
+            """<div class='equipamento-adipometro'><strong>🔵 ADIPÔMETRO (Plicômetro):</strong> Utilizado para medir a espessura da gordura subcutânea. 
+        Estas medidas são usadas para calcular o <strong>percentual de gordura corporal</strong>.<br>Unidade: <strong>milímetros (mm)</strong></div>""",
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "💡 **Instruções:** Para cada dobra, realize 3 medições. O sistema calculará automaticamente a média. Meça sempre no **lado direito** do corpo."
+        )
+
+        sexo_avaliacao = st.radio(
+            "Sexo para avaliação:",
+            ["Masculino", "Feminino"],
+            horizontal=True,
+            key="sexo_avaliacao",
+            disabled=not tem_acesso_av,  # ✅ ADICIONAR
+        )
+
+        st.markdown("### 💪 Braços")
+        triceps_media = criar_medicao_tripla(
+            "TRÍCEPS", "adipometro", disabled=not tem_acesso_av
+        )
+        biceps_media = criar_medicao_tripla(
+            "BÍCEPS", "adipometro", disabled=not tem_acesso_av
+        )
+
+        st.markdown("### 🏋️ Tronco")
+        peitoral = criar_medicao_tripla(
+            "PEITORAL", "adipometro", disabled=not tem_acesso_av
+        )
+        subescapular = criar_medicao_tripla(
+            "SUBESCAPULAR", "adipometro", disabled=not tem_acesso_av
+        )
+        abdominal = criar_medicao_tripla(
+            "ABDOME", "adipometro", disabled=not tem_acesso_av
+        )
+
+        st.markdown("### 📐 Quadril / Axila")
+        axilar = criar_medicao_tripla(
+            "AXILAR MÉDIA", "adipometro", disabled=not tem_acesso_av
+        )
+        suprailiaca = criar_medicao_tripla(
+            "SUPRA-ILÍACA", "adipometro", disabled=not tem_acesso_av
+        )
+
+        st.markdown("### 🆕 Supra-espinal (SS)")
+        st.caption(
+            "Utilizada no cálculo do somatotipo de Heath-Carter. Localizada 5-7 cm acima da espinha ilíaca anterior."
+        )
+        supra_espinal = criar_medicao_tripla(
+            "SUPRA-ESPINAL", "adipometro", disabled=not tem_acesso_av
+        )
+
+        st.markdown("### 🦵 Pernas")
+        coxa_media = criar_medicao_tripla(
+            "COXA", "adipometro", disabled=not tem_acesso_av
+        )
+        panturrilha_media = criar_medicao_tripla(
+            "PANTURRILHA", "adipometro", disabled=not tem_acesso_av
+        )
+
+        # SEÇÃO 2: FITA MÉTRICA
+        st.markdown("---")
+        st.markdown("## 📏 SEÇÃO 2: CIRCUNFERÊNCIAS (FITA MÉTRICA)")
+        st.markdown(
+            """<div class='equipamento-fita'><strong>🟢 FITA MÉTRICA:</strong> Utilizada para medir perímetros musculares e circunferências corporais.
+        Estas medidas avaliam o <strong>tamanho muscular</strong> e a distribuição da gordura.<br>Unidade: <strong>centímetros (cm)</strong></div>""",
+            unsafe_allow_html=True,
+        )
+
+        col_fita1, col_fita2 = st.columns(2)
+        with col_fita1:
+            st.markdown("**💪 Braço Contraído**")
+            braco_d = st.number_input(
+                "Braço Direito (cm)",
+                0.0,
+                60.0,
+                0.0,
+                step=0.5,
+                key="braco_d",
+                disabled=not tem_acesso_av,
+            )
+            braco_e = st.number_input(
+                "Braço Esquerdo (cm)",
+                0.0,
+                60.0,
+                0.0,
+                step=0.5,
+                key="braco_e",
+                disabled=not tem_acesso_av,
+            )
+            braco_media_cm = (
+                (braco_d + braco_e) / 2 if braco_d > 0 or braco_e > 0 else 0
+            )
+            if braco_media_cm > 0:
+                st.caption(f"Média: {braco_media_cm:.1f} cm")
+
+            st.markdown("**📏 Peitoral / Tórax**")
+            st.caption("Medida na altura dos mamilos, em expiração normal.")
+            peitoral_cm = st.number_input(
+                "Circunferência Torácica (cm)",
+                0.0,
+                150.0,
+                0.0,
+                step=0.5,
+                key="peitoral_cm",
+                disabled=not tem_acesso_av,
+            )
+
+            st.markdown("**📐 Cintura**")
+            cintura = st.number_input(
+                "Circunferência da Cintura (cm)",
+                0.0,
+                150.0,
+                0.0,
+                step=0.5,
+                key="cintura",
+                disabled=not tem_acesso_av,
+            )
+
+        with col_fita2:
+            st.markdown("**🦵 Coxa**")
+            coxa_cm_d = st.number_input(
+                "Coxa Direita (cm)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="coxa_cm_d",
+                disabled=not tem_acesso_av,
+            )
+            coxa_cm_e = st.number_input(
+                "Coxa Esquerda (cm)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="coxa_cm_e",
+                disabled=not tem_acesso_av,
+            )
+            coxa_media_cm = (
+                (coxa_cm_d + coxa_cm_e) / 2 if coxa_cm_d > 0 or coxa_cm_e > 0 else 0
+            )
+            if coxa_media_cm > 0:
+                st.caption(f"Média: {coxa_media_cm:.1f} cm")
+
+            st.markdown("**🦵 Panturrilha**")
+            panturrilha_cm_d = st.number_input(
+                "Panturrilha Direita (cm)",
+                0.0,
+                50.0,
+                0.0,
+                step=0.5,
+                key="panturrilha_cm_d",
+                disabled=not tem_acesso_av,
+            )
+            panturrilha_cm_e = st.number_input(
+                "Panturrilha Esquerda (cm)",
+                0.0,
+                50.0,
+                0.0,
+                step=0.5,
+                key="panturrilha_cm_e",
+                disabled=not tem_acesso_av,
+            )
+            panturrilha_media_cm = (
+                (panturrilha_cm_d + panturrilha_cm_e) / 2
+                if panturrilha_cm_d > 0 or panturrilha_cm_e > 0
+                else 0
+            )
+            if panturrilha_media_cm > 0:
+                st.caption(f"Média: {panturrilha_media_cm:.1f} cm")
+
+        st.markdown("**🫀 Relação Cintura-Quadril (RCQ)**")
+        quadril = st.number_input(
+            "Circunferência do Quadril (cm)",
+            0.0,
+            150.0,
+            0.0,
+            step=0.5,
+            key="quadril",
+            disabled=not tem_acesso_av,
+        )
+
+        if quadril > 0 and cintura > 0:
+            rcq = cintura / quadril
+            if sexo_avaliacao == "Masculino":
+                risco_rcq = (
+                    "⚠️ Risco cardiovascular elevado"
+                    if rcq > 0.95
+                    else "✅ Risco cardiovascular normal"
+                )
+            else:
+                risco_rcq = (
+                    "⚠️ Risco cardiovascular elevado"
+                    if rcq > 0.85
+                    else "✅ Risco cardiovascular normal"
+                )
+            st.caption(f"Relação Cintura-Quadril: **{rcq:.2f}** - {risco_rcq}")
+
+        # SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES
+        st.markdown("---")
+        st.markdown("## 💪 SEÇÃO 3: AVALIAÇÕES COMPLEMENTARES")
+        st.markdown(
+            """<div class='equipamento-complementar'><strong>🟡 Handgrip e Banco de Wells:</strong> Estas avaliações NÃO entram no cálculo do percentual de gordura,
+        mas são importantes para o perfil completo do avaliado.</div>""",
+            unsafe_allow_html=True,
+        )
+
+        col_comp1, col_comp2 = st.columns(2)
+        with col_comp1:
+            st.markdown("**🤝 Força de Preensão Palmar (Handgrip)**")
+            st.caption(
+                "Mede a força de preensão manual, indicador de força geral e saúde cardiovascular."
+            )
+            handgrip_d = st.number_input(
+                "Handgrip Direito (kg/f)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="handgrip_d",
+                disabled=not tem_acesso_av,
+            )
+            handgrip_e = st.number_input(
+                "Handgrip Esquerdo (kg/f)",
+                0.0,
+                80.0,
+                0.0,
+                step=0.5,
+                key="handgrip_e",
+                disabled=not tem_acesso_av,
+            )
+            handgrip_media = (
+                (handgrip_d + handgrip_e) / 2 if handgrip_d > 0 or handgrip_e > 0 else 0
+            )
+            if handgrip_media > 0:
+                if sexo_avaliacao == "Masculino":
+                    nivel_forca = (
+                        "🔴 Fraco"
+                        if handgrip_media < 35
+                        else ("🟡 Regular" if handgrip_media < 45 else "🟢 Forte")
+                    )
+                else:
+                    nivel_forca = (
+                        "🔴 Fraco"
+                        if handgrip_media < 25
+                        else ("🟡 Regular" if handgrip_media < 35 else "🟢 Forte")
+                    )
+                st.caption(f"Média: {handgrip_media:.1f} kg/f - Nível: {nivel_forca}")
+
+        with col_comp2:
+            st.markdown("**🧘 Flexibilidade (Banco de Wells)**")
+            st.caption("Mede a flexibilidade da região lombar e posterior da coxa.")
+            wells = st.number_input(
+                "Banco de Wells (cm)",
+                -20.0,
+                50.0,
+                0.0,
+                step=0.5,
+                key="wells",
+                disabled=not tem_acesso_av,
+            )
+            if wells != 0:
+                if sexo_avaliacao == "Masculino":
+                    nivel_flex = (
+                        "🔴 Abaixo"
+                        if wells < 20
+                        else ("🟡 Média" if wells < 30 else "🟢 Acima")
+                    )
+                else:
+                    nivel_flex = (
+                        "🔴 Abaixo"
+                        if wells < 25
+                        else ("🟡 Média" if wells < 35 else "🟢 Acima")
+                    )
+                st.caption(f"Flexibilidade: {wells:.1f} cm - Nível: {nivel_flex}")
+
+        # ========== CÁLCULOS JACKSON & POLLOCK ==========
+        st.markdown("---")
+        st.markdown("#### 🔬 Protocolo de Dobras (Jackson & Pollock)")
+
+        tem_medidas = (
+            triceps_media > 0 or peitoral > 0 or abdominal > 0 or coxa_media > 0
+        )
+
+        if tem_medidas:
+            if sexo_avaliacao == "Masculino":
+                usar_7_dobras = (
+                    st.radio(
+                        "Escolha o protocolo:",
+                        [
+                            "3 dobras (Tríceps, Peitoral, Abdome)",
+                            "7 dobras (Completo - mais preciso)",
+                        ],
+                        horizontal=True,
+                        key="protocolo_masc",
+                    )
+                    == "7 dobras (Completo - mais preciso)"
+                )
+                if usar_7_dobras:
+                    soma_dobras = (
+                        triceps_media
+                        + peitoral
+                        + abdominal
+                        + subescapular
+                        + axilar
+                        + suprailiaca
+                        + coxa_media
+                    )
+                    st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
+                    if soma_dobras > 0:
+                        densidade = (
+                            1.112
+                            - (0.00043499 * soma_dobras)
+                            + (0.00000055 * (soma_dobras**2))
+                            - (0.00028826 * idade)
+                        )
+                    else:
+                        densidade = 0
+                else:
+                    soma_dobras = triceps_media + peitoral + abdominal
+                    st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
+                    if soma_dobras > 0:
+                        densidade = (
+                            1.10938
+                            - (0.0008267 * soma_dobras)
+                            + (0.0000016 * (soma_dobras**2))
+                            - (0.0002574 * idade)
+                        )
+                    else:
+                        densidade = 0
+            else:
+                usar_7_dobras = (
+                    st.radio(
+                        "Escolha o protocolo:",
+                        [
+                            "3 dobras (Tríceps, Supra-ilíaca, Coxa)",
+                            "7 dobras (Completo - mais preciso)",
+                        ],
+                        horizontal=True,
+                        key="protocolo_fem",
+                    )
+                    == "7 dobras (Completo - mais preciso)"
+                )
+                if usar_7_dobras:
+                    soma_dobras = (
+                        triceps_media
+                        + suprailiaca
+                        + coxa_media
+                        + subescapular
+                        + peitoral
+                        + axilar
+                        + abdominal
+                    )
+                    st.caption(f"📊 Soma das 7 dobras: {soma_dobras:.1f} mm")
+                    if soma_dobras > 0:
+                        densidade = (
+                            1.097
+                            - (0.00046971 * soma_dobras)
+                            + (0.00000056 * (soma_dobras**2))
+                            - (0.00012828 * idade)
+                        )
+                    else:
+                        densidade = 0
+                else:
+                    soma_dobras = triceps_media + suprailiaca + coxa_media
+                    st.caption(f"📊 Soma das 3 dobras: {soma_dobras:.1f} mm")
+                    if soma_dobras > 0:
+                        densidade = (
+                            1.0994921
+                            - (0.0009929 * soma_dobras)
+                            + (0.0000023 * (soma_dobras**2))
+                            - (0.0001392 * idade)
+                        )
+                    else:
+                        densidade = 0
+
+            if densidade > 0:
+                percentual_gordura_jp = ((4.95 / densidade) - 4.5) * 100
+                percentual_gordura_jp = max(5, min(50, percentual_gordura_jp))
+            else:
+                percentual_gordura_jp = 0
+
+            if percentual_gordura_jp > 0:
+                massa_gordura_jp = peso_at * (percentual_gordura_jp / 100)
+                massa_magra_jp = peso_at - massa_gordura_jp
+
+                # Classificações
+                if sexo_avaliacao == "Masculino":
+                    if percentual_gordura_jp < 6:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Gordura Essencial",
+                            "Muito abaixo do ideal",
+                            "Baixo (atletas de elite)",
+                        )
+                    elif percentual_gordura_jp < 14:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Atleta",
+                            "Abaixo do ideal (atleta)",
+                            "Muito baixo",
+                        )
+                    elif percentual_gordura_jp < 18:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Saudável",
+                            "Normal",
+                            "Baixo",
+                        )
+                    elif percentual_gordura_jp < 25:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Aceitável",
+                            "Sobrepeso",
+                            "Moderado",
+                        )
+                    else:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Elevado",
+                            "Obesidade",
+                            "Alto",
+                        )
+                else:
+                    if percentual_gordura_jp < 12:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Gordura Essencial",
+                            "Muito abaixo do ideal",
+                            "Baixo (atletas de elite)",
+                        )
+                    elif percentual_gordura_jp < 21:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Atleta",
+                            "Abaixo do ideal (atleta)",
+                            "Muito baixo",
+                        )
+                    elif percentual_gordura_jp < 25:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Saudável",
+                            "Normal",
+                            "Baixo",
+                        )
+                    elif percentual_gordura_jp < 32:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Aceitável",
+                            "Sobrepeso",
+                            "Moderado",
+                        )
+                    else:
+                        classif_gordura, grau_obesidade, risco_saude = (
+                            "Elevado",
+                            "Obesidade",
+                            "Alto",
+                        )
+
+                # Biotipo
+                if percentual_gordura_jp > 25:
+                    biotipo, cor_biotipo = "Endomorfo", "#ef4444"
+                    desc_biotipo = (
+                        "Tendência a acumular gordura, corpo mais arredondado."
+                    )
+                    recomendacao_biotipo = "Foco em déficit calórico moderado + treino de força de alta intensidade."
+                elif percentual_gordura_jp < 12 and massa_magra_jp > (peso_at * 0.4):
+                    biotipo, cor_biotipo = "Ectomorfo", "#3b82f6"
+                    desc_biotipo = "Metabolismo acelerado, dificuldade para ganhar peso e massa muscular."
+                    recomendacao_biotipo = "Foco em superávit calórico + treino de força com pouca frequência cardio."
+                else:
+                    biotipo, cor_biotipo = "Mesomorfo", "#10b981"
+                    desc_biotipo = "Estrutura atlética natural, facilidade para ganhar massa muscular."
+                    recomendacao_biotipo = "Treino equilibrado de força e cardio, facilidade para manutenção."
+
+                # ========== SELEÇÃO DO MÉTODO DE CÁLCULO DO GET ==========
+                st.markdown("---")
+                st.markdown("### 🧮 Configuração do Gasto Energético (GET)")
+                st.markdown(
+                    """<div class='metodo-selector'><h4>📊 Método de Cálculo do GET</h4>
+                <p>Escolha qual método será utilizado para calcular seu Gasto Energético Total (GET).</p></div>""",
+                    unsafe_allow_html=True,
+                )
+
+                col_metodo1, col_metodo2 = st.columns(2)
+
+                with col_metodo1:
+                    tmb_katch = 370 + (21.6 * massa_magra_jp)
+                    get_katch = tmb_katch * naf_val
+                    st.markdown(
+                        f"""<div style='background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 12px; padding: 15px; border: 2px solid {"#ffd700" if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)" else "#3b82f6"};'>
+                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 10px;'><span style='font-size: 24px;'>📊</span><h4 style='color: #3b82f6; margin: 0;'>Harris-Benedict</h4></div>
+                    <p style='color: #94a3b8; font-size: 13px;'>Baseado no <strong>PESO TOTAL</strong> ({peso_at:.1f} kg)</p>
+                    <div style='display: flex; justify-content: space-between;'><div><div style='font-size: 11px; color: #94a3b8;'>TMB</div><div style='font-size: 24px; font-weight: bold; color: white;'>{tmb_harris:.0f} kcal</div></div>
+                    <div><div style='font-size: 11px; color: #94a3b8;'>GET</div><div style='font-size: 24px; font-weight: bold; color: white;'>{get_harris:.0f} kcal</div></div></div>
+                    <p style='color: #94a3b8; font-size: 11px; margin-top: 12px;'>✅ Padrão utilizado em estudos desde 1919</p></div>""",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(
+                        "✅ Usar Harris-Benedict",
+                        key="btn_harris",
+                        use_container_width=True,
+                    ):
+                        st.session_state.metodo_get = "Harris-Benedict (Peso Total)"
+                        st.rerun()
+
+                with col_metodo2:
+                    st.markdown(
+                        f"""<div style='background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 12px; padding: 15px; border: 2px solid {"#ffd700" if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)" else "#10b981"};'>
+                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 10px;'><span style='font-size: 24px;'>🧬</span><h4 style='color: #10b981; margin: 0;'>Katch-McArdle</h4></div>
+                    <p style='color: #94a3b8; font-size: 13px;'>Baseado na <strong>MASSA MAGRA</strong> ({massa_magra_jp:.1f} kg)</p>
+                    <div style='display: flex; justify-content: space-between;'><div><div style='font-size: 11px; color: #94a3b8;'>TMB</div><div style='font-size: 24px; font-weight: bold; color: white;'>{tmb_katch:.0f} kcal</div>
+                    <div style='font-size: 12px; color: #fbbf24;'>{tmb_katch - tmb_harris:+.0f} kcal</div></div>
+                    <div><div style='font-size: 11px; color: #94a3b8;'>GET</div><div style='font-size: 24px; font-weight: bold; color: white;'>{get_katch:.0f} kcal</div>
+                    <div style='font-size: 12px; color: #fbbf24;'>{get_katch - get_harris:+.0f} kcal</div></div></div>
+                    <p style='color: #94a3b8; font-size: 11px; margin-top: 12px;'>💡 <strong>MAIS PRECISO!</strong> A gordura não consome energia</p></div>""",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(
+                        "✅ Usar Katch-McArdle",
+                        key="btn_katch",
+                        use_container_width=True,
+                    ):
+                        st.session_state.metodo_get = "Katch-McArdle (Massa Magra)"
+                        st.rerun()
+
+                # Atualizar GET conforme método selecionado
+                if st.session_state.metodo_get == "Katch-McArdle (Massa Magra)":
+                    tmb_atual = tmb_katch
+                    get_atual = get_katch
+                    metodo_atual_nome = "Katch-McArdle (Massa Magra)"
+                else:
+                    tmb_atual = tmb_harris
+                    get_atual = get_harris
+                    metodo_atual_nome = "Harris-Benedict (Peso Total)"
+
+                st.session_state.get_calculado = get_atual   # ← linha nova
+                st.session_state.tmb_calculado = tmb_atual   # ← linha nova
+
+                st.info(
+                    f"🔬 **Método selecionado:** {metodo_atual_nome}\n\nEste método será utilizado para calcular seu Gasto Energético Total (GET) e TMB."
+                )
+
+                # Exibir resultados da avaliação
+                st.markdown("---")
+                st.markdown("### 📊 Resultado da Avaliação Física (Jackson & Pollock)")
+
+                col_jp1, col_jp2, col_jp3 = st.columns(3)
+                with col_jp1:
+                    st.markdown(
+                        f"""<div class='card-com-explicacao'><div class='card-icon'>🎯</div>
+                    <div class='card-valor'>{percentual_gordura_jp:.1f}%</div><div class='card-titulo'>% Gordura (Adipômetro)</div>
+                    <div class='card-explicacao'>Classificação: {classif_gordura}<br>Risco: {risco_saude}</div></div>""",
+                        unsafe_allow_html=True,
+                    )
+                with col_jp2:
+                    st.markdown(
+                        f"""<div class='card-com-explicacao'><div class='card-icon'>⚖️</div>
+                    <div class='card-valor'>{massa_gordura_jp:.1f} kg</div><div class='card-titulo'>Massa de Gordura</div>
+                    <div class='card-explicacao'>{((massa_gordura_jp/peso_at)*100):.1f}% do peso total</div></div>""",
+                        unsafe_allow_html=True,
+                    )
+                with col_jp3:
+                    st.markdown(
+                        f"""<div class='card-com-explicacao'><div class='card-icon'>💪</div>
+                    <div class='card-valor'>{massa_magra_jp:.1f} kg</div><div class='card-titulo'>Massa Magra</div>
+                    <div class='card-explicacao'>{((massa_magra_jp/peso_at)*100):.1f}% do peso total</div></div>""",
+                        unsafe_allow_html=True,
+                    )
+
+                # Gráfico de pizza
+                st.markdown("---")
+                st.markdown("#### 🥧 Composição Corporal")
+                col_pizza, col_biotipo = st.columns(2)
+                with col_pizza:
+                    composicao_corpo = pd.DataFrame(
+                        {
+                            "Componente": ["Massa Gorda", "Massa Magra"],
+                            "Valor": [
+                                percentual_gordura_jp,
+                                100 - percentual_gordura_jp,
+                            ],
+                        }
+                    )
+                    fig_pizza = px.pie(
+                        composicao_corpo,
+                        values="Valor",
+                        names="Componente",
+                        title="Proporção do seu corpo",
+                        color="Componente",
+                        color_discrete_map={
+                            "Massa Gorda": "#ef4444",
+                            "Massa Magra": "#3b82f6",
+                        },
+                    )
+                    fig_pizza.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        height=350,
+                    )
+                    st.plotly_chart(fig_pizza, use_container_width=True)
+                with col_biotipo:
+                    st.markdown(
+                        f"""<div class='card-com-explicacao' style='border-left: 5px solid {cor_biotipo};'>
+                    <div class='card-icon'>🧬</div><div class='card-valor' style='color: {cor_biotipo};'>{biotipo}</div>
+                    <div class='card-titulo'>Biotipo Corporal</div><div class='card-explicacao'>{desc_biotipo}<br><br>
+                    <strong>Recomendação:</strong> {recomendacao_biotipo}</div></div>""",
+                        unsafe_allow_html=True,
+                    )
+
+                # Gráficos comparativos
+                st.markdown("---")
+                st.markdown("#### 📊 Comparativo com Referências de Saúde")
+                referencia_saudavel = 17 if sexo_avaliacao == "Masculino" else 24
+                referencia_atleta = 12 if sexo_avaliacao == "Masculino" else 20
+                referencia_obesidade = 25 if sexo_avaliacao == "Masculino" else 32
+                referencia_essencial = 5 if sexo_avaliacao == "Masculino" else 12
+
+                df_comparacao = pd.DataFrame(
+                    {
+                        "Categoria": [
+                            "Seu % Gordura",
+                            "Gordura Essencial",
+                            "Atleta",
+                            "Saudável",
+                            "Obesidade",
+                        ],
+                        "Percentual": [
+                            percentual_gordura_jp,
+                            referencia_essencial,
+                            referencia_atleta,
+                            referencia_saudavel,
+                            referencia_obesidade,
+                        ],
+                    }
+                )
+                fig_comparacao = px.bar(
+                    df_comparacao,
+                    x="Categoria",
+                    y="Percentual",
+                    title="Comparação do seu percentual de gordura com referências",
+                    color="Categoria",
+                    color_discrete_map={
+                        "Seu % Gordura": "#3b82f6",
+                        "Gordura Essencial": "#8b5cf6",
+                        "Atleta": "#10b981",
+                        "Saudável": "#f59e0b",
+                        "Obesidade": "#ef4444",
+                    },
+                )
+                fig_comparacao.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    height=400,
+                )
+                st.plotly_chart(fig_comparacao, use_container_width=True)
+
+                # Gráfico por idade
+                st.markdown("---")
+                st.markdown("#### 📈 Percentual de Gordura por Idade (Referência)")
+                idades = list(range(20, 71, 5))
+                if sexo_avaliacao == "Masculino":
+                    percentuais_referencia = [
+                        18,
+                        19,
+                        20,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26,
+                        27,
+                        28,
+                        29,
+                    ]
+                else:
+                    percentuais_referencia = [
+                        25,
+                        26,
+                        27,
+                        29,
+                        30,
+                        31,
+                        32,
+                        33,
+                        34,
+                        35,
+                        36,
+                    ]
+                df_idade = pd.DataFrame(
+                    {
+                        "Idade": idades,
+                        "Referência": percentuais_referencia,
+                        "Seu Valor": [percentual_gordura_jp] * len(idades),
+                    }
+                )
+                fig_idade = px.line(
+                    df_idade,
+                    x="Idade",
+                    y="Referência",
+                    title="Percentual de Gordura por Idade (Referência ACSM)",
+                    labels={"value": "% Gordura", "Idade": "Idade (anos)"},
+                )
+                fig_idade.add_hline(
+                    y=percentual_gordura_jp,
+                    line_dash="dash",
+                    line_color="#3b82f6",
+                    annotation_text=f"Seu valor: {percentual_gordura_jp:.1f}%",
+                )
+                fig_idade.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    height=400,
+                )
+                st.plotly_chart(fig_idade, use_container_width=True)
+
+                # ========== LAUDO DA AVALIAÇÃO FÍSICA COMPLETO ==========
+                st.markdown("---")
+                st.markdown("## 🖨️ LAUDO DA AVALIAÇÃO FÍSICA")
+                st.markdown(
+                    "*Este laudo pode ser impresso para arquivo pessoal ou para compartilhar com profissionais*"
+                )
+
+                # Classificação IMC para o laudo
+                if imc < 18.5:
+                    classificacao_imc_laudo = "Abaixo do peso"
+                elif imc < 25:
+                    classificacao_imc_laudo = "Peso normal"
+                elif imc < 30:
+                    classificacao_imc_laudo = "Sobrepeso"
+                elif imc < 35:
+                    classificacao_imc_laudo = "Obesidade Grau I"
+                elif imc < 40:
+                    classificacao_imc_laudo = "Obesidade Grau II"
+                else:
+                    classificacao_imc_laudo = "Obesidade Grau III"
+
+                st.markdown("### 📊 Dados do Avaliado")
+                st.markdown(f"""
+                | Medida | Valor |
+                |--------|-------|
+                | **Nome** | {nome_avaliado if nome_avaliado else '-'} |
+                | **Peso** | {peso_at:.1f} kg |
+                | **Altura** | {alt_cm} cm |
+                | **Idade** | {idade} anos |
+                | **IMC** | {imc:.1f} ({classificacao_imc_laudo}) |
+                | **Frequência Cardíaca** | {frequencia_cardiaca} bpm {f'({classif_pressao})' if frequencia_cardiaca > 0 else '-'} |
+                | **Pressão Arterial** | {pressao_sistolica}/{pressao_diastolica} mmHg {f'({classif_pressao})' if pressao_sistolica > 0 and pressao_diastolica > 0 else '-'} |
+                """)
+
+                st.markdown(
+                    "### 📏 Resultados da Avaliação por Dobras Cutâneas (Adipômetro)"
+                )
+                st.markdown(f"""
+                | Medida | Valor |
+                |--------|-------|
+                | **Percentual de Gordura** | {percentual_gordura_jp:.1f}% |
+                | **Classificação** | {classif_gordura} |
+                | **Grau** | {grau_obesidade} |
+                | **Risco à Saúde** | {risco_saude} |
+                | **Massa de Gordura** | {massa_gordura_jp:.1f} kg |
+                | **Massa Magra** | {massa_magra_jp:.1f} kg |
+                """)
+
+                st.markdown("### 📏 Resultados das Circunferências (Fita Métrica)")
+                rcq_valor = f"{rcq:.2f}" if rcq > 0 else "-"
+                risco_rcq_valor = risco_rcq if risco_rcq != "-" else "-"
+                st.markdown(f"""
+                | Medida | Valor |
+                |--------|-------|
+                | **Braço (média D+E)** | {braco_media_cm:.1f} cm |
+                | **Peitoral / Tórax** | {peitoral_cm:.1f} cm |
+                | **Coxa (média D+E)** | {coxa_media_cm:.1f} cm |
+                | **Panturrilha (média D+E)** | {panturrilha_media_cm:.1f} cm |
+                | **Cintura** | {cintura:.1f} cm |
+                | **Quadril** | {quadril:.1f} cm |
+                | **Relação Cintura-Quadril** | {rcq_valor} - {risco_rcq_valor} |
+                """)
+
+                st.markdown("### 💪 Resultados das Avaliações Complementares")
+                st.markdown(f"""
+                | Medida | Valor |
+                |--------|-------|
+                | **Handgrip (média D+E)** | {handgrip_media:.1f} kg/f - {nivel_forca if handgrip_media > 0 else '-'} |
+                | **Banco de Wells** | {wells:.1f} cm - {nivel_flex if wells != 0 else '-'} |
+                """)
+
+                st.markdown("### 🧬 Biotipo Corporal")
+                st.markdown(f"""
+                | Medida | Valor |
+                |--------|-------|
+                | **Biotipo** | {biotipo} |
+                | **Descrição** | {desc_biotipo} |
+                | **Recomendação** | {recomendacao_biotipo} |
+                """)
+
+                st.markdown("### 📋 Protocolo Utilizado")
+                st.markdown(f"""
+                | Item | Informação |
+                |------|-------------|
+                | **Protocolo de Dobras** | Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'} |
+                | **Fórmula de Densidade** | Siri (1961) |
+                | **Equipamentos** | Adipômetro, Fita Métrica, Handgrip, Banco de Wells |
+                | **Referência** | ACSM - American College of Sports Medicine |
+                """)
+
+                st.markdown("### 📊 Método de Cálculo do GET Selecionado")
+                st.markdown(f"""
+                | Item | Informação |
+                |------|-------------|
+                | **Método Utilizado** | {metodo_atual_nome} |
+                | **TMB Calculada** | {tmb_atual:.0f} kcal/dia |
+                | **GET Calculado** | {get_atual:.0f} kcal/dia |
+                | **Fator de Atividade** | {naf_label} ({naf_val}) |
+                
+                **Sobre o método:** {'Baseado no PESO TOTAL (Harris-Benedict, 1919)' if 'Harris' in metodo_atual_nome else 'Baseado na MASSA MAGRA (Katch-McArdle) - MAIS PRECISO!'}
+                """)
+
+                # ========== BOTÕES DE DOWNLOAD DA AVALIAÇÃO FÍSICA ==========
+                st.markdown("---")
+                st.markdown("#### 📥 Exportar Laudo da Avaliação Física")
+
+                col_avaliacao1, col_avaliacao2 = st.columns(2)
+
+                with col_avaliacao1:
+                    dados_laudo_avaliacao = {
+                        "Categoria": [
+                            "Data da Avaliação",
+                            "Nome do Avaliado",
+                            "Sexo",
+                            "Idade",
+                            "Peso",
+                            "Altura",
+                            "IMC",
+                            "Frequência Cardíaca",
+                            "Pressão Sistólica",
+                            "Pressão Diastólica",
+                            "Classificação Pressão",
+                            "Protocolo de Dobras",
+                            "Soma das Dobras (mm)",
+                            "Densidade Corporal (g/cm³)",
+                            "% Gordura (Adipômetro)",
+                            "Classificação % Gordura",
+                            "Risco à Saúde",
+                            "Massa de Gordura (kg)",
+                            "Massa Magra (kg)",
+                            "Biotipo",
+                            "Circunferência do Braço (média cm)",
+                            "Circunferência do Peitoral (cm)",
+                            "Circunferência da Coxa (média cm)",
+                            "Circunferência da Panturrilha (média cm)",
+                            "Circunferência da Cintura (cm)",
+                            "Circunferência do Quadril (cm)",
+                            "Relação Cintura-Quadril (RCQ)",
+                            "Força Handgrip (média kg/f)",
+                            "Flexibilidade Banco de Wells (cm)",
+                            "Método GET Selecionado",
+                            "TMB Calculada (kcal/dia)",
+                            "GET Calculado (kcal/dia)",
+                            "Fator de Atividade Física",
+                        ],
+                        "Valor": [
+                            pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
+                            nome_avaliado if nome_avaliado else "-",
+                            sexo_avaliacao,
+                            idade,
+                            f"{peso_at:.1f} kg",
+                            f"{alt_cm} cm",
+                            f"{imc:.1f}",
+                            (
+                                f"{frequencia_cardiaca} bpm"
+                                if frequencia_cardiaca > 0
+                                else "-"
+                            ),
+                            (
+                                f"{pressao_sistolica} mmHg"
+                                if pressao_sistolica > 0
+                                else "-"
+                            ),
+                            (
+                                f"{pressao_diastolica} mmHg"
+                                if pressao_diastolica > 0
+                                else "-"
+                            ),
+                            classif_pressao,
+                            f"Jackson & Pollock - {'7 dobras' if usar_7_dobras else '3 dobras'}",
+                            f"{soma_dobras:.1f} mm" if soma_dobras > 0 else "-",
+                            f"{densidade:.3f}" if densidade > 0 else "-",
+                            f"{percentual_gordura_jp:.1f}%",
+                            classif_gordura,
+                            risco_saude,
+                            f"{massa_gordura_jp:.1f} kg",
+                            f"{massa_magra_jp:.1f} kg",
+                            biotipo,
+                            f"{braco_media_cm:.1f} cm" if braco_media_cm > 0 else "-",
+                            f"{peitoral_cm:.1f} cm" if peitoral_cm > 0 else "-",
+                            f"{coxa_media_cm:.1f} cm" if coxa_media_cm > 0 else "-",
+                            (
+                                f"{panturrilha_media_cm:.1f} cm"
+                                if panturrilha_media_cm > 0
+                                else "-"
+                            ),
+                            f"{cintura:.1f} cm" if cintura > 0 else "-",
+                            f"{quadril:.1f} cm" if quadril > 0 else "-",
+                            f"{rcq:.2f}" if rcq > 0 else "-",
+                            f"{handgrip_media:.1f} kg/f" if handgrip_media > 0 else "-",
+                            f"{wells:.1f} cm" if wells != 0 else "-",
+                            metodo_atual_nome,
+                            f"{tmb_atual:.0f} kcal/dia",
+                            f"{get_atual:.0f} kcal/dia",
+                            f"{naf_label} ({naf_val})",
+                        ],
+                    }
+                    df_laudo_avaliacao = pd.DataFrame(dados_laudo_avaliacao)
+                    csv_laudo_avaliacao = df_laudo_avaliacao.to_csv(
+                        index=False, encoding="utf-8-sig"
+                    )
+                    st.download_button(
+                        "📊 Baixar CSV",
+                        data=csv_laudo_avaliacao,
+                        file_name=f"laudo_avaliacao_fisica_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
+
+                with col_avaliacao2:
+                    # Coletar todas as medidas
+                    medidas_dobras = []
+                    if triceps_media > 0:
+                        medidas_dobras.append(f"Tríceps: {triceps_media:.1f} mm")
+                    if biceps_media > 0:
+                        medidas_dobras.append(f"Bíceps: {biceps_media:.1f} mm")
+                    if peitoral > 0:
+                        medidas_dobras.append(f"Peitoral: {peitoral:.1f} mm")
+                    if subescapular > 0:
+                        medidas_dobras.append(f"Subescapular: {subescapular:.1f} mm")
+                    if abdominal > 0:
+                        medidas_dobras.append(f"Abdome: {abdominal:.1f} mm")
+                    if axilar > 0:
+                        medidas_dobras.append(f"Axilar: {axilar:.1f} mm")
+                    if suprailiaca > 0:
+                        medidas_dobras.append(f"Supra-ilíaca: {suprailiaca:.1f} mm")
+                    if coxa_media > 0:
+                        medidas_dobras.append(f"Coxa: {coxa_media:.1f} mm")
+                    if panturrilha_media > 0:
+                        medidas_dobras.append(
+                            f"Panturrilha: {panturrilha_media:.1f} mm"
+                        )
+
+                    medidas_circunferencias = []
+                    if braco_media_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Braço: {braco_media_cm:.1f} cm"
+                        )
+                    if peitoral_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Peitoral: {peitoral_cm:.1f} cm"
+                        )
+                    if cintura > 0:
+                        medidas_circunferencias.append(f"Cintura: {cintura:.1f} cm")
+                    if quadril > 0:
+                        medidas_circunferencias.append(f"Quadril: {quadril:.1f} cm")
+                    if coxa_media_cm > 0:
+                        medidas_circunferencias.append(f"Coxa: {coxa_media_cm:.1f} cm")
+                    if panturrilha_media_cm > 0:
+                        medidas_circunferencias.append(
+                            f"Panturrilha: {panturrilha_media_cm:.1f} cm"
+                        )
+
+                    # Criar gráficos
+                    import matplotlib.pyplot as plt
+                    import io
+
+                    # Gráfico 1: Composição Corporal
+                    fig1, ax1 = plt.subplots(figsize=(5, 4))
+                    sizes1 = [percentual_gordura_jp, 100 - percentual_gordura_jp]
+                    ax1.pie(
+                        sizes1,
+                        labels=["Massa Gorda", "Massa Magra"],
+                        colors=["#ef4444", "#3b82f6"],
+                        autopct="%1.1f%%",
+                        startangle=90,
+                    )
+                    ax1.set_title("Composição Corporal", fontsize=12, fontweight="bold")
+                    plt.tight_layout()
+                    buf1 = io.BytesIO()
+                    plt.savefig(
+                        buf1,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf1.seek(0)
+                    grafico_composicao_b64 = base64.b64encode(buf1.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
+
+                    # Gráfico 2: Comparativo
+                    fig2, ax2 = plt.subplots(figsize=(7, 4))
+                    categorias = [
+                        "Seu %",
+                        "Essencial",
+                        "Atleta",
+                        "Saudável",
+                        "Obesidade",
+                    ]
+                    valores = [
+                        percentual_gordura_jp,
+                        referencia_essencial,
+                        referencia_atleta,
+                        referencia_saudavel,
+                        referencia_obesidade,
+                    ]
+                    cores = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"]
+                    ax2.bar(categorias, valores, color=cores)
+                    ax2.axhline(
+                        y=percentual_gordura_jp,
+                        color="red",
+                        linestyle="--",
+                        linewidth=2,
+                    )
+                    ax2.set_title(
+                        "Comparação do % de Gordura", fontsize=12, fontweight="bold"
+                    )
+                    ax2.set_ylabel("Percentual (%)")
+                    plt.tight_layout()
+                    buf2 = io.BytesIO()
+                    plt.savefig(
+                        buf2,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf2.seek(0)
+                    grafico_comparativo_b64 = base64.b64encode(buf2.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
+
+                    # Gráfico 3: Por Idade
+                    fig3, ax3 = plt.subplots(figsize=(7, 4))
+                    idades_grafico = list(range(20, 71, 5))
+                    if sexo_avaliacao == "Masculino":
+                        percentuais_referencia_idade = [
+                            18,
+                            19,
+                            20,
+                            22,
+                            23,
+                            24,
+                            25,
+                            26,
+                            27,
+                            28,
+                            29,
+                        ]
+                    else:
+                        percentuais_referencia_idade = [
+                            25,
+                            26,
+                            27,
+                            29,
+                            30,
+                            31,
+                            32,
+                            33,
+                            34,
+                            35,
+                            36,
+                        ]
+                    ax3.plot(
+                        idades_grafico,
+                        percentuais_referencia_idade,
+                        "o-",
+                        color="#f59e0b",
+                        linewidth=2,
+                        markersize=6,
+                        label="Referência ACSM",
+                    )
+                    ax3.axhline(
+                        y=percentual_gordura_jp,
+                        color="#ef4444",
+                        linestyle="--",
+                        linewidth=2,
+                        label=f"Seu valor: {percentual_gordura_jp:.1f}%",
+                    )
+                    ax3.set_title(
+                        "Percentual de Gordura por Idade",
+                        fontsize=12,
+                        fontweight="bold",
+                    )
+                    ax3.set_xlabel("Idade (anos)")
+                    ax3.set_ylabel("Percentual (%)")
+                    ax3.legend()
+                    ax3.grid(True, alpha=0.3)
+                    plt.tight_layout()
+                    buf3 = io.BytesIO()
+                    plt.savefig(
+                        buf3,
+                        format="png",
+                        dpi=150,
+                        bbox_inches="tight",
+                        facecolor="white",
+                    )
+                    buf3.seek(0)
+                    grafico_idade_b64 = base64.b64encode(buf3.getvalue()).decode(
+                        "utf-8"
+                    )
+                    plt.close()
+
+                    # Classificação IMC
+                    if imc < 18.5:
+                        classificacao_imc_texto = "Abaixo do peso"
+                    elif imc < 25:
+                        classificacao_imc_texto = "Peso normal"
+                    elif imc < 30:
+                        classificacao_imc_texto = "Sobrepeso"
+                    elif imc < 35:
+                        classificacao_imc_texto = "Obesidade Grau I"
+                    elif imc < 40:
+                        classificacao_imc_texto = "Obesidade Grau II"
+                    else:
+                        classificacao_imc_texto = "Obesidade Grau III"
+
+                    data_atual_avaliacao = datetime.now().strftime("%d/%m/%Y às %H:%M")
+
+                    # Construir HTML das medidas
+                    dobras_html = ""
+                    for medida in medidas_dobras:
+                        partes = medida.split(": ")
+                        dobras_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
+
+                    circunferencias_html = ""
+                    for medida in medidas_circunferencias:
+                        partes = medida.split(": ")
+                        circunferencias_html += f'<div class="card"><div class="card-title">{partes[0]}</div><div class="card-value">{partes[1]}</div></div>'
+
+                    if not dobras_html:
+                        dobras_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
+                    if not circunferencias_html:
+                        circunferencias_html = '<div class="card"><div class="card-value">Nenhuma medida registrada</div></div>'
+
+                    # Determinar idade para comparação
+                    idx_idade = (
+                        min(
+                            len(percentuais_referencia_idade) - 1,
+                            max(0, int((idade - 20) / 5)),
+                        )
+                        if idade >= 20
+                        else 0
+                    )
+
+                    html_avaliacao = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Laudo Avaliação Física</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Arial, sans-serif; background: white; color: #1e293b; padding: 15px; font-size: 11pt; }}
+        .container {{ max-width: 1100px; margin: 0 auto; }}
+        h1 {{ color: #f59e0b; font-size: 18pt; text-align: center; border-bottom: 2px solid #f59e0b; padding-bottom: 8px; margin-bottom: 15px; }}
+        h2 {{ background: linear-gradient(135deg, #1e3a5f, #0f172a); color: white; padding: 6px 10px; margin: 15px 0 10px 0; font-size: 13pt; border-radius: 6px; }}
+        h3 {{ color: #1e3a5f; margin: 12px 0 8px 0; border-left: 4px solid #f59e0b; padding-left: 10px; font-size: 11pt; }}
+        .subheader {{ text-align: center; color: #64748b; font-size: 9pt; margin-bottom: 15px; }}
+        .grid-2 {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; }}
+        .grid-3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }}
+        .grid-4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }}
+        .card {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; background: #f8fafc; }}
+        .card-title {{ font-size: 8pt; color: #64748b; margin-bottom: 3px; }}
+        .card-value {{ font-size: 12pt; font-weight: bold; color: #1e293b; }}
+        .metric-card {{ text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; background: #f8fafc; }}
+        .metric-icon {{ font-size: 20pt; }}
+        .metric-value {{ font-size: 15pt; font-weight: bold; color: #f59e0b; }}
+        .metric-label {{ font-size: 8pt; color: #64748b; }}
+        .graficos-container {{ text-align: center; margin: 15px 0; }}
+        .graficos-container img {{ max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin: 8px 0; }}
+        .explicacao {{ background: #f0f9ff; border-left: 4px solid #0284c7; padding: 10px; margin: 10px 0; font-size: 9pt; color: #0369a1; }}
+        .info-box {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; margin: 10px 0; font-size: 9pt; color: #92400e; }}
+        .footer {{ text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; }}
+        @media print {{
+            body {{ padding: 0; margin: 0; }}
+            h2 {{ background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            .page-break {{ page-break-before: always; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ BioGestão 360 - Laudo de Avaliação Física</h1>
+        <div class="subheader">Gerado em {data_atual_avaliacao}</div>
+        
+        <h2>📋 DADOS DO AVALIADO</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">👤 Nome</div><div class="card-value">{nome_avaliado if nome_avaliado else '-'}</div></div>
+            <div class="card"><div class="card-title">⚥ Sexo</div><div class="card-value">{sexo_avaliacao}</div></div>
+            <div class="card"><div class="card-title">🎂 Idade</div><div class="card-value">{idade} anos</div></div>
+            <div class="card"><div class="card-title">⚖️ Peso</div><div class="card-value">{peso_at:.1f} kg</div></div>
+            <div class="card"><div class="card-title">📏 Altura</div><div class="card-value">{alt_cm} cm</div></div>
+            <div class="card"><div class="card-title">📊 IMC</div><div class="card-value">{imc:.1f} ({classificacao_imc_texto})</div></div>
+            <div class="card"><div class="card-title">❤️ FC</div><div class="card-value">{frequencia_cardiaca if frequencia_cardiaca > 0 else '-'} bpm</div></div>
+            <div class="card"><div class="card-title">🫀 Pressão</div><div class="card-value">{pressao_sistolica if pressao_sistolica > 0 else '-'}/{pressao_diastolica if pressao_diastolica > 0 else '-'} mmHg</div></div>
+        </div>
+        
+        <h2>📊 RESULTADOS DA AVALIAÇÃO</h2>
+        <div class="grid-3">
+            <div class="metric-card"><div class="metric-icon">🎯</div><div class="metric-value">{percentual_gordura_jp:.1f}%</div><div class="metric-label">% Gordura</div></div>
+            <div class="metric-card"><div class="metric-icon">⚖️</div><div class="metric-value">{massa_gordura_jp:.1f} kg</div><div class="metric-label">Massa Gorda</div></div>
+            <div class="metric-card"><div class="metric-icon">💪</div><div class="metric-value">{massa_magra_jp:.1f} kg</div><div class="metric-label">Massa Magra</div></div>
+        </div>
+        
+        <div class="grid-3">
+            <div class="card"><div class="card-title">🏷️ Classificação</div><div class="card-value">{classif_gordura}</div></div>
+            <div class="card"><div class="card-title">⚠️ Grau</div><div class="card-value">{grau_obesidade}</div></div>
+            <div class="card"><div class="card-title">🩺 Risco à Saúde</div><div class="card-value">{risco_saude}</div></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Sobre o percentual de gordura:</strong> Valores entre 14-17% (homens) e 21-24% (mulheres) são considerados saudáveis. 
+            Seu percentual está na faixa {classif_gordura.lower()}, o que indica {risco_saude.lower()} risco para doenças cardiovasculares e metabólicas.
+        </div>
+        
+        <h2>📏 CIRCUNFERÊNCIAS CORPORAIS</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">💪 Braço</div><div class="card-value">{braco_media_cm:.1f} cm</div></div>
+            <div class="card"><div class="card-title">📏 Peitoral</div><div class="card-value">{peitoral_cm:.1f} cm</div></div>
+            <div class="card"><div class="card-title">🦵 Coxa</div><div class="card-value">{coxa_media_cm:.1f} cm</div></div>
+            <div class="card"><div class="card-title">🦵 Panturrilha</div><div class="card-value">{panturrilha_media_cm:.1f} cm</div></div>
+            <div class="card"><div class="card-title">📐 Cintura</div><div class="card-value">{cintura:.1f} cm</div></div>
+            <div class="card"><div class="card-title">📐 Quadril</div><div class="card-value">{quadril:.1f} cm</div></div>
+            <div class="card"><div class="card-title">🫀 RCQ</div><div class="card-value">{rcq:.2f} - {risco_rcq if risco_rcq != '-' else '-'}</div></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Sobre a Relação Cintura-Quadril (RCQ):</strong> 
+            {f'Seu valor de {rcq:.2f} está acima do recomendado (0.95 para homens, 0.85 para mulheres), indicando maior risco cardiovascular.' if rcq > (0.95 if sexo_avaliacao == 'Masculino' else 0.85) else f'Seu valor de {rcq:.2f} está dentro do recomendado, indicando baixo risco cardiovascular.'}
+        </div>
+        
+        <h2>💪 AVALIAÇÕES COMPLEMENTARES</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">🤝 Handgrip</div><div class="card-value">{handgrip_media:.1f} kg/f - {nivel_forca if handgrip_media > 0 else '-'}</div></div>
+            <div class="card"><div class="card-title">🧘 Wells</div><div class="card-value">{wells:.1f} cm - {nivel_flex if wells != 0 else '-'}</div></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Interpretação:</strong> 
+            A força de preensão ({handgrip_media:.1f} kg/f) é um indicador de força geral e saúde cardiovascular. 
+            A flexibilidade ({wells:.1f} cm) indica a mobilidade da região lombar e posterior da coxa.
+        </div>
+        
+        <h2>🧬 BIOTIPO CORPORAL</h2>
+        <div class="grid-3">
+            <div class="metric-card"><div class="metric-icon">🏃</div><div class="metric-value">{biotipo}</div><div class="metric-label">Biotipo</div></div>
+            <div class="card"><div class="card-title">📝 Descrição</div><div class="card-value">{desc_biotipo}</div></div>
+            <div class="card"><div class="card-title">💡 Recomendação</div><div class="card-value">{recomendacao_biotipo}</div></div>
+        </div>
+        
+        <h2>📋 PROTOCOLO UTILIZADO</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">🔬 Protocolo de Dobras</div><div class="card-value">Jackson & Pollock {'(7 dobras)' if usar_7_dobras else '(3 dobras)'}</div></div>
+            <div class="card"><div class="card-title">📐 Fórmula de Densidade</div><div class="card-value">Siri (1961)</div></div>
+            <div class="card"><div class="card-title">🧰 Equipamentos</div><div class="card-value">Adipômetro, Fita Métrica, Handgrip, Banco de Wells</div></div>
+            <div class="card"><div class="card-title">📚 Referência</div><div class="card-value">ACSM - American College of Sports Medicine</div></div>
+        </div>
+        
+        <h2>⚡ GASTO ENERGÉTICO (GET)</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">🧮 Método</div><div class="card-value">{metodo_atual_nome}</div></div>
+            <div class="card"><div class="card-title">🏃 Atividade</div><div class="card-value">{naf_label} ({naf_val})</div></div>
+            <div class="card"><div class="card-title">🔥 TMB</div><div class="card-value">{tmb_atual:.0f} kcal/dia</div></div>
+            <div class="card"><div class="card-title">⚡ GET</div><div class="card-value">{get_atual:.0f} kcal/dia</div></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Sobre seu metabolismo:</strong> Seu Gasto Energético Total (GET) é de {get_atual:.0f} kcal por dia. 
+            Este é o total de calorias que seu corpo gasta considerando seu nível de atividade física. 
+            Para perda de peso, consuma 300-500 kcal a menos; para ganho de massa muscular, consuma 300-500 kcal a mais.
+        </div>
+        
+        <h2>📏 MEDIDAS DETALHADAS</h2>
+        <h3>Dobras Cutâneas (mm)</h3>
+        <div class="grid-3">{dobras_html}</div>
+        
+        <h3>Circunferências (cm)</h3>
+        <div class="grid-3">{circunferencias_html}</div>
+        
+        <h2>📊 GRÁFICOS DA AVALIAÇÃO</h2>
+        <div class="graficos-container">
+            <img src="data:image/png;base64,{grafico_composicao_b64}" alt="Composição Corporal">
+            <div class="explicacao">
+                <strong>📌 Análise da Composição Corporal:</strong> Seu corpo é composto por {percentual_gordura_jp:.1f}% de gordura e {100-percentual_gordura_jp:.1f}% de massa magra. 
+                A massa magra inclui músculos, ossos e órgãos. Quanto maior a massa magra, maior seu metabolismo basal.
+            </div>
+            
+            <img src="data:image/png;base64,{grafico_comparativo_b64}" alt="Comparativo com Referências">
+            <div class="explicacao">
+                <strong>📌 Comparação com Referências:</strong> O gráfico acima compara seu percentual de gordura com as referências científicas.
+                {f'Seu valor ({percentual_gordura_jp:.1f}%) está na faixa "{classif_gordura}"' if classif_gordura else ''}.
+                A faixa saudável recomendada pelo ACSM é de 14-17% para homens e 21-24% para mulheres.
+            </div>
+            
+            <img src="data:image/png;base64,{grafico_idade_b64}" alt="Percentual por Idade">
+            <div class="explicacao">
+                <strong>📌 Tendência por Idade:</strong> O percentual de gordura tende a aumentar naturalmente com o envelhecimento. 
+                A linha laranja mostra a média esperada para a população brasileira segundo o ACSM.
+                {f'Seu valor está abaixo da média para sua idade, o que é positivo!' if percentual_gordura_jp < percentuais_referencia_idade[idx_idade] else 'Seu valor está acima da média para sua idade, indicando necessidade de atenção.'}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <strong>BioGestão 360</strong> | Jackson & Pollock (1980) | Siri (1961) | ACSM<br>
+            🔒 Zero-Footprint | 📊 Estimativa | 👨‍⚕️ Consulte um profissional
+        </div>
+    </div>
+</body>
+</html>"""
+
+                    b64_avaliacao = base64.b64encode(html_avaliacao.encode()).decode()
+                    st.markdown(
+                        f"""
+                        <a href="data:text/html;base64,{b64_avaliacao}" download="laudo_avaliacao_fisica_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html" 
+                           style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; 
+                           text-decoration: none; border-radius: 8px; display: inline-block; width: 100%; text-align: center; 
+                           font-weight: bold; font-size: 14px;">
+                           📄 Baixar PDF
+                        </a>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+                    st.caption("💡 Abra o arquivo HTML → Ctrl+P → Salvar como PDF")
+
+                st.markdown(
+                    "*Este laudo é uma estimativa baseada nas medidas inseridas. Para maior precisão, consulte um profissional de Educação Física ou Nutrição qualificado.*"
+                )
+            else:
+                st.warning(
+                    "⚠️ Insira as medidas das dobras cutâneas para calcular o percentual de gordura."
+                )
+        else:
+            st.info(
+                "📝 Insira as medidas das dobras cutâneas para começar a avaliação."
+            )
+else:
+    st.info(
+        "💡 **Dica:** Ative a opção acima para realizar uma avaliação física completa com dobras cutâneas (adipômetro), circunferências (fita métrica), handgrip e banco de wells."
+    )
+
+# ============================================
+# 25.1 TREINO FÍSICO PROFISSIONAL
+# ============================================
+tela_treino_fisico(
+    peso_kg=peso_at,
+    dados_paciente=st.session_state.get("dados_paciente", {}),
+)
+
+# ============================================
+# 26. MONTAGEM DO PLANO ALIMENTAR (MANTIDO E MODIFICADO)
+# ============================================
+st.markdown("## 🍏 Montagem do Plano Alimentar")
+
+st.markdown(
+    """
+<div class='aviso-peso-real'>
+    <div style='display: flex; align-items: center; gap: 15px; flex-wrap: wrap;'>
+        <span style='font-size: 40px;'>⚠️</span>
+        <div style='flex: 1;'>
+            <h3>📌 REGRA DE OURO PARA PRECISÃO!</h3>
+            <p>Para alimentos em <strong>"unidades"</strong> (biscoitos, frutas, ovos, pães, etc.), 
+            <strong>sempre informe o peso real de UMA unidade</strong> no campo <strong>"Peso Real (g/ml)"</strong>.</p>
+        </div>
+    </div>
+        <hr>
+    <div class='grid-referencia'>
+        <div class='card-peso'><strong>🍪 Biscoito maisena</strong><br><span>1 unidade = 5g → informe 5g</span></div>
+        <div class='card-peso'><strong>🍞 Pão francês</strong><br><span>1 unidade = 50g → informe 50g</span></div>
+        <div class='card-peso'><strong>🍎 Maçã</strong><br><span>1 unidade = 150g → informe 150g</span></div>
+        <div class='card-peso'><strong>🥚 Ovo</strong><br><span>1 unidade = 50g → informe 50g</span></div>
+        <div class='card-peso'><strong>🍌 Banana</strong><br><span>1 unidade = 100g → informe 100g</span></div>
+        <div class='card-peso'><strong>🍊 Laranja</strong><br><span>1 unidade = 120g → informe 120g</span></div>
+        <div class='card-peso'><strong>🥛 Leite/bebida</strong><br><span>1 copo = 200ml → informe 200ml</span></div>
+        <div class='card-peso'><strong>🧀 Queijo minas</strong><br><span>1 fatia = 30g → informe 30g</span></div>
+        <div class='card-peso'><strong>🍗 Frango (filé)</strong><br><span>1 filé = 100g → informe 100g</span></div>
+    </div>
+    <div style="background:#ffffff; border-radius:10px; padding:12px; margin-top:12px; border:1px solid #fde68a;">
+        <strong style="color:#d97706;">🔍 O que significam os ícones do cardápio?</strong><br>
+        <span style="display:inline-block; background:#ef4444; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🔥 Kcal</span> <span style="color:#1e293b;">= calorias do alimento</span><br>
+        <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥩 Proteínas</span> <span style="color:#1e293b;">= constroem e reparam músculos — combustível do treino de força</span><br>
+        <span style="display:inline-block; background:#f59e0b; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍞 Carboidratos</span> <span style="color:#1e293b;">= principal fonte de energia para o treino</span><br>
+        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span>
+    </div>
+    <div class='obs'>
+        💡 <strong>Não sabe o peso?</strong> Consulte a embalagem do produto ou use a tabela acima como referência.<br><br>
+        📏 <strong>Porções baseadas na IN 75/2020 (Anvisa):</strong> 
+        <a href="https://www.in.gov.br/en/web/dou/-/instrucao-normativa-in-n-75-de-8-de-outubro-de-2020-282071143" target="_blank">
+            Instrução Normativa nº 75, de 8 de outubro de 2020
+        </a> – define porções e medidas caseiras para alimentos embalados.
+    </div>
+""",
+    unsafe_allow_html=True,
+)
+
+# Descrição dinâmica da fonte selecionada
+_fonte_atual = st.session_state.get("fonte_dados", "🥦 BioGestão 360")
+if "TACO" in _fonte_atual:
+    _desc_fonte = "🌿 <strong>TACO/UNICAMP</strong> — 613 alimentos in natura e preparações caseiras (4ª Ed.)"
+elif "IBGE" in _fonte_atual:
+    _desc_fonte = "📊 <strong>IBGE/POF 2008-2009</strong> — 1.962 alimentos com 16 formas de preparo"
+else:
+    _desc_fonte = "🥦 <strong>BioGestão 360</strong> — 25 mil+ produtos reais do mercado brasileiro"
+
+st.markdown(
+    f"""
+<div class='instrucao-cientifica'>
+    <h4>📋 Como montar seu plano alimentar:</h4>
+    <ol>
+        <li>🔍 Busque o alimento na base {_desc_fonte}</li>
+        <li>➕ Adicione um a um com as quantidades corretas</li>
+        <li>⚡ O sistema calcula automaticamente kcal, proteínas, carboidratos e gorduras</li>
+        <li>📊 Use o resumo para acompanhamento e impressão</li>
+    </ol>
+    <p>
+        ⚠️ <strong>Dados incompletos:</strong> Alguns produtos podem ter campos nutricionais 
+        não informados pelo fabricante. Nesses casos o sistema considera 0 (zero). 
+        Consulte o rótulo do produto para maior precisão.
+    </p>
+    <p>
+        ⚠️ <strong>Alertas OMS/IARC:</strong> O sistema sinaliza automaticamente 
+        alimentos com classificação de risco da OMS. O alerta é baseado na 
+        <strong>composição e processamento do alimento</strong> — não apenas no nome 
+        ou na origem. Sempre prefira versões in natura ou minimamente processadas.
+    </p>
+    <p>
+        ⚠️ <strong>Restrições alimentares:</strong> Informe alergias ou intolerâncias 
+        nas <strong>Observações da Consulta</strong>. O sistema alerta automaticamente 
+        quando o ingrediente restrito for identificado.
+    </p>
+    <p>
+        ⚠️ <strong>Comorbidades:</strong> Pacientes com condições de saúde especiais 
+        (diabetes, hipertensão, cardiopatias, insuficiência renal, etc.) devem ter 
+        o plano alimentar supervisionado por nutricionista ou médico habilitado. 
+        O profissional de Educação Física pode e deve integrar o treino ao plano nutricional.
+    </p>
+    <p>
+        💡 <strong>Lembrete:</strong> Este sistema é uma ferramenta de apoio ao profissional. 
+        Para melhores resultados, combine a avaliação física com orientação nutricional 
+        especializada — corpo e alimentação são um sistema único.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# ========== BASE DE DADOS: SELECIONÁVEL PELA SIDEBAR ==========
+_fonte_sel = st.session_state.get("fonte_dados", "🥦 BioGestão 360")
+
+if "TACO" in _fonte_sel:
+    df_atual     = df_taco
+    campo_busca  = "nome_busca"   # TACO usa nome_busca normalizado
+    _fonte_label = "TACO"
+elif "IBGE" in _fonte_sel:
+    df_atual     = df_ibge
+    campo_busca  = "nome_busca"   # IBGE usa nome_busca (nome + preparação)
+    _fonte_label = "IBGE"
+else:
+    df_atual     = df_bio
+    campo_busca  = "nome"
+    _fonte_label = "BioGestão 360"
+
+if df_atual is None or df_atual.empty:
+    st.error(
+        f"⚠️ Tabela **{_fonte_label}** não disponível. "
+        "Verifique se o arquivo está na pasta do projeto ou selecione outra fonte."
+    )
+    st.stop()
+
+# Filtra apenas alimentos com kcal > 0
+df_filtrado = df_atual[
+    pd.to_numeric(df_atual["kcal_100g"], errors="coerce").fillna(0) > 0
+]
+
+lista_alimentos = preparar_lista_alimentos(df_filtrado)
+
+if not st.session_state.modo_impressao:
+    with st.container():
+        col1, col2, col3 = st.columns([1.5, 3, 2])
+        with col1:
+            refeicao_sel = st.selectbox(
+                "Refeição", ["Café da Manhã", "Almoço", "Lanches", "Jantar"]
+            )
+        with col2:
+            alimento_sel = st.selectbox("Alimento", lista_alimentos)
+        with col3:
+            marcas_disp = obter_marcas_disponiveis(df_filtrado, alimento_sel)
+            if len(marcas_disp) > 1:
+                marca_sel = st.selectbox(
+                    "Marca",
+                    marcas_disp,
+                    help="Escolha a marca desejada. '(qualquer marca)' usa o produto com mais dados preenchidos."
+                )
+            else:
+                marca_sel = marcas_disp[0]
+                st.caption(f"🏷️ {marca_sel}" if marca_sel != "(padrão)" else "")
+
+        col4, col5, col6 = st.columns([1, 1, 1])
+        with col4:
+            qtd_unidade = st.number_input("Quantidade", 0.0, 50.0, 1.0, step=0.5)
+        with col5:
+            peso_real = st.number_input(
+                "Peso Real (g/ml)",
+                0.0,
+                2000.0,
+                0.0,
+                step=1.0,
+                help="Informe o peso de UMA unidade",
+            )
+        with col6:
+            unidade_tipo = st.selectbox("Unidade", ["g", "ml", "un"])
+
+        if st.button("➕ Adicionar ao Plano", use_container_width=True):
+            item = obter_item_selecionado(df_filtrado, alimento_sel, marca_sel)
+            if item is None:
+                st.error(f"❌ Alimento '{alimento_sel}' não encontrado na base.")
+            else:
+                observacoes_consulta = st.session_state.dados_consulta.get("observacoes", "")
+                palavras_restritas = extrair_palavras_chave_restricao(observacoes_consulta)
+                alerta_restricao = verificar_restricao_alimento(alimento_sel, palavras_restritas)
+                if alerta_restricao:
+                    st.warning(alerta_restricao)
+
+                volume_padrao_liquido = 200.0
+                if peso_real > 0:
+                    peso_final = peso_real * qtd_unidade
+                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} {'ml' if unidade_tipo == 'ml' else 'g'})"
+                elif unidade_tipo == "un":
+                    peso_por_unidade = obter_peso_unidade_item(item, alimento_sel)
+                    if peso_por_unidade > 0:
+                        peso_final = peso_por_unidade * qtd_unidade
+                        label_qtd = f"{qtd_unidade:g} un (~{peso_final:.0f} g)"
+                    else:
+                        st.warning(f"⚠️ Sem estimativa de peso para '{alimento_sel}'. Informe o Peso Real (g) de uma unidade.")
+                        peso_final = 0
+                        label_qtd = f"{qtd_unidade:g} un (peso não informado)"
+                elif unidade_tipo == "ml":
+                    peso_final = qtd_unidade * volume_padrao_liquido
+                    label_qtd = f"{qtd_unidade:g} un ({peso_final:.0f} ml)"
+                else:
+                    peso_final = qtd_unidade
+                    label_qtd = f"{qtd_unidade:g} g"
+
+                if peso_final <= 0:
+                    st.error(f"❌ Item **não adicionado**. Não foi possível determinar o peso/volume de '{alimento_sel}'. Informe o 'Peso Real (g/ml)' ou utilize 'g'/'ml' com valores válidos.")
+                else:
+                    fator_calc = peso_final / 100
+                    risco_oms = verificar_risco_oms(alimento_sel)
+
+                    from ia_gemini import tratar_valor as _tv
+
+                    def _safe_multiply(value, factor):
+                        if value is None or value == 0:
+                            return None
+                        return round(value * factor, 1)
+
+                    kcal_v = _tv(item.get("kcal_100g", 0)) * fator_calc
+                    prot_v = _tv(item.get("proteina_g", 0)) * fator_calc
+                    carb_v = _tv(item.get("carboidrato_g", 0)) * fator_calc
+                    gord_v = _tv(item.get("gordura_g", 0)) * fator_calc
+
+                    acucar_v = _safe_multiply(_tv(item.get("acucar_g", None), nullable=True), fator_calc)
+                    sat_v = _safe_multiply(_tv(item.get("gordura_saturada_g", None), nullable=True), fator_calc)
+                    trans_v = _safe_multiply(_tv(item.get("gordura_trans_g", None), nullable=True), fator_calc)
+                    fibra_v = _safe_multiply(_tv(item.get("fibra_g", None), nullable=True), fator_calc)
+                    sodio_g = _tv(item.get("sodio_g", None), nullable=True)
+                    sodio_mg_v = _safe_multiply(sodio_g * 1000 if sodio_g is not None else None, fator_calc)
+
+                    novo_item = {
+                        "Ali": alimento_sel,
+                        "Qtd": label_qtd,
+                        "Kcal": round(kcal_v, 1),
+                        "P": round(prot_v, 1),
+                        "C": round(carb_v, 1),
+                        "G": round(gord_v, 1),
+                        "Acucar": acucar_v,
+                        "GSat": sat_v,
+                        "GTrans": trans_v,
+                        "Fibra": fibra_v,
+                        "SodioMg": sodio_mg_v,
+                        "Risco": risco_oms,
+                        "AlertaRestricao": alerta_restricao if alerta_restricao else None,
+                    }
+
+                    if st.session_state.planejamento_tipo == "Diário":
+                        st.session_state.cardapio[refeicao_sel].append(novo_item)
+                    else:
+                        st.session_state.cardapio_semanal[st.session_state.dia_atual][refeicao_sel].append(novo_item)
+
+                    st.rerun()
+
+# ============================================
+# 27. EXIBIÇÃO DO PLANO (MODIFICADO COM ALERTA DE RESTRIÇÃO)
+# ============================================
+if st.session_state.planejamento_tipo == "Diário":
+    st.markdown("### 📋 Seu Cardápio de Hoje")
+    for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+        itens = st.session_state.cardapio.get(refeicao, [])
+        if itens:
+            header_class = {
+                "Café da Manhã": "header-cafe",
+                "Almoço": "header-almoco",
+                "Lanches": "header-lanches",
+                "Jantar": "header-jantar",
+            }[refeicao]
+            st.markdown(
+                f"<div class='{header_class}'>{refeicao.upper()}</div>",
+                unsafe_allow_html=True,
+            )
+            for idx, item in enumerate(itens):
+                colA, colB, colC = st.columns([3, 4, 1])
+                with colA:
+                    st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+                with colB:
+                    _acucar = item.get("Acucar", "---")
+                    _sat = item.get("GSat", "---")
+                    _trans = item.get("GTrans", "---")
+                    _fibra = item.get("Fibra", "---")
+                    _sodio = item.get("SodioMg", "---")
+                    st.markdown(
+                        f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> "
+                        f"<span class='macro-tag-proteina'>🥩 {item['P']}g</span> "
+                        f"<span class='macro-tag-carb'>🍞 {item['C']}g</span> "
+                        f"<span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                        unsafe_allow_html=True,
+                    )
+                    if _acucar != "---" or _sat != "---":
+                        st.caption(
+                            f"🍬 Açúcar: {_acucar}g &nbsp;|&nbsp; "
+                            f"🧈 Sat: {_sat}g &nbsp;|&nbsp; "
+                            f"⚠️ Trans: {_trans}g &nbsp;|&nbsp; "
+                            f"🌾 Fibra: {_fibra}g &nbsp;|&nbsp; "
+                            f"🧂 Sódio: {_sodio}mg"
+                        )
+                with colC:
+                    if st.button("🗑️", key=f"del_{refeicao}_{idx}"):
+                        remover_item_diario(refeicao, idx)
+                if item.get("Risco"):
+                    st.markdown(
+                        f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                if item.get("AlertaRestricao"):
+                    st.error(item["AlertaRestricao"])
+                st.divider()
+else:
+    # Título com o dia da semana
+    st.markdown(f"### 📅 Planejamento Semanal: **{st.session_state.dia_atual}**")
+
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    cols_dias = st.columns(7)
+
+    for i, dia in enumerate(dias_semana):
+        with cols_dias[i]:
+            if st.session_state.dia_atual == dia:
+                st.markdown(
+                    f"""
+                <div style="
+                    background: linear-gradient(135deg, #f59e0b, #ef4444);
+                    border: 1px solid #ffd700;
+                    color: white;
+                    text-align: center;
+                    padding: 8px 0;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 14px;
+                ">
+                    {dia}
+                </div>
+                """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                if st.button(dia, key=f"dia_{dia}", use_container_width=True):
+                    st.session_state.dia_atual = dia
+                    st.rerun()
+
+    st.markdown("---")
+
+    for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+        itens = st.session_state.cardapio_semanal.get(
+            st.session_state.dia_atual, {}
+        ).get(refeicao, [])
+        if itens:
+            header_class = {
+                "Café da Manhã": "header-cafe",
+                "Almoço": "header-almoco",
+                "Lanches": "header-lanches",
+                "Jantar": "header-jantar",
+            }[refeicao]
+            st.markdown(
+                f"<div class='{header_class}'>{refeicao.upper()}</div>",
+                unsafe_allow_html=True,
+            )
+            for idx, item in enumerate(itens):
+                colA, colB, colC = st.columns([3, 4, 1])
+                with colA:
+                    st.markdown(f"**{item['Ali']}**  \n*{item['Qtd']}*")
+                with colB:
+                    _acucar = item.get("Acucar", "---")
+                    _sat = item.get("GSat", "---")
+                    _trans = item.get("GTrans", "---")
+                    _fibra = item.get("Fibra", "---")
+                    _sodio = item.get("SodioMg", "---")
+                    st.markdown(
+                        f"<span class='macro-tag-kcal'>🔥 {item['Kcal']} kcal</span> "
+                        f"<span class='macro-tag-proteina'>🥩 {item['P']}g</span> "
+                        f"<span class='macro-tag-carb'>🍞 {item['C']}g</span> "
+                        f"<span class='macro-tag-gordura'>🥑 {item['G']}g</span>",
+                        unsafe_allow_html=True,
+                    )
+                    if _acucar != "---" or _sat != "---":
+                        st.caption(
+                            f"🍬 Açúcar: {_acucar}g &nbsp;|&nbsp; "
+                            f"🧈 Sat: {_sat}g &nbsp;|&nbsp; "
+                            f"⚠️ Trans: {_trans}g &nbsp;|&nbsp; "
+                            f"🌾 Fibra: {_fibra}g &nbsp;|&nbsp; "
+                            f"🧂 Sódio: {_sodio}mg"
+                        )
+                with colC:
+                    if st.button("🗑️", key=f"del_semanal_{refeicao}_{idx}"):
+                        remover_item_semanal(st.session_state.dia_atual, refeicao, idx)
+                if item.get("Risco"):
+                    st.markdown(
+                        f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                if item.get("AlertaRestricao"):
+                    st.error(item["AlertaRestricao"])
+                st.divider()
+
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button(
+            f"🗑️ Limpar {st.session_state.dia_atual}", use_container_width=True
+        ):
+            limpar_dia_semanal(st.session_state.dia_atual)
+    with col_btn2:
+        if st.button("🗑️ Limpar Semana Inteira", use_container_width=True):
+            limpar_semana_completa()
+
+st.markdown("---")
+
+# ============================================
+# 28. CÁLCULO DOS TOTAIS (MANTIDO)
+# ============================================
+if dados_validos:
+    totais = calcular_totais_cardapio(
+        st.session_state.cardapio,
+        st.session_state.planejamento_tipo,
+        st.session_state.cardapio_semanal,
+    )
+    total_kcal = totais["total_kcal"]
+    total_prot = totais["total_prot"]
+    total_carb = totais["total_carb"]
+    total_gord = totais["total_gord"]
+    media_diaria = totais["media_diaria_kcal"]
+    saldo_diario = get_atual - media_diaria
+    variacao_semanal = abs((saldo_diario * 7) / 7700) if saldo_diario != 0 else 0
+    variacao_30dias = abs((saldo_diario * 30) / 7700) if saldo_diario != 0 else 0
+else:
+    total_kcal = 0
+    total_prot = 0
+    total_carb = 0
+    total_gord = 0
+    media_diaria = 0
+    saldo_diario = 0
+    variacao_semanal = 0
+    variacao_30dias = 0
+
+# ============================================
+# 29. GRÁFICOS (MANTIDO)
+# ============================================
+if total_kcal > 0 and dados_validos:
+    st.markdown("## 📊 Análise Nutricional")
+    col_graf1, col_graf2 = st.columns(2)
+    with col_graf1:
+        macros_data = pd.DataFrame(
+            {
+                "Macronutriente": ["Proteínas", "Carboidratos", "Gorduras"],
+                "Calorias": [total_prot * 4, total_carb * 4, total_gord * 9],
+            }
+        )
+        fig_pizza = px.pie(
+            macros_data,
+            values="Calorias",
+            names="Macronutriente",
+            title="Distribuição dos Macronutrientes",
+            color_discrete_sequence=["#ef4444", "#3b82f6", "#f59e0b"],
+        )
+        fig_pizza.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350
+        )
+        st.plotly_chart(fig_pizza, use_container_width=True)
+    with col_graf2:
+        balanco_data = pd.DataFrame(
+            {
+                "Categoria": ["Gasto Total (GET)", "Consumo Médio", "Diferença"],
+                "Valor (kcal)": [get_atual, media_diaria, abs(saldo_diario)],
+            }
+        )
+        fig_balanco = px.bar(
+            balanco_data,
+            x="Categoria",
+            y="Valor (kcal)",
+            title="Balanço Energético",
+            color="Categoria",
+            color_discrete_map={
+                "Gasto Total (GET)": "#ef4444",
+                "Consumo Médio": "#10b981",
+                "Diferença": "#f59e0b",
+            },
+        )
+        fig_balanco.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350
+        )
+        st.plotly_chart(fig_balanco, use_container_width=True)
+    st.markdown("---")
+
+# ========== CARDS DE MICRONUTRIENTES (seção 26) ==========
+# Calcular totais a partir do cardápio (diário ou semanal)
+total_acucar = 0.0
+total_sat = 0.0
+total_trans = 0.0
+total_fibra = 0.0
+total_sodio = 0.0
+
+if st.session_state.planejamento_tipo == "Diário":
+    for refeicao, itens in st.session_state.cardapio.items():
+        for item in itens:
+            total_acucar += float(item.get("Acucar", 0) or 0)
+            total_sat += float(item.get("GSat", 0) or 0)
+            total_trans += float(item.get("GTrans", 0) or 0)
+            total_fibra += float(item.get("Fibra", 0) or 0)
+            total_sodio += float(item.get("SodioMg", 0) or 0)
+else:
+    for dia, refeicoes in st.session_state.cardapio_semanal.items():
+        for refeicao, itens in refeicoes.items():
+            for item in itens:
+                total_acucar += float(item.get("Acucar", 0) or 0)
+                total_sat += float(item.get("GSat", 0) or 0)
+                total_trans += float(item.get("GTrans", 0) or 0)
+                total_fibra += float(item.get("Fibra", 0) or 0)
+                total_sodio += float(item.get("SodioMg", 0) or 0)
+
+st.markdown("#### 🧪 Consumo de Outros Nutrientes vs. Referência Diária")
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+with col_m1:
+    st.metric("🍬 Açúcares Totais", f"{total_acucar:.0f}g", 
+              delta=f"{min(100, int(total_acucar/50*100))}% da ref. (50g)")
+    st.progress(min(1.0, total_acucar/50))
+with col_m2:
+    st.metric("🧈 Gord. Saturada", f"{total_sat:.0f}g",
+              delta=f"{min(100, int(total_sat/22*100))}% da ref. (22g)")
+    st.progress(min(1.0, total_sat/22))
+with col_m3:
+    st.metric("🌾 Fibras", f"{total_fibra:.0f}g",
+              delta=f"{min(100, int(total_fibra/25*100))}% da ref. (25g)")
+    st.progress(min(1.0, total_fibra/25))
+with col_m4:
+    st.metric("🧂 Sódio", f"{total_sodio:.0f}mg",
+              delta=f"{min(100, int(total_sodio/2400*100))}% da ref. (2400mg)")
+    st.progress(min(1.0, total_sodio/2400))
+
+if total_trans > 0:
+    st.warning(f"⚠️ Gorduras trans totais: {total_trans:.0f}g. Recomendação: evitar ao máximo.")
+
+# ============================================
+# 30. LAUDO TÉCNICO COMPLETO (MANTIDO)
+# ============================================
+st.markdown("## 📋 LAUDO TÉCNICO DE VIABILIDADE ALIMENTAR")
+
+if dados_validos:
+    if st.session_state.planejamento_tipo == "Diário":
+        st.caption(
+            f"📅 **Período analisado:** Hoje (1 dia) | Total de {total_kcal:.1f} kcal no dia"
+        )
+    else:
+        st.caption(
+            f"📅 **Período analisado:** Semana completa (7 dias) | Total de {total_kcal:.1f} kcal na semana | Média diária: {media_diaria:.1f} kcal"
+        )
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(
+            "🥗 Consumo Planejado",
+            (
+                f"{media_diaria:.1f} kcal"
+                if st.session_state.planejamento_tipo == "Semanal"
+                else f"{total_kcal:.1f} kcal"
+            ),
+        )
+    with col2:
+        st.metric("⚡ Gasto Estimado (GET)", f"{get_atual:.0f} kcal")
+    with col3:
+        delta_texto = "Déficit" if saldo_diario > 0 else "Superávit"
+        st.metric(
+            "💪 Saldo Energético Diário", f"{abs(saldo_diario):.1f} kcal", delta_texto
+        )
+
+    st.markdown("---")
+    st.markdown("#### 🍽️ MACRONUTRIENTES TOTAIS DO PLANO")
+    col_p, col_c, col_g = st.columns(3)
+    if st.session_state.planejamento_tipo == "Diário":
+        with col_p:
+            st.metric(
+                "🥩 Proteínas",
+                f"{total_prot:.1f} g",
+                f"{((total_prot*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+            )
+        with col_c:
+            st.metric(
+                "🍞 Carboidratos",
+                f"{total_carb:.1f} g",
+                f"{((total_carb*4)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+            )
+        with col_g:
+            st.metric(
+                "🥑 Gorduras",
+                f"{total_gord:.1f} g",
+                f"{((total_gord*9)/total_kcal*100 if total_kcal>0 else 0):.1f}% das calorias",
+            )
+    else:
+        with col_p:
+            st.metric(
+                "🥩 Proteínas (semana)",
+                f"{total_prot:.1f} g",
+                f"Média: {total_prot/7:.1f}g/dia",
+            )
+        with col_c:
+            st.metric(
+                "🍞 Carboidratos (semana)",
+                f"{total_carb:.1f} g",
+                f"Média: {total_carb/7:.1f}g/dia",
+            )
+        with col_g:
+            st.metric(
+                "🥑 Gorduras (semana)",
+                f"{total_gord:.1f} g",
+                f"Média: {total_gord/7:.1f}g/dia",
+            )
+
+    st.markdown("---")
+    st.markdown("#### 📊 ESTIMATIVA DE RESULTADOS")
+
+    col_result1, col_result2, col_result3 = st.columns(3)
+
+    with col_result1:
+        if objetivo == "Perda de peso":
+            if saldo_diario > 0:
+                st.success(
+                    f"🎯 **DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia."
+                )
+            elif saldo_diario < 0:
+                st.warning(
+                    f"⚠️ **SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia."
+                )
+            else:
+                st.info(
+                    "✅ **Manutenção!** Você está consumindo exatamente o que gasta."
+                )
+        else:
+            if saldo_diario < 0:
+                st.success(
+                    f"🎯 **SUPERÁVIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a mais por dia."
+                )
+            elif saldo_diario > 0:
+                st.warning(
+                    f"⚠️ **DÉFICIT calórico!**\n\nConsumindo {abs(saldo_diario):.1f} kcal a menos por dia."
+                )
+            else:
+                st.info(
+                    "✅ **Manutenção!** Você está consumindo exatamente o que gasta."
+                )
+
+    with col_result2:
+        st.markdown(f"""
+        📉 **Projeção em 7 dias:** {variacao_semanal:.2f} kg
+        
+        📉 **Projeção em 30 dias:** {variacao_30dias:.2f} kg
+        
+        ---
+        ℹ️ **Sobre a projeção de 7 dias:**
+        Esta é uma **estimativa teórica** baseada no déficit calórico médio.
+        
+        Variações diárias de peso são normais devido a:
+        • 💧 Retenção hídrica (pode variar 1-2kg)
+        • ⏰ Horário da pesagem
+        • 🍽️ Conteúdo intestinal
+        
+        O resultado real pode diferir. O mais importante é a **consistência** e a **tendência de longo prazo**.
+        """)
+
+    with col_result3:
+        if saldo_diario != 0 and p_alvo > 0 and diferenca_meta != 0:
+            if objetivo == "Perda de peso" and saldo_diario > 0:
+                semanas_meta = (
+                    abs(diferenca_meta) / (variacao_30dias / 4.3)
+                    if variacao_30dias > 0
+                    else 0
+                )
+                if semanas_meta > 0:
+                    st.success(
+                        f"⏱️ **Tempo estimado:** {max(1, int(semanas_meta))} semanas"
+                    )
+                    st.caption("⏱️ Baseado na projeção de 30 dias")
+                else:
+                    st.info("📝 Adicione alimentos para calcular o tempo")
+            elif objetivo == "Ganho de peso" and saldo_diario < 0:
+                semanas_meta = (
+                    abs(diferenca_meta) / (variacao_30dias / 4.3)
+                    if variacao_30dias > 0
+                    else 0
+                )
+                if semanas_meta > 0:
+                    st.success(
+                        f"⏱️ **Tempo estimado:** {max(1, int(semanas_meta))} semanas"
+                    )
+                    st.caption("⏱️ Baseado na projeção de 30 dias")
+                else:
+                    st.info("📝 Adicione alimentos para calcular o tempo")
+            else:
+                st.warning("⚡ **Ajuste seu consumo para atingir a meta!**")
+        elif p_alvo == 0:
+            st.info("📝 Defina sua meta de peso para ver o tempo estimado")
+        elif saldo_diario == 0:
+            st.info("✅ **Manutenção!** Você está consumindo exatamente o que gasta.")
+        else:
+            st.info("📝 Adicione alimentos ao cardápio para calcular o tempo estimado")
+
+else:
+    st.info("📝 Preencha seus dados na barra lateral para gerar o laudo técnico.")
+
+# ============================================
+# 31. RESUMO COMPLETO PARA IMPRESSÃO (CORRIGIDO)
+# ============================================
+st.markdown("---")
+st.markdown("## 🖨️ RESUMO COMPLETO PARA IMPRESSÃO")
+st.markdown(
+    "*Esta seção contém todos os alimentos selecionados para fácil impressão - sem botões de excluir*"
+)
+
+# --- Função auxiliar para formatar valores numéricos com 1 casa decimal ---
+def _fmt_num(valor):
+    if valor is None or (isinstance(valor, float) and pd.isna(valor)):
+        return "---"
+    try:
+        num = float(valor)
+        return f"{num:.1f}"
+    except (TypeError, ValueError):
+        return str(valor)
+
+todos_alimentos = []
+dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
+if st.session_state.planejamento_tipo == "Diário":
+    for refeicao, itens in st.session_state.cardapio.items():
+        for item in itens:
+            todos_alimentos.append(
+                {
+                    "Dia": "Hoje",
+                    "Refeição": refeicao,
+                    "Alimento": item["Ali"],
+                    "Quantidade": item["Qtd"],
+                    "🔥 Kcal": _fmt_num(item["Kcal"]),
+                    "🥩 Prot(g)": _fmt_num(item["P"]),
+                    "🍞 Carb(g)": _fmt_num(item["C"]),
+                    "🥑 Gord(g)": _fmt_num(item["G"]),
+                    "🍬 Açúcar(g)": _fmt_num(item.get("Acucar")),
+                    "🧈 Sat(g)": _fmt_num(item.get("GSat")),
+                    "⚠️ Trans(g)": _fmt_num(item.get("GTrans")),
+                    "🌾 Fibra(g)": _fmt_num(item.get("Fibra")),
+                    "🧂 Sódio(mg)": _fmt_num(item.get("SodioMg")),
+                    "⚠️ Alerta OMS": (item.get("Risco", "") if item.get("Risco") else "-"),
+                }
+            )
+else:
+    for dia in dias_semana:
+        for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+            for item in st.session_state.cardapio_semanal.get(dia, {}).get(refeicao, []):
+                todos_alimentos.append(
+                    {
+                        "Dia": dia,
+                        "Refeição": refeicao,
+                        "Alimento": item["Ali"],
+                        "Quantidade": item["Qtd"],
+                        "🔥 Kcal": _fmt_num(item["Kcal"]),
+                        "🥩 Prot(g)": _fmt_num(item["P"]),
+                        "🍞 Carb(g)": _fmt_num(item["C"]),
+                        "🥑 Gord(g)": _fmt_num(item["G"]),
+                        "🍬 Açúcar(g)": _fmt_num(item.get("Acucar")),
+                        "🧈 Sat(g)": _fmt_num(item.get("GSat")),
+                        "⚠️ Trans(g)": _fmt_num(item.get("GTrans")),
+                        "🌾 Fibra(g)": _fmt_num(item.get("Fibra")),
+                        "🧂 Sódio(mg)": _fmt_num(item.get("SodioMg")),
+                        "⚠️ Alerta OMS": (item.get("Risco", "") if item.get("Risco") else "-"),
+                    }
+                )
+
+if todos_alimentos:
+    df_resumo = pd.DataFrame(todos_alimentos)
+    st.dataframe(df_resumo, use_container_width=True, hide_index=True)
+
+    # Garantir que todas as colunas numéricas sejam strings formatadas
+    # (já estão, mas o float_format força a formatação)
+    csv = df_resumo.to_csv(index=False, encoding="utf-8-sig", float_format="%.1f")
+    st.download_button(
+        "📥 Baixar Resumo em CSV",
+        data=csv,
+        file_name="resumo_alimentar.csv",
+        mime="text/csv",
+    )
+else:
+    st.info(
+        "ℹ️ Nenhum alimento adicionado ainda. Adicione alimentos para gerar o resumo."
+    )
+
+# ============================================
+# 32. EXPORTAÇÃO LAUDO TÉCNICO (CSV + PDF COM GRÁFICOS)
+# ============================================
+st.markdown("---")
+st.markdown("### 📥 Exportar Laudo Técnico")
+
+if dados_validos:
+    # Classificação IMC para o laudo
+    if imc < 18.5:
+        classificacao_imc = "Abaixo do peso"
+    elif imc < 25:
+        classificacao_imc = "Peso normal"
+    elif imc < 30:
+        classificacao_imc = "Sobrepeso"
+    elif imc < 35:
+        classificacao_imc = "Obesidade Grau I"
+    elif imc < 40:
+        classificacao_imc = "Obesidade Grau II"
+    else:
+        classificacao_imc = "Obesidade Grau III"
+
+    if saldo_diario > 0:
+        status_saldo = "Déficit (perda de peso)"
+    elif saldo_diario < 0:
+        status_saldo = "Superávit (ganho de peso)"
+    else:
+        status_saldo = "Manutenção"
+
+    if objetivo == "Perda de peso":
+        if p_alvo > 0:
+            if p_alvo < peso_at:
+                mensagem_meta = f"Faltam {peso_at - p_alvo:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+            else:
+                mensagem_meta = f"Meta de {p_alvo:.1f} kg está acima do peso atual. Ajuste para perda de peso."
+        else:
+            mensagem_meta = "Defina sua meta de peso para acompanhamento"
+    else:
+        if p_alvo > 0:
+            if p_alvo > peso_at:
+                mensagem_meta = f"Faltam {p_alvo - peso_at:.1f} kg para atingir sua meta de {p_alvo:.1f} kg"
+            else:
+                mensagem_meta = f"Meta de {p_alvo:.1f} kg está abaixo do peso atual. Ajuste para ganho de peso."
+        else:
+            mensagem_meta = "Defina sua meta de peso para acompanhamento"
+
+    # Calcular percentuais baseados no total_kcal
+    if total_kcal > 0 and not pd.isna(total_kcal) and total_kcal is not None:
+        perc_prot = (total_prot * 4 / total_kcal) * 100 if total_prot > 0 else 0
+        perc_carb = (total_carb * 4 / total_kcal) * 100 if total_carb > 0 else 0
+        perc_gord = (total_gord * 9 / total_kcal) * 100 if total_gord > 0 else 0
+    else:
+        perc_prot = perc_carb = perc_gord = 0
+
+    perc_prot = (
+        0 if (pd.isna(perc_prot) or perc_prot is None or perc_prot < 0) else perc_prot
+    )
+    perc_carb = (
+        0 if (pd.isna(perc_carb) or perc_carb is None or perc_carb < 0) else perc_carb
+    )
+    perc_gord = (
+        0 if (pd.isna(perc_gord) or perc_gord is None or perc_gord < 0) else perc_gord
+    )
+
+    if saldo_diario != 0 and p_alvo > 0 and diferenca_meta != 0:
+        if objetivo == "Perda de peso" and saldo_diario > 0:
+            semanas_meta = (
+                abs(diferenca_meta) / (variacao_30dias / 4.3)
+                if variacao_30dias > 0
+                else 0
+            )
+            if semanas_meta > 0:
+                tempo_meta = f"{max(1, int(semanas_meta))} semanas"
+            else:
+                tempo_meta = "Adicione alimentos para calcular"
+        elif objetivo == "Ganho de peso" and saldo_diario < 0:
+            semanas_meta = (
+                abs(diferenca_meta) / (variacao_30dias / 4.3)
+                if variacao_30dias > 0
+                else 0
+            )
+            if semanas_meta > 0:
+                tempo_meta = f"{max(1, int(semanas_meta))} semanas"
+            else:
+                tempo_meta = "Adicione alimentos para calcular"
+        else:
+            tempo_meta = "Ajuste seu consumo para atingir a meta"
+    elif p_alvo == 0:
+        tempo_meta = "Defina sua meta de peso"
+    elif saldo_diario == 0:
+        tempo_meta = "Manutenção - consumo igual ao gasto"
+    else:
+        tempo_meta = "Adicione alimentos ao cardápio"
+
+    # DADOS DA CONSULTA para incluir no CSV
+    dados_consulta_csv = [
+        {"Categoria": "📋 DADOS DA CONSULTA", "Valor": ""},
+        {
+            "Categoria": "Paciente",
+            "Valor": st.session_state.dados_paciente.get("nome", "-"),
+        },
+        {
+            "Categoria": "E-mail",
+            "Valor": st.session_state.dados_paciente.get("email", "-"),
+        },
+        {
+            "Categoria": "Telefone",
+            "Valor": st.session_state.dados_paciente.get("telefone", "-"),
+        },
+        {
+            "Categoria": "Profissional",
+            "Valor": st.session_state.dados_profissional.get("nome", "-"),
+        },
+        {
+            "Categoria": "Registro",
+            "Valor": st.session_state.dados_profissional.get("registro", "-"),
+        },
+        {
+            "Categoria": "Clínica",
+            "Valor": st.session_state.dados_consulta.get("clinica", "-"),
+        },
+        {
+            "Categoria": "Data Início",
+            "Valor": st.session_state.dados_consulta.get("data_inicio", "-"),
+        },
+        {
+            "Categoria": "Data Retorno",
+            "Valor": st.session_state.dados_consulta.get("data_retorno", "-"),
+        },
+        {
+            "Categoria": "Observações",
+            "Valor": (
+                st.session_state.dados_consulta.get("observacoes", "-")
+                if st.session_state.dados_consulta.get("observacoes")
+                else "-"
+            ),
+        },
+        {"Categoria": "", "Valor": ""},
+    ]
+
+    dados_laudo = {
+        "Categoria": [
+            "📋 DATA DO RELATÓRIO",
+            "📋 TIPO DE PLANEJAMENTO",
+            "📋 PERÍODO ANALISADO",
+            "",
+            "👤 PERFIL DO AVALIADO",
+            "Peso Atual (kg)",
+            "Altura (cm)",
+            "Idade (anos)",
+            "Sexo",
+            "Objetivo",
+            "Meta de Peso (kg)",
+            "Status da Meta",
+            "Frequência de Atividade Física",
+            "",
+            "⚡ METABOLISMO E GASTO ENERGÉTICO",
+            "Gasto Total (GET) - kcal/dia",
+            "Metabolismo Basal (TMB) - kcal/dia",
+            "Índice de Massa Corporal (IMC)",
+            "Classificação IMC",
+            "Peso Ideal Estimado (kg)",
+            "Percentual de Gordura (Estimativa IMC)",
+            "Massa de Gordura (kg)",
+            "Massa Magra (kg)",
+            "Método de Cálculo do GET",
+            "",
+            "🍽️ CONSUMO DO PERÍODO",
+            "Consumo Total (kcal)",
+            "Média Diária (kcal)",
+            "Saldo Energético Diário (kcal)",
+            "Status do Saldo",
+            "",
+            "🥩 MACRONUTRIENTES",
+            "Proteínas (g)",
+            "% Proteínas",
+            "Carboidratos (g)",
+            "% Carboidratos",
+            "Gorduras (g)",
+            "% Gorduras",
+            "",
+            "📊 PROJEÇÕES",
+            "Projeção de Variação em 7 dias (kg)",
+            "Projeção de Variação em 30 dias (kg)",
+            "Tempo Estimado para Meta",
+            "Mensagem do Saldo",
+            "",
+            "⚠️ AVISO CIENTÍFICO",
+        ],
+        "Valor": [
+            pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
+            st.session_state.planejamento_tipo,
+            (
+                "Hoje (1 dia)"
+                if st.session_state.planejamento_tipo == "Diário"
+                else "Semana completa (7 dias)"
+            ),
+            "",
+            "",
+            f"{peso_at:.1f} kg",
+            f"{alt_cm} cm",
+            f"{idade} anos",
+            sexo,
+            objetivo,
+            f"{p_alvo:.1f} kg" if p_alvo > 0 else "Não definida",
+            mensagem_meta,
+            naf_label,
+            "",
+            "",
+            f"{get_atual:.0f} kcal",
+            f"{tmb_atual:.0f} kcal",
+            f"{composicao['imc']}",
+            classificacao_imc,
+            f"{composicao['peso_ideal']:.1f} kg",
+            f"{composicao['percentual_gordura']:.1f}%",
+            f"{composicao['massa_gordura']:.1f} kg",
+            f"{composicao['massa_magra']:.1f} kg",
+            metodo_atual_nome,
+            "",
+            "",
+            f"{total_kcal:.1f} kcal",
+            f"{media_diaria:.1f} kcal",
+            f"{abs(saldo_diario):.1f} kcal",
+            status_saldo,
+            "",
+            "",
+            f"{total_prot:.1f} g",
+            f"{perc_prot:.1f}%",
+            f"{total_carb:.1f} g",
+            f"{perc_carb:.1f}%",
+            f"{total_gord:.1f} g",
+            f"{perc_gord:.1f}%",
+            "",
+            "",
+            f"{variacao_semanal:.2f} kg",
+            f"{variacao_30dias:.2f} kg",
+            tempo_meta,
+            f"{'Déficit calórico' if saldo_diario > 0 else 'Superávit calórico' if saldo_diario < 0 else 'Manutenção'} - Consumindo {abs(saldo_diario):.1f} kcal {'a menos' if saldo_diario > 0 else 'a mais'} por dia",
+            "",
+            "⚠️ ATENÇÃO: Projeção de 7 dias é uma estimativa teórica. Variações diárias de peso são normais (retenção hídrica 1-2kg, horário da pesagem, conteúdo intestinal). O resultado real pode diferir. A consistência e a tendência de 30 dias são mais confiáveis.",
+        ],
+    }
+
+    df_consulta = pd.DataFrame(dados_consulta_csv)
+    df_laudo = pd.DataFrame(dados_laudo)
+    df_final = pd.concat([df_consulta, df_laudo], ignore_index=True)
+
+    # Adicionar separador e tipo de cardápio
+    df_separador = pd.DataFrame([{"Categoria": "", "Valor": ""}])
+    df_tipo_cardapio = pd.DataFrame(
+        [
+            {
+                "Categoria": "📅 TIPO DE CARDÁPIO",
+                "Valor": st.session_state.planejamento_tipo,
+            }
+        ]
+    )
+    df_separador2 = pd.DataFrame([{"Categoria": "", "Valor": ""}])
+    df_separador3 = pd.DataFrame([{"Categoria": "🍽️ CARDÁPIO DETALHADO", "Valor": ""}])
+    df_separador4 = pd.DataFrame([{"Categoria": "", "Valor": ""}])
+
+    df_final = pd.concat(
+        [
+            df_final,
+            df_separador,
+            df_tipo_cardapio,
+            df_separador2,
+            df_separador3,
+            df_separador4,
+        ],
+        ignore_index=True,
+    )
+
+    # CORREÇÃO: Coletar alimentos conforme o tipo de planejamento
+    todos_alimentos_csv = []
+
+    if st.session_state.planejamento_tipo == "Diário":
+        for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+            itens = st.session_state.cardapio.get(refeicao, [])
+            if itens:
+                todos_alimentos_csv.append(
+                    {"Categoria": f"--- {refeicao.upper()} ---", "Valor": ""}
+                )
+                for item in itens:
+                    _a = item.get("Acucar","---"); _s = item.get("GSat","---")
+                    _t = item.get("GTrans","---"); _f = item.get("Fibra","---")
+                    _n = item.get("SodioMg","---")
+                    todos_alimentos_csv.append(
+                        {
+                            "Categoria": f"  • {item['Ali']}",
+                            "Valor": (
+                                f"{item['Qtd']} | {item['Kcal']} kcal | "
+                                f"🥩P:{item['P']}g 🍞C:{item['C']}g 🥑G:{item['G']}g | "
+                                f"🍬Açúcar:{_a}g 🧈Sat:{_s}g ⚠️Trans:{_t}g "
+                                f"🌾Fibra:{_f}g 🧂Sódio:{_n}mg"
+                            ),
+                        }
+                    )
+                todos_alimentos_csv.append({"Categoria": "", "Valor": ""})
+    else:
+        for dia in ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]:
+            tem_itens_no_dia = False
+            for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+                itens = st.session_state.cardapio_semanal.get(dia, {}).get(refeicao, [])
+                if itens:
+                    if not tem_itens_no_dia:
+                        todos_alimentos_csv.append(
+                            {"Categoria": f"📆 {dia.upper()}", "Valor": ""}
+                        )
+                        tem_itens_no_dia = True
+                    todos_alimentos_csv.append(
+                        {"Categoria": f"    🍽️ {refeicao}", "Valor": ""}
+                    )
+                    for item in itens:
+                        _a = item.get("Acucar","---"); _s = item.get("GSat","---")
+                        _t = item.get("GTrans","---"); _f = item.get("Fibra","---")
+                        _n = item.get("SodioMg","---")
+                        todos_alimentos_csv.append(
+                            {
+                                "Categoria": f"        • {item['Ali']}",
+                                "Valor": (
+                                    f"{item['Qtd']} | {item['Kcal']} kcal | "
+                                    f"🥩P:{item['P']}g 🍞C:{item['C']}g 🥑G:{item['G']}g | "
+                                    f"🍬Açúcar:{_a}g 🧈Sat:{_s}g ⚠️Trans:{_t}g "
+                                    f"🌾Fibra:{_f}g 🧂Sódio:{_n}mg"
+                                ),
+                            }
+                        )
+            if tem_itens_no_dia:
+                todos_alimentos_csv.append({"Categoria": "", "Valor": ""})
+
+    if todos_alimentos_csv:
+        df_alimentos = pd.DataFrame(todos_alimentos_csv)
+        df_final = pd.concat([df_final, df_alimentos], ignore_index=True)
+    else:
+        df_final = pd.concat(
+            [
+                df_final,
+                pd.DataFrame(
+                    [
+                        {
+                            "Categoria": "ℹ️ NENHUM ALIMENTO ADICIONADO",
+                            "Valor": "Adicione alimentos ao cardápio",
+                        }
+                    ]
+                ),
+            ],
+            ignore_index=True,
+        )
+
+    csv_laudo = df_final.to_csv(index=False, encoding="utf-8-sig", sep=";")
+
+    col_exp1, col_exp2 = st.columns(2)
+
+    with col_exp1:
+        st.download_button(
+            "📊 Baixar Laudo Técnico Completo (CSV)",
+            data=csv_laudo,
+            file_name=f"laudo_biogestao_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+        st.caption(
+            "📌 CSV organizado: Dados da Consulta | Perfil | Metabolismo | Consumo | Macronutrientes | Projeções | Tipo de Cardápio | Alimentos"
+        )
+    
+    with col_exp2:
+        # ========== Código original do HTML/PDF (completo, agora com e-mail) ==========
+        import matplotlib.pyplot as plt
+        import io
+
+        # Preparar dados para os gráficos
+        comp_gordura_val = composicao["percentual_gordura"] if composicao and composicao["percentual_gordura"] > 0 else 50
+        comp_magra_val = 100 - comp_gordura_val
+
+        prot_cal = total_prot * 4 if total_prot > 0 else 0
+        carb_cal = total_carb * 4 if total_carb > 0 else 0
+        gord_cal = total_gord * 9 if total_gord > 0 else 0
+
+        if prot_cal == 0 and carb_cal == 0 and gord_cal == 0:
+            prot_cal, carb_cal, gord_cal = 100, 100, 100
+
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+        axes[0].pie(
+            [comp_gordura_val, comp_magra_val],
+            labels=["Massa Gorda", "Massa Magra"],
+            colors=["#ef4444", "#3b82f6"],
+            autopct="%1.1f%%",
+            startangle=90,
+        )
+        axes[0].set_title("Composição Corporal", fontweight="bold")
+
+        get_val = get_atual if get_atual > 0 else 2000
+        consumo_val = media_diaria if media_diaria > 0 else 2000
+        diferenca_val = abs(saldo_diario) if abs(saldo_diario) > 0 else 500
+
+        bars = axes[1].bar(
+            ["GET", "Consumo", "Diferença"],
+            [get_val, consumo_val, diferenca_val],
+            color=["#ef4444", "#10b981", "#f59e0b"],
+        )
+        axes[1].set_title("Balanço Energético (kcal/dia)", fontweight="bold")
+        axes[1].set_ylabel("kcal")
+        for bar, val in zip(bars, [get_val, consumo_val, diferenca_val]):
+            axes[1].text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 10, f"{val:.0f}", ha="center", fontsize=9)
+
+        axes[2].pie(
+            [prot_cal, carb_cal, gord_cal],
+            labels=["Proteínas", "Carboidratos", "Gorduras"],
+            colors=["#ef4444", "#3b82f6", "#f59e0b"],
+            autopct="%1.1f%%",
+            startangle=90,
+        )
+        axes[2].set_title("Distribuição dos Macronutrientes", fontweight="bold")
+
+        plt.tight_layout()
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", dpi=200, bbox_inches="tight", facecolor="white")
+        buf.seek(0)
+        graficos_b64 = base64.b64encode(buf.getvalue()).decode()
+        plt.close()
+
+        data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
+
+        if saldo_diario > 0:
+            saldo_texto_pdf = "🎯 DÉFICIT calórico!"
+            saldo_desc_pdf = f"Consumindo {abs(saldo_diario):.1f} kcal a menos por dia."
+        elif saldo_diario < 0:
+            saldo_texto_pdf = "🎯 SUPERÁVIT calórico!"
+            saldo_desc_pdf = f"Consumindo {abs(saldo_diario):.1f} kcal a mais por dia."
+        else:
+            saldo_texto_pdf = "🎯 Manutenção!"
+            saldo_desc_pdf = "Você está consumindo exatamente o que gasta."
+
+        observacoes_texto = st.session_state.dados_consulta.get("observacoes", "") or "Nenhuma observação registrada"
+        email_paciente = st.session_state.dados_paciente.get("email", "-")
+        if not email_paciente or email_paciente == "[email protected]":
+            email_paciente = "Não informado"
+
+        # Montar tabela do cardápio para o HTML (no formato original, com ícones)
+        tabela_cardapio_html = ""
+        if st.session_state.planejamento_tipo == "Diário":
+            for refeicao, itens in st.session_state.cardapio.items():
+                for item in itens:
+                    tabela_cardapio_html += f"<tr><td>Hoje</td><td>{refeicao}</td><td>{item['Ali']}</td><td>{item['Qtd']}</td><td>{item['Kcal']}</td><td>{item['P']}</td><td>{item['C']}</td><td>{item['G']}</td><td>{item.get('Acucar','---')}</td><td>{item.get('GSat','---')}</td><td>{item.get('Fibra','---')}</td><td>{item.get('SodioMg','---')}</td></tr>"
+        else:
+            for dia in dias_semana:
+                for refeicao in ["Café da Manhã", "Almoço", "Lanches", "Jantar"]:
+                    for item in st.session_state.cardapio_semanal.get(dia, {}).get(refeicao, []):
+                        tabela_cardapio_html += f"<tr><td>{dia}</td><td>{refeicao}</td><td>{item['Ali']}</td><td>{item['Qtd']}</td><td>{item['Kcal']}</td><td>{item['P']}</td><td>{item['C']}</td><td>{item['G']}</td><td>{item.get('Acucar','---')}</td><td>{item.get('GSat','---')}</td><td>{item.get('Fibra','---')}</td><td>{item.get('SodioMg','---')}</td></tr>"
+
+        if not tabela_cardapio_html:
+            tabela_cardapio_html = "<tr><td colspan='8' style='text-align: center'>Nenhum alimento adicionado ao cardápio</td></tr>"
+
+        html_pdf = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Laudo BioGestão 360</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: white;
+            color: #1e293b;
+            padding: 15px;
+            font-size: 11pt;
+        }}
+        .container {{ max-width: 1200px; margin: 0 auto; }}
+        h1 {{ color: #f59e0b; font-size: 20pt; text-align: center; border-bottom: 2px solid #f59e0b; padding-bottom: 8px; }}
+        h2 {{ background: linear-gradient(135deg, #1e3a5f, #0f172a); color: white; padding: 6px 10px; margin: 20px 0 12px 0; font-size: 14pt; border-radius: 6px; }}
+        .subheader {{ text-align: center; color: #64748b; font-size: 9pt; margin-top: 5px; }}
+        .grid-2 {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0; }}
+        .grid-3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }}
+        .grid-4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }}
+        .card {{ border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+        .card-title {{ font-size: 9pt; color: #64748b; }}
+        .card-value {{ font-size: 13pt; font-weight: bold; color: #1e293b; }}
+        .metric-card {{ text-align: center; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }}
+        .metric-icon {{ font-size: 22pt; }}
+        .metric-value {{ font-size: 16pt; font-weight: bold; color: #f59e0b; }}
+        .metric-label {{ font-size: 9pt; color: #64748b; }}
+        .metric-desc {{ font-size: 7pt; color: #94a3b8; margin-top: 5px; }}
+        .success-box {{ background: #dcfce7; border-left: 4px solid #10b981; padding: 10px; border-radius: 8px; margin: 12px 0; }}
+        .warning-box {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 12px 0; font-size: 9pt; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 8pt; }}
+        th, td {{ border: 1px solid #cbd5e1; padding: 5px 6px; text-align: left; }}
+        th {{ background: #f59e0b; color: white; }}
+        tr:nth-child(even) {{ background: #f8fafc; }}
+        .graficos-container {{ text-align: center; margin: 15px 0; }}
+        .graficos-container img {{ max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 12px; }}
+        .footer {{ text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #94a3b8; }}
+        .page-break {{ page-break-before: always; }}
+        @media print {{
+            body {{ padding: 0; margin: 0; }}
+            h2 {{ background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            th {{ background: #666 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            .page-break {{ page-break-before: always; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ BioGestão 360 - Laudo Técnico Completo</h1>
+        <div class="subheader">Gerado em {data_atual}</div>
+        
+        <h2>📋 DADOS DA CONSULTA</h2>
+        <div class="grid-2">
+            <div class="card"><div class="card-title">👤 Paciente</div><div class="card-value">{st.session_state.dados_paciente.get('nome', '-')}</div></div>
+            <div class="card"><div class="card-title">📧 E-mail</div><div class="card-value">{email_paciente}</div></div>
+            <div class="card"><div class="card-title">📞 Telefone</div><div class="card-value">{st.session_state.dados_paciente.get('telefone', '-')}</div></div>
+            <div class="card"><div class="card-title">👨‍⚕️ Profissional</div><div class="card-value">{st.session_state.dados_profissional.get('nome', '-')}</div></div>
+            <div class="card"><div class="card-title">📜 Registro</div><div class="card-value">{st.session_state.dados_profissional.get('registro', '-')}</div></div>
+            <div class="card"><div class="card-title">🏥 Clínica</div><div class="card-value">{st.session_state.dados_consulta.get('clinica', '-')}</div></div>
+            <div class="card"><div class="card-title">📅 Data Início</div><div class="card-value">{st.session_state.dados_consulta.get('data_inicio', '-')}</div></div>
+            <div class="card"><div class="card-title">🔄 Data Retorno</div><div class="card-value">{st.session_state.dados_consulta.get('data_retorno', '-')}</div></div>
+            <div class="card"><div class="card-title">📝 Observações</div><div class="card-value">{observacoes_texto}</div></div>
+        </div>
+        
+        <h2>👤 PERFIL BIOLÓGICO</h2>
+        <div class="grid-3">
+            <div class="metric-card"><div class="metric-icon">⚖️</div><div class="metric-value">{peso_at:.1f} kg</div><div class="metric-label">Peso</div></div>
+            <div class="metric-card"><div class="metric-icon">📏</div><div class="metric-value">{alt_cm} cm</div><div class="metric-label">Altura</div></div>
+            <div class="metric-card"><div class="metric-icon">🎂</div><div class="metric-value">{idade} anos</div><div class="metric-label">Idade</div></div>
+            <div class="metric-card"><div class="metric-icon">⚥</div><div class="metric-value">{sexo}</div><div class="metric-label">Sexo</div></div>
+            <div class="metric-card"><div class="metric-icon">🎯</div><div class="metric-value">{objetivo}</div><div class="metric-label">Objetivo</div></div>
+            <div class="metric-card"><div class="metric-icon">🏆</div><div class="metric-value">{p_alvo:.1f} kg</div><div class="metric-label">Meta de Peso</div></div>
+        </div>
+        
+        <h2>⚡ Metabolismo e Gasto Energético</h2>
+        <div class="grid-4">
+            <div class="metric-card"><div class="metric-icon">⚡</div><div class="metric-value">{get_atual:.0f} kcal</div><div class="metric-label">Gasto Total (GET)</div><div class="metric-desc">Total de calorias que seu corpo gasta por dia.</div></div>
+            <div class="metric-card"><div class="metric-icon">🔥</div><div class="metric-value">{tmb_atual:.0f} kcal</div><div class="metric-label">Metabolismo Basal (TMB)</div><div class="metric-desc">Calorias queimadas em repouso total.</div></div>
+            <div class="metric-card"><div class="metric-icon">📊</div><div class="metric-value">{composicao['imc']}</div><div class="metric-label">IMC ({classificacao_imc})</div></div>
+            <div class="metric-card"><div class="metric-icon">🎯</div><div class="metric-value">{composicao['peso_ideal']:.1f} kg</div><div class="metric-label">Peso Ideal</div></div>
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <h2>🧬 Composição Corporal</h2>
+        <div class="grid-3">
+            <div class="metric-card"><div class="metric-icon">🎯</div><div class="metric-value">{composicao['percentual_gordura']:.1f}%</div><div class="metric-label">% Gordura</div><div class="metric-desc">Homens: 10-25% | Mulheres: 18-32%</div></div>
+            <div class="metric-card"><div class="metric-icon">⚖️</div><div class="metric-value">{composicao['massa_gordura']:.1f} kg</div><div class="metric-label">Massa Gorda</div></div>
+            <div class="metric-card"><div class="metric-icon">💪</div><div class="metric-value">{composicao['massa_magra']:.1f} kg</div><div class="metric-label">Massa Magra</div></div>
+        </div>
+        
+        <div class="graficos-container">
+            <img src="data:image/png;base64,{graficos_b64}" alt="Gráficos do Laudo">
+        </div>
+        
+        <h2>📊 ESTIMATIVA DE RESULTADOS</h2>
+        <div class="success-box">
+            <strong>{saldo_texto_pdf}</strong><br>{saldo_desc_pdf}
+        </div>
+        <div class="grid-3">
+            <div class="metric-card"><div class="metric-value">{variacao_semanal:.2f} kg</div><div class="metric-label">📉 Projeção em 7 dias</div></div>
+            <div class="metric-card"><div class="metric-value">{variacao_30dias:.2f} kg</div><div class="metric-label">📉 Projeção em 30 dias</div></div>
+            <div class="metric-card"><div class="metric-value">{tempo_meta}</div><div class="metric-label">⏱️ Tempo estimado</div></div>
+        </div>
+        <div class="warning-box">
+            <strong>ℹ️ Sobre as projeções:</strong><br>
+            Esta é uma <strong>estimativa teórica</strong> baseada no déficit/superávit calórico médio.<br><br>
+            Variações diárias de peso são normais devido a:<br>
+            • 💧 Retenção hídrica (pode variar 1-2kg)<br>
+            • ⏰ Horário da pesagem<br>
+            • 🍽️ Conteúdo intestinal<br><br>
+            O resultado real pode diferir. O mais importante é a <strong>consistência</strong> e a <strong>tendência de longo prazo</strong>.
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <h2>🍽️ CARDÁPIO - {st.session_state.planejamento_tipo}</h2>
+        <table>
+            <thead>
+                <tr><th>Dia</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>🔥 Kcal</th><th>🥩 Prot(g)</th><th>🍞 Carb(g)</th><th>🥑 Gord(g)</th><th>🍬 Açúcar(g)</th><th>🧈 Sat(g)</th><th>🌾 Fibra(g)</th><th>🧂 Sódio(mg)</th></tr>
+            </thead>
+            <tbody>{tabela_cardapio_html}</tbody>
+        </table>
+        
+        <div class="footer">
+            BioGestão 360 | Este documento foi gerado automaticamente e não substitui avaliação médica profissional.<br>
+            Fonte: {st.session_state.fonte_dados} | Método GET: {metodo_atual_nome}
+        </div>
+    </div>
+</body>
+</html>"""
+
+        b64_pdf = base64.b64encode(html_pdf.encode()).decode()
+        st.markdown(
+            f"""
+            <a href="data:text/html;base64,{b64_pdf}" download="laudo_biogestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html" 
+               style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 12px 20px; 
+               text-decoration: none; border-radius: 8px; display: inline-block; width: 100%; text-align: center; 
+               font-weight: bold; font-size: 16px;">
+               📄 Baixar Laudo Completo com Gráficos (HTML/PDF)
+            </a>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("💡 Abra o arquivo HTML e pressione Ctrl+P para salvar como PDF")
+        st.caption("📌 O PDF tem quebras de página: Página 1 (Dados+Perfil+Metabolismo) | Página 2 (Composição+Gráficos+Estimativa) | Página 3 (Cardápio)")
+
+else:
+    st.info("📝 Preencha seus dados na barra lateral para gerar o laudo técnico.")
+
+# ============================================
+# 33. RESUMO DO LAUDO TÉCNICO (MANTIDO)
+# ============================================
+if dados_validos:
+    st.markdown("---")
+    st.markdown("## 📋 RESUMO DO LAUDO TÉCNICO")
+    st.markdown(
+        f"""
+    <div class='resumo-laudo'>
+        <h4>📊 Resumo da Análise</h4>
+        <p><strong>📅 Período analisado:</strong> {'Hoje (1 dia)' if st.session_state.planejamento_tipo == "Diário" else 'Semana completa (7 dias)'}</p>
+        <p><strong>🥗 Consumo total:</strong> {total_kcal:.1f} kcal</p>
+        <p><strong>📊 Média diária:</strong> {media_diaria:.1f} kcal</p>
+        <p><strong>⚡ Gasto diário (GET):</strong> {get_atual:.0f} kcal</p>
+        <p><strong>💪 Saldo diário:</strong> {abs(saldo_diario):.1f} kcal <strong>{"Déficit" if saldo_diario > 0 else "Superávit"}</strong></p>
+        <p><strong>📉 Projeção em 30 dias:</strong> {variacao_30dias:.2f} kg</p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+# ============================================
+# 34. INFORMAÇÃO OMS E DOCUMENTAÇÃO TÉCNICA (MANTIDO)
+# ============================================
+with st.expander("📋 Informações OMS e Documentação Técnica", expanded=False):
+    st.markdown("""
+    ### Classificação da OMS/IARC para alimentos:
+    
+    | Grupo | Classificação | Alimentos | Recomendação |
+    |-------|--------------|-----------|--------------|
+    | **Grupo 1** | **Cancerígeno para humanos** | Carnes processadas, Bebidas alcoólicas | Evitar ou reduzir |
+    | **Grupo 2A** | **Provavelmente cancerígeno** | Carne vermelha | Limitar a 500g/semana |
+    | **Grupo 2B** | **Possivelmente cancerígeno** | Aspartame, bebidas >65°C | Consumo moderado |
+    
+    🔗 **Fontes oficiais IARC/OMS:**
+    - [IARC Monographs on the Identification of Carcinogenic Hazards to Humans](https://monographs.iarc.who.int/)
+    - [IARC Publications Programme](https://www.iarc.who.int/cards_page/iarc-publications/)
+    - [Red Meat and Processed Meat – IARC Monographs (NCBI Bookshelf)](https://www.ncbi.nlm.nih.gov/books/NBK507971/)
+    - [AMSA – IARC Cancer Risk of Red and Processed Meats](https://meatscience.org/publications-resources/other-meat-science-resources/IARC)
+    
+    ---
+    
+    ### 📚 Fórmulas Científicas:
+    
+    | Cálculo | Fórmula | Fonte |
+    |---------|---------|-------|
+    | **TMB (Homens)** | 66.47 + (13.75 × P) + (5.0 × A) - (6.75 × I) | Harris-Benedict (1919) |
+    | **TMB (Mulheres)** | 655.1 + (9.56 × P) + (1.85 × A) - (4.67 × I) | Harris-Benedict (1919) |
+    | **TMB Katch-McArdle** | 370 + (21.6 × Massa Magra) | Katch-McArdle (1975) |
+    | **% Gordura (IMC)** | (1.20 × IMC) + (0.23 × I) - (16.2 ou 5.4) | Deurenberg et al. |
+    | **% Gordura (Dobras)** | Protocolo Jackson & Pollock + Fórmula de Siri | ACSM |
+    
+    ---
+    
+    ### 📊 Base de Dados Nutricional
+    
+    | Base | Cobertura | Característica |
+    |------|-----------|----------------|
+    | **BioGestão 360** | 25.000+ produtos do mercado brasileiro | Dados reais de rótulos — **fonte principal** |
+    | **TACO/UNICAMP** | 613 alimentos in natura e preparações | 4ª Edição — referência científica oficial brasileira |
+    | **IBGE/POF 2008-2009** | 1.962 alimentos com 16 modos de preparo | Inclui gordura saturada, trans e açúcar total |
+
+    🔗 **Atribuições e licenças:**
+    - **Open Food Facts:** https://br.openfoodfacts.org — Open Database License (ODbL)
+    - **TACO/UNICAMP:** https://www.fao.org/food-composition/tables-and-databases/detail/(brazil--2011)-tabela-brasileira-de-composi%C3%A7%C3%A3o-de-alimentos-(taco)/en
+    - **IBGE POF 2008-2009:** https://www.fao.org/food-composition/tables-and-databases/detail/(brazil--2011)-tabelas-de-composi%C3%A7%C3%A3o-nutricional-dos-alimentos-consumidos-no-brasil/en
+    
+    ---
+
+    ### 📏 Medidas caseiras e porções (IN 75/2020)
+
+    A **Instrução Normativa nº 75/2020** da Anvisa estabelece as porções de alimentos e bebidas 
+    para fins de rotulagem nutricional. Ela também define **medidas caseiras** (xícara, copo, colher, fatia, etc.) 
+    e seus respectivos pesos/volumes em gramas ou mililitros.
+
+    🔗 [Leia a íntegra da IN 75/2020 no DOU](https://www.in.gov.br/en/web/dou/-/instrucao-normativa-in-n-75-de-8-de-outubro-de-2020-282071143)
+
+    Utilize essas referências para informar o **Peso Real (g/ml)** com maior precisão.
+    
+    ---
+    
+    ### 🥗 Recomendações práticas (OMS)
+    
+    - ✅ Prefira carnes brancas (frango, peixe)
+    - ✅ Cozinhe em temperaturas mais baixas (vapor, cozido)
+    - ✅ Evite frituras e churrascos em excesso
+    - ✅ Aumente consumo de fibras (frutas, verduras, legumes)
+    
+    > Este sistema é um **agregador de dados públicos** e não substitui a consulta a um profissional de saúde.
+    """)
+
+# ============================================
+# 35. BOTÃO DE LIMPAR (MANTIDO)
+# ============================================
+if st.session_state.planejamento_tipo == "Diário":
+    total_itens = sum(len(itens) for itens in st.session_state.cardapio.values())
+    if total_itens > 0 and not st.session_state.modo_impressao:
+        if st.button("🗑️ LIMPAR CARDÁPIO COMPLETO", use_container_width=True):
+            limpar_cardapio()
+
+# ============================================
+# 36. SAIR DO MODO IMPRESSÃO (MANTIDO)
+# ============================================
+if st.session_state.modo_impressao:
+    st.divider()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔙 Sair do Modo Impressão", use_container_width=True):
+            st.session_state.modo_impressao = False
+            st.rerun()
+
+# ============================================
+# 37. RODAPÉ (MANTIDO)
+# ============================================
+st.markdown(
+    f"""
+<div style='text-align: center; font-size: 11px; color: #666; padding: 15px;'>
+    <b>BioGestão 360 v4.1</b> | Fonte: {st.session_state.fonte_dados} | Método GET: {metodo_atual_nome if dados_validos else "Harris-Benedict"}<br>
+    <b>⚠️ SISTEMA EM DESENVOLVIMENTO - DADOS PODEM CONTER ERRO</b><br>
+    🔗 <b>Bases de dados:</b> BioGestão 360 (Open Food Facts/ODbL) | TACO/UNICAMP (4ª Ed.) | IBGE/POF 2008-2009 | OMS/IARC<br>
+</div>
+""",
+    unsafe_allow_html=True,
+)

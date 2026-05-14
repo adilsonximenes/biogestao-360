@@ -1,0 +1,77 @@
+# ============================================
+# SEGREDOS — NUNCA subir ao GitHub
+# ============================================
+.streamlit/secrets.toml
+secrets.toml
+.env
+*.env
+
+# ============================================
+# SCRIPTS DE MANUTENÇÃO LOCAL
+# Contêm acesso direto ao banco — rodar só localmente
+# ============================================
+reset_admin.py
+reimportar_supabase.py
+processar_tabelas.py
+corrigir_tabelas.py
+atualizar_supabase.sql
+
+# ============================================
+# ARQUIVOS DE DADOS — grandes e gerados automaticamente
+# Não subir: qualquer um que rode processar_tabelas.py gera localmente
+# ============================================
+biogestao_foods.csv
+biogestao_foods_corrigido.csv
+taco_limpa.csv
+ibge_limpa.csv
+
+# ============================================
+# BANCO DE DADOS LOCAL
+# ============================================
+biogestao.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# PYTHON
+# ============================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ============================================
+# AMBIENTE VIRTUAL
+# ============================================
+venv/
+env/
+.venv/
+.env/
+
+# ============================================
+# SISTEMA OPERACIONAL
+# ============================================
+.DS_Store
+Thumbs.db
+*.log
+
+# ============================================
+# EDITORES E IDEs
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================
+# STREAMLIT
+# ============================================
+.streamlit/secrets.toml
