@@ -22,8 +22,6 @@ atualizar_supabase.sql
 # ============================================
 biogestao_foods.csv
 biogestao_foods_corrigido.csv
-taco_limpa.csv
-ibge_limpa.csv
 
 # ============================================
 # BANCO DE DADOS LOCAL
