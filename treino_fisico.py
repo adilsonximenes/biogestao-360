@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 treino_fisico.py — BioGestão 360
 =================================
@@ -100,6 +101,21 @@ TABELA_MET = {
         "Lutas em geral (treino moderado)":               7.0,
         "Lutas em geral (treino intenso)":               10.0,
     },
+    "💪 Esportes de Força": {
+        "Powerlifting - treino técnico (leve)":           5.0,
+        "Powerlifting - treino moderado":                 6.0,
+        "Powerlifting - treino intenso / competição":     7.0,
+        "Strongman - treino geral":                       8.0,
+        "Strongman - treino competitivo (eventos)":      10.0,
+        "Halterofilismo Olímpico - técnica":              5.5,
+        "Halterofilismo Olímpico - treino intenso":       8.5,
+        "CrossFit - WOD competitivo / Games":            12.0,
+        "Kettlebell Lifting (snatch / clean & press)":    8.5,
+        "Calistenia Avançada (planche, front lever)":     6.0,
+        "Cabo de Guerra (Tug of War)":                    6.5,
+        "Atletismo de Força (arremesso, lançamento)":     5.5,
+        "Arm Wrestling (braço de ferro)":                 5.0,
+    },
     "⚽ Esportes Olímpicos": {
         "Basquetebol (jogo recreativo)":                  6.5,
         "Basquetebol (jogo competitivo)":                 8.0,
@@ -157,6 +173,9 @@ REFERENCIAS_MODALIDADE = {
         "Modalidades de luta e artes marciais que combinam técnica, força e condicionamento. "
         "Ótimo para coordenação motora, autoconfiança e condicionamento cardiovascular. "
         "Exige supervisão adequada para evitar lesões."
+    ),
+    "💪 Esportes de Força": (
+        "Categoria que engloba Powerlifting (agachamento, supino e terra), Strongman (Farmer's Walk, Log Press, Sled Push/Pull, virada de pneus, battle ropes, levantamento de pedras), Halterofilismo Olímpico (arranco e arremesso), CrossFit competitivo, Kettlebell e calistenia avançada. Podem ser adaptados com halteres, kettlebells e sacos de areia."
     ),
     "⚽ Esportes Olímpicos": (
         "Esportes coletivos e individuais de alto rendimento ou lazer. Desenvolvem coordenação, "
@@ -1193,6 +1212,305 @@ SUGESTOES_TREINO = {
             "Jogo Competitivo (Sex)": ["Pelada ou set de treino 90 min"],
         }
     },
+    # Powerlifting Iniciante
+    ("💪 Esportes de Força", "Powerlifting - treino técnico (leve)", "Iniciante", "3x"): {
+        "nome": "Powerlifting Iniciante - Técnica dos 3 Movimentos",
+        "descricao": "Aprendizado técnico do agachamento, supino e levantamento terra. Foco na forma correta antes de aumentar carga. Progressão linear: +2,5kg por sessão nos exercícios principais.",
+        "dias": {
+            "Dia A - Agachamento + Supino (Seg)": [
+                "Agachamento livre (começar com barra vazia -> carga leve) - 5x5",
+                "ATENCAO: descer ate 90 graus ou abaixo, joelhos alinhados com os pes",
+                "Supino reto (barra) - 5x5",
+                "ATENCAO: cotovelos a 45-75 graus do corpo, arco lombar natural",
+                "Barra fixa (pull-up) - 3xmax (mobilidade complementar)",
+                "Prancha frontal - 3x45s",
+            ],
+            "Dia B - Terra + Supino (Qui)": [
+                "Levantamento terra (convencional) - 5x3",
+                "ATENCAO: barra sobre o medio-pe, costas neutras, quadril acima dos joelhos",
+                "Supino reto - 5x5 (carga maior que Dia A)",
+                "Agachamento frontal (front squat) - 3x5 (mobilidade e tecnica)",
+                "Face pull - 4x15 (saude do ombro)",
+                "Abdominal hollow hold - 3x30s",
+            ],
+            "Dia C - Volume (Sex)": [
+                "Agachamento pausa 3s no fundo - 4x3",
+                "Supino com pausa 1s no peito - 4x3",
+                "Romanian Deadlift (RDL) - 4x8 (60% da carga do terra)",
+                "Rosca + Triceps superset - 3x12",
+            ],
+        }
+    },
+    # Powerlifting Intermediario
+    ("💪 Esportes de Força", "Powerlifting - treino moderado", "Intermediario", "4-5x"): {
+        "nome": "Powerlifting Intermediario - Forca Linear Avancada",
+        "descricao": "Programa 4 dias Upper/Lower enfase nos 3 levantamentos. Periodizacao simples: semana pesada (90%) -> leve (75%) -> moderada (82,5%).",
+        "dias": {
+            "Dia 1 - Agachamento (Seg)": [
+                "Agachamento - 4x4 (80-85% 1RM)",
+                "Agachamento pausa - 3x3 (70%)",
+                "Leg press - 3x10",
+                "Cadeira extensora - 3x12",
+                "Panturrilha em pe - 4x15",
+            ],
+            "Dia 2 - Supino (Ter)": [
+                "Supino reto - 4x4 (80-85% 1RM)",
+                "Supino com pausa - 3x3 (70%)",
+                "Supino inclinado halteres - 3x10",
+                "Triceps corda - 4x12",
+                "Face pull - 4x15",
+                "Rosca direta - 3x12",
+            ],
+            "Dia 3 - Terra + Posterior (Qui)": [
+                "Levantamento terra - 4x3 (80-87% 1RM)",
+                "RDL Romanian Deadlift - 3x5 (65%)",
+                "Remada curvada barra - 4x8",
+                "Good morning - 3x10",
+                "Extensao lombar - 3x15",
+            ],
+            "Dia 4 - Overhead + Upper (Sex)": [
+                "Press militar overhead press - 4x6",
+                "Remada cavalinho - 4x8",
+                "Barra fixa lastro - 4x5",
+                "Peck deck - 3x15",
+                "Triceps frances - 3x12",
+            ],
+        }
+    },
+    # Powerlifting Avancado
+    ("💪 Esportes de Força", "Powerlifting - treino intenso / competição", "Avançado", "4-5x"): {
+        "nome": "Powerlifting Avancado - Periodizacao por Blocos",
+        "descricao": "Blocos de acumulacao, intensificacao e realizacao. Pico de carga nas semanas 8-10 para competicao ou teste de 1RM.",
+        "dias": {
+            "Agachamento (Seg)": [
+                "Agachamento - 5x2-3 (85-92% 1RM)",
+                "Agachamento sumo variacao - 3x5",
+                "Pausa agachamento - 3x3 (75%)",
+                "Leg press - 4x8 + drop set final",
+                "Dead bug com peso - 3x10",
+            ],
+            "Supino (Ter)": [
+                "Supino reto - 5x2-3 (85-92% 1RM)",
+                "Supino pegada fechada - 4x5 (forca de triceps)",
+                "Supino pausa 2s - 3x3 (75%)",
+                "Peck deck Crucifixo - 4x12",
+                "Triceps corda drop set - 4 series",
+                "Face pull + rotacao externa - 4x15",
+            ],
+            "Terra (Qui)": [
+                "Levantamento terra - 5x1-2 (87-95% 1RM)",
+                "Terra com deficit pe em step 5cm - 3x3 (70%)",
+                "Terra sumo - 3x5 (60%)",
+                "Good morning - 4x8",
+                "Remada curvada pesada - 4x5",
+            ],
+            "Overhead + Acessorio (Sex)": [
+                "Press militar - 5x3 (progressao semanal)",
+                "Barra fixa lastro pesado - 5x3",
+                "Triceps testa pesado - 4x6",
+                "Rosca direta barra - 4x8",
+                "Farmers carry - 4x20m (trabalho de pegada)",
+            ],
+        }
+    },
+    # Strongman Iniciante
+    ("💪 Esportes de Força", "Strongman - treino geral", "Iniciante", "3x"): {
+        "nome": "Strongman Iniciante - Fundamentos dos Eventos",
+        "descricao": "Introducao aos movimentos do Strongman adaptados para academia. Usa halteres, kettlebells e sacos de areia para simular os eventos. Foco em tecnica correta e progressao gradual.",
+        "dias": {
+            "Dia 1 - Terra + Farmers Walk (Seg)": [
+                "Levantamento terra - 4x5 (aprender posicao correta)",
+                "Base do Strongman - cadeia posterior completa",
+                "Farmers Walk com halteres pesados - 4x20m",
+                "Simula o Farmers Carry - fortalece pegada, ombros e core",
+                "Agachamento goblet kettlebell - 3x10",
+                "Prancha com peso - 3x30s",
+                "Farmers carry unilateral (valise) - 3x15m cada lado",
+            ],
+            "Dia 2 - Press + Empurrar e Puxar (Qua)": [
+                "Log Press adaptado (barra hexagonal ou halteres pesados) - 4x5",
+                "Substitui o Log Press - desenvolvimento de forca overhead",
+                "Sled Push adaptado (agachamento com banda elastica) - 4x30s",
+                "Sled Pull (puxar saco de areia) - 4x15m",
+                "Battle ropes (corda grossa) - 6x30s ondas e chicote",
+                "Farmers carry + press final - 3 series combinadas",
+            ],
+            "Dia 3 - Pedras + Pneu (Sex)": [
+                "Simulacao levantamento de pedra: abracar medicine ball pesada - 4x5",
+                "Posicao: agachar, abracar, levantar com quadril - tecnica Atlas Stone",
+                "Virada de pneu adaptada (terra + empurre) - 4x5",
+                "Loaded carry com saco de areia - 4x20m",
+                "Isometria de pegada: Farmers hold - 3x60s",
+                "Russian twist pesado + wood chop - 3x12",
+            ],
+        }
+    },
+    # Strongman Intermediario
+    ("💪 Esportes de Força", "Strongman - treino geral", "Intermediario", "4-5x"): {
+        "nome": "Strongman Intermediario - Condicionamento de Forca",
+        "descricao": "4 sessoes com progressao de carga e eventos mais complexos. Combina forca maxima, explosao e resistencia de forca.",
+        "dias": {
+            "Forca Base (Seg)": [
+                "Levantamento terra - 5x3 (trabalho pesado)",
+                "Agachamento frontal - 4x5 (posicao de clean)",
+                "Press militar estrito - 4x5",
+                "Farmers Walk pesado - 5x20m (carga desafiadora)",
+            ],
+            "Eventos Carrying (Ter)": [
+                "Yoke Walk adaptado (barra nas costas + carga extra) - 4x15m",
+                "Simula o Yoke Carry do Strongman",
+                "Sled Push (trenó ou substituicao) - 5x20m",
+                "Battle ropes - 8x30s trabalho / 30s descanso",
+                "Loaded carry de saco de areia - 4x20m",
+            ],
+            "Press + Overhead (Qui)": [
+                "Log Press pesado (barra + presas) - 5x3",
+                "Push press - 4x5 (impulso de quadril)",
+                "Remada pesada - 4x6",
+                "Barra fixa lastro - 4x5",
+            ],
+            "Eventos Mistos (Sex)": [
+                "Atlas stones adaptado - 6 levantamentos maximos",
+                "Tyre flip adaptado - 5 viradas + sprint 10m",
+                "Puxada de corda rope pull - 3xmax",
+                "Farmers Walk final - 3x30m (resistencia de forca)",
+                "Pallof press pesado (core antirotacao) - 4x12",
+            ],
+        }
+    },
+    # Strongman Avancado
+    ("💪 Esportes de Força", "Strongman - treino competitivo (eventos)", "Avançado", "6-7x"): {
+        "nome": "Strongman Avancado - Preparacao para Competicao",
+        "descricao": "6 sessoes semanais simulando eventos de competicao: Farmers Walk, Log Press, Sled, Yoke, Atlas Stones e terra.",
+        "dias": {
+            "Terra + Yoke (Seg)": [
+                "Levantamento terra - maximas do ciclo",
+                "Terra com deficit 5cm - 4x3",
+                "Yoke Walk - 4x15m carga crescente",
+                "Isometria de pegada - 3x90s",
+            ],
+            "Log Press + Supino (Ter)": [
+                "Log Press - trabalho principal 5x3 ou onda 5-4-3-2-1",
+                "Supino reto - 4x5 (suporte ao press)",
+                "Push press - 4x3",
+                "Triceps pesado - 4x6",
+            ],
+            "Carrying Events (Qua)": [
+                "Farmers Walk - 6x20m progressao de carga",
+                "Sled Push + Sled Pull - 5 rodadas carga maxima",
+                "Loaded carry medley: 20m Farmers + 20m Yoke + 20m saco",
+            ],
+            "Pedras + Agachamento (Qui)": [
+                "Atlas Stones - 5 levantamentos para plataforma",
+                "Agachamento pesado - 4x3 (95% 1RM)",
+                "Agachamento sumo base larga - 3x5",
+            ],
+            "Eventos Resistencia (Sex)": [
+                "Battle ropes - 10x30s maxima intensidade",
+                "Tyre flip - serie maxima em 90s",
+                "Rope pull pesado - 3xmax",
+                "Farmers hold grip - 3xmax",
+            ],
+            "Recuperacao Ativa (Sab)": [
+                "Tecnica de levantamento (30-40% das cargas)",
+                "Mobilidade de quadril, ombros e coluna toracica",
+                "Alongamento especifico para atleta de forca - 40 min",
+            ],
+        }
+    },
+    # Halterofilismo Olimpico Iniciante
+    ("💪 Esportes de Força", "Halterofilismo Olímpico - técnica", "Iniciante", "3x"): {
+        "nome": "Halterofilismo Olimpico Iniciante - Aprendizagem Tecnica",
+        "descricao": "Os movimentos olimpicos sao os mais tecnicos do esporte. Iniciante deve passar semanas com barra vazia antes de adicionar carga. Recomendado acompanhamento presencial de tecnico especializado.",
+        "dias": {
+            "Arranco - Snatch (Seg)": [
+                "TECNICA: barra vazia - snatch grip (pegada larga)",
+                "Overhead squat - 5x5 (mobilidade indispensavel)",
+                "Snatch pull - 4x5 (puxada do chao)",
+                "Hang power snatch - 4x3 (da altura dos joelhos)",
+                "Power snatch - 4x3 (entrada parcial)",
+                "Snatch balance - 3x5 (velocidade sob a barra)",
+            ],
+            "Arremesso - Clean and Jerk (Qua)": [
+                "TECNICA: barra vazia - clean grip (pegada ombros)",
+                "Front squat - 5x5 (posicao de recebimento)",
+                "Hang power clean - 4x3",
+                "Power clean - 4x3",
+                "Push press - 4x5 (fase do jerk)",
+                "Split jerk - 4x3 (posicao dividida)",
+            ],
+            "Combinado + Forca (Sex)": [
+                "Power snatch + overhead squat - 4x(2+2)",
+                "Power clean + front squat + push jerk - 4x(1+2+2)",
+                "Agachamento costas - 4x5 (60% do total estimado)",
+                "Stiff leg deadlift - 3x8",
+                "Core: dead bug + hollow hold - 3 series de cada",
+            ],
+        }
+    },
+    # Kettlebell Iniciante
+    ("💪 Esportes de Força", "Kettlebell Lifting (snatch / clean & press)", "Iniciante", "3x"): {
+        "nome": "Kettlebell Iniciante - Swing, Clean e Press",
+        "descricao": "O kettlebell e versatil e eficiente. Treino de forca, potencia e condicionamento em um unico implemento. Iniciante aprende swing, clean e press antes do snatch.",
+        "dias": {
+            "Forca + Swing (Seg)": [
+                "Turkish Get-Up TGU - 5x1 cada lado (tecnica fundamental)",
+                "Kettlebell swing bilateral - 5x10",
+                "Goblet squat - 4x10",
+                "Kettlebell clean unilateral - 4x5 cada",
+                "Prancha com kettlebell renegade row - 3x8",
+            ],
+            "Press + Condicionamento (Qua)": [
+                "Kettlebell press estrito - 4x8 cada braco",
+                "Swing unilateral - 4x10 cada",
+                "Clean + press combinado - 4x5 cada",
+                "Farmers carry com kettlebell - 4x20m",
+                "Windmill - 3x5 cada (mobilidade e forca obliquia)",
+            ],
+            "Potencia + Snatch (Sex)": [
+                "Kettlebell snatch - 5x5 cada (aprender tecnica)",
+                "ATENCAO: snatch e o mais tecnico do kettlebell - cuidado com o punho",
+                "Swing duplo two-hand swing pesado - 5x8",
+                "Clean + squat + press complexo - 4x3 cada",
+                "Battle ropes finalizador - 4x20s",
+            ],
+        }
+    },
+    # Calistenia Avancada
+    ("💪 Esportes de Força", "Calistenia Avançada (planche, front lever)", "Intermediario", "4-5x"): {
+        "nome": "Calistenia Avancada - Progressao Planche e Front Lever",
+        "descricao": "Progressao para planche, front lever e muscle-up. Requer base solida: pelo menos 10 pull-ups e 20 dips antes de comecar.",
+        "dias": {
+            "Planche (Seg)": [
+                "Planche lean - 5x5s (inclinacao progressiva)",
+                "Tuck planche hold - 5x10s",
+                "Advanced tuck -> straddle planche progressao",
+                "Pseudo planche push-ups - 5x8",
+                "Pike push-ups para ombros - 4x10",
+            ],
+            "Front Lever + Pull (Ter)": [
+                "Tuck front lever hold - 5x10s",
+                "Advanced tuck -> straddle front lever progressao",
+                "Front lever pull - 5x3",
+                "Barra fixa pronada - 5x8 (lastro quando possivel)",
+                "L-sit hold - 5x15s",
+            ],
+            "Muscle-up + Forca (Qui)": [
+                "Muscle-up trabalho tecnico - 5x3",
+                "Ring muscle-up progressao - 4x3",
+                "Dips nas argolas rings - 4x8",
+                "Handstand hold parada de mao - 5x20s",
+                "Handstand push-up progressao",
+            ],
+            "Forca Complementar (Sex)": [
+                "Pistol squat agachamento unilateral - 4x5 cada",
+                "Dragon flag progressao - 4x5",
+                "Barra fixa supinada pesada - 5x5",
+                "Circuito tecnico: planche + front lever combinado",
+            ],
+        }
+    },
+
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
