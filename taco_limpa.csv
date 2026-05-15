@@ -1,0 +1,683 @@
+nome,nome_busca,categoria,kcal_100g,proteina_g,carboidrato_g,gordura_g,fibra_g,sodio_mg,colesterol_mg,calcio_mg,ferro_mg,fonte,porcao_num,porcao_uni,marca,sodio_g
+"Arroz, integral, cozido",arroz integral cozido,Cereais e derivados,124.0,2.6,25.8,1.0,2.7,1.0,,5.0,0.3,TACO,,g,,0.001
+"Arroz, integral, cru",arroz integral cru,Cereais e derivados,360.0,7.3,77.5,1.9,4.8,2.0,,8.0,0.9,TACO,,g,,0.002
+"Arroz, tipo 1, cozido",arroz tipo 1 cozido,Cereais e derivados,128.0,2.5,28.1,0.2,1.6,1.0,,4.0,0.1,TACO,,g,,0.001
+"Arroz, tipo 1, cru",arroz tipo 1 cru,Cereais e derivados,358.0,7.2,78.8,0.3,1.6,1.0,,4.0,0.7,TACO,,g,,0.001
+"Arroz, tipo 2, cozido",arroz tipo 2 cozido,Cereais e derivados,130.0,2.6,28.2,0.4,1.1,2.0,,3.0,0.1,TACO,,g,,0.002
+"Arroz, tipo 2, cru",arroz tipo 2 cru,Cereais e derivados,358.0,7.2,78.9,0.3,1.7,1.0,,5.0,0.6,TACO,,g,,0.001
+"Aveia, flocos, crua",aveia flocos crua,Cereais e derivados,394.0,13.9,66.6,8.5,9.1,5.0,,48.0,4.4,TACO,,g,,0.005
+"Biscoito, doce, maisena",biscoito doce maisena,Cereais e derivados,443.0,8.1,75.2,12.0,2.1,352.0,,54.0,1.8,TACO,,g,,0.352
+"Biscoito, doce, recheado com chocolate",biscoito doce recheado com chocolate,Cereais e derivados,472.0,6.4,70.5,19.6,3.0,239.0,0.0,27.0,2.3,TACO,,g,,0.239
+"Biscoito, doce, recheado com morango",biscoito doce recheado com morango,Cereais e derivados,471.0,5.7,71.0,19.6,1.5,230.0,0.0,36.0,1.5,TACO,,g,,0.23
+"Biscoito, doce, wafer, recheado de chocolate",biscoito doce wafer recheado de chocolate,Cereais e derivados,502.0,5.6,67.5,24.7,1.8,137.0,0.0,23.0,2.4,TACO,,g,,0.137
+"Biscoito, doce, wafer, recheado de morango",biscoito doce wafer recheado de morango,Cereais e derivados,513.0,4.5,67.4,26.4,0.8,120.0,1.0,14.0,1.1,TACO,,g,,0.12
+"Biscoito, salgado, cream cracker",biscoito salgado cream cracker,Cereais e derivados,432.0,10.1,68.7,14.4,2.5,854.0,,20.0,2.2,TACO,,g,,0.854
+"Bolo, mistura para",bolo mistura para,Cereais e derivados,419.0,6.2,84.7,6.1,1.7,463.0,0.0,59.0,1.2,TACO,,g,,0.463
+"Bolo, pronto, aipim",bolo pronto aipim,Cereais e derivados,324.0,4.4,47.9,12.7,0.7,111.0,73.0,85.0,0.5,TACO,,g,,0.111
+"Bolo, pronto, chocolate",bolo pronto chocolate,Cereais e derivados,410.0,6.2,54.7,18.5,1.4,283.0,77.0,75.0,2.1,TACO,,g,,0.283
+"Bolo, pronto, coco",bolo pronto coco,Cereais e derivados,333.0,5.7,52.3,11.3,1.1,190.0,63.0,57.0,0.8,TACO,,g,,0.19
+"Bolo, pronto, milho",bolo pronto milho,Cereais e derivados,311.0,4.8,45.1,12.4,0.7,134.0,82.0,83.0,0.7,TACO,,g,,0.134
+"Canjica, branca, crua",canjica branca crua,Cereais e derivados,358.0,7.2,78.1,1.0,5.5,1.0,,2.0,0.3,TACO,,g,,0.001
+"Canjica, com leite integral",canjica com leite integral,Cereais e derivados,112.0,2.4,23.6,1.2,1.2,28.0,1.0,43.0,0.1,TACO,,g,,0.028
+"Cereais, milho, flocos, com sal",cereais milho flocos com sal,Cereais e derivados,370.0,7.3,80.8,1.6,5.3,272.0,,2.0,0.5,TACO,,g,,0.272
+"Cereais, milho, flocos, sem sal",cereais milho flocos sem sal,Cereais e derivados,363.0,6.9,80.4,1.2,1.8,31.0,,2.0,1.7,TACO,,g,,0.031
+"Cereais, mingau, milho, infantil",cereais mingau milho infantil,Cereais e derivados,394.0,6.4,87.3,1.1,3.2,399.0,,219.0,3.0,TACO,,g,,0.399
+"Cereais, mistura para vitamina, trigo, cevada e aveia",cereais mistura para vitamina trigo cevada e aveia,Cereais e derivados,381.0,8.9,81.6,2.1,5.0,1163.0,,584.0,12.6,TACO,,g,,1.163
+"Cereal matinal, milho",cereal matinal milho,Cereais e derivados,365.0,7.2,83.8,1.0,4.1,655.0,,143.0,3.1,TACO,,g,,0.655
+"Cereal matinal, milho, açúcar",cereal matinal milho acucar,Cereais e derivados,377.0,4.7,88.8,0.7,2.1,405.0,,56.0,3.9,TACO,,g,,0.405
+"Creme de arroz, pó",creme de arroz po,Cereais e derivados,386.0,7.0,83.9,1.2,1.1,1.0,,7.0,0.6,TACO,,g,,0.001
+"Creme de milho, pó",creme de milho po,Cereais e derivados,333.0,4.8,86.1,1.6,3.7,594.0,,323.0,4.3,TACO,,g,,0.594
+"Curau, milho verde",curau milho verde,Cereais e derivados,78.0,2.4,13.9,1.6,0.5,21.0,5.0,53.0,0.4,TACO,,g,,0.021
+"Curau, milho verde, mistura para",curau milho verde mistura para,Cereais e derivados,402.0,2.2,79.8,13.4,2.5,223.0,,31.0,0.9,TACO,,g,,0.223
+"Farinha, de arroz, enriquecida",farinha de arroz enriquecida,Cereais e derivados,363.0,1.3,85.5,0.3,0.6,17.0,,1.0,31.4,TACO,,g,,0.017
+"Farinha, de centeio, integral",farinha de centeio integral,Cereais e derivados,336.0,12.5,73.3,1.8,15.5,41.0,,34.0,4.7,TACO,,g,,0.041
+"Farinha, de milho, amarela",farinha de milho amarela,Cereais e derivados,351.0,7.2,79.1,1.5,5.5,45.0,,1.0,2.3,TACO,,g,,0.045
+"Farinha, de rosca",farinha de rosca,Cereais e derivados,371.0,11.4,75.8,1.5,4.8,333.0,,35.0,6.7,TACO,,g,,0.333
+"Farinha, de trigo",farinha de trigo,Cereais e derivados,360.0,9.8,75.1,1.4,2.3,1.0,,18.0,1.0,TACO,,g,,0.001
+"Farinha, láctea, de cereais",farinha lactea de cereais,Cereais e derivados,415.0,11.9,77.8,5.8,1.9,125.0,11.0,196.0,8.7,TACO,,g,,0.125
+"Lasanha, massa fresca, cozida",lasanha massa fresca cozida,Cereais e derivados,164.0,5.8,32.5,1.2,1.6,207.0,,10.0,1.2,TACO,,g,,0.207
+"Lasanha, massa fresca, crua",lasanha massa fresca crua,Cereais e derivados,220.0,7.0,45.1,1.3,1.6,667.0,,17.0,1.9,TACO,,g,,0.667
+"Macarrão, instantâneo",macarrao instantaneo,Cereais e derivados,436.0,8.8,62.4,17.2,5.6,1516.0,,18.0,0.8,TACO,,g,,1.516
+"Macarrão, trigo, cru",macarrao trigo cru,Cereais e derivados,371.0,10.0,77.9,1.3,2.9,7.0,,17.0,0.9,TACO,,g,,0.007
+"Macarrão, trigo, cru, com ovos",macarrao trigo cru com ovos,Cereais e derivados,371.0,10.3,76.6,2.0,2.3,15.0,18.0,19.0,0.9,TACO,,g,,0.015
+"Milho, amido, cru",milho amido cru,Cereais e derivados,361.0,0.6,87.1,0.0,0.7,8.0,,1.0,0.1,TACO,,g,,0.008
+"Milho, fubá, cru",milho fuba cru,Cereais e derivados,353.0,7.2,78.9,1.9,4.7,0.0,,3.0,0.9,TACO,,g,,0.0
+"Milho, verde, cru",milho verde cru,Cereais e derivados,138.0,6.6,28.6,0.6,3.9,1.0,,2.0,0.4,TACO,,g,,0.001
+"Milho, verde, enlatado, drenado",milho verde enlatado drenado,Cereais e derivados,98.0,3.2,17.1,2.4,4.6,260.0,,2.0,0.6,TACO,,g,,0.26
+"Mingau tradicional, pó",mingau tradicional po,Cereais e derivados,373.0,0.6,89.3,0.4,0.9,15.0,,522.0,42.0,TACO,,g,,0.015
+"Pamonha, barra para cozimento, pré-cozida",pamonha barra para cozimento precozida,Cereais e derivados,171.0,2.6,30.7,4.8,2.4,132.0,,4.0,0.4,TACO,,g,,0.132
+"Pão, aveia, forma",pao aveia forma,Cereais e derivados,343.0,12.4,59.6,5.7,6.0,606.0,0.0,109.0,4.7,TACO,,g,,0.606
+"Pão, de soja",pao de soja,Cereais e derivados,309.0,11.3,56.5,3.6,5.7,663.0,,90.0,3.3,TACO,,g,,0.663
+"Pão, glúten, forma",pao gluten forma,Cereais e derivados,253.0,12.0,44.1,2.7,2.5,22.0,,156.0,5.7,TACO,,g,,0.022
+"Pão, milho, forma",pao milho forma,Cereais e derivados,292.0,8.3,56.4,3.1,4.3,507.0,6.0,78.0,3.0,TACO,,g,,0.507
+"Pão, trigo, forma, integral",pao trigo forma integral,Cereais e derivados,253.0,9.4,49.9,3.7,6.9,506.0,,132.0,3.0,TACO,,g,,0.506
+"Pão, trigo, francês",pao trigo frances,Cereais e derivados,300.0,8.0,58.6,3.1,2.3,648.0,,16.0,1.0,TACO,50,g,,0.648
+"Pão, trigo, sovado",pao trigo sovado,Cereais e derivados,311.0,8.4,61.5,2.8,2.4,431.0,17.0,52.0,2.3,TACO,,g,,0.431
+"Pastel, de carne, cru",pastel de carne cru,Cereais e derivados,289.0,10.7,42.0,8.8,1.0,1309.0,18.0,17.0,2.0,TACO,,g,,1.309
+"Pastel, de carne, frito",pastel de carne frito,Cereais e derivados,388.0,10.1,43.8,20.1,1.0,1040.0,25.0,13.0,2.5,TACO,,g,,1.04
+"Pastel, de queijo, cru",pastel de queijo cru,Cereais e derivados,308.0,9.9,45.9,9.6,1.1,985.0,14.0,155.0,1.0,TACO,,g,,0.985
+"Pastel, de queijo, frito",pastel de queijo frito,Cereais e derivados,422.0,8.7,48.1,22.7,0.9,821.0,15.0,126.0,1.3,TACO,,g,,0.821
+"Pastel, massa, crua",pastel massa crua,Cereais e derivados,310.0,6.9,57.4,5.5,1.4,1344.0,,13.0,1.1,TACO,,g,,1.344
+"Pastel, massa, frita",pastel massa frita,Cereais e derivados,570.0,6.0,49.3,40.9,1.3,1175.0,,11.0,1.4,TACO,,g,,1.175
+"Pipoca, com óleo de soja, sem sal",pipoca com oleo de soja sem sal,Cereais e derivados,448.0,9.9,70.3,15.9,14.3,4.0,,3.0,1.2,TACO,,g,,0.004
+"Polenta, pré-cozida",polenta precozida,Cereais e derivados,103.0,2.3,23.3,0.3,2.4,442.0,,1.0,0.0,TACO,,g,,0.442
+"Torrada, pão francês",torrada pao frances,Cereais e derivados,377.0,10.5,74.6,3.3,3.4,829.0,,19.0,1.2,TACO,10,g,,0.829
+"Abóbora, cabotian, cozida",abobora cabotian cozida,"Verduras, hortaliças e derivados",48.0,1.4,10.8,0.7,2.5,1.0,,8.0,0.3,TACO,,g,,0.001
+"Abóbora, cabotian, crua",abobora cabotian crua,"Verduras, hortaliças e derivados",39.0,1.7,8.4,0.5,2.2,0.0,,18.0,0.4,TACO,,g,,0.0
+"Abóbora, menina brasileira, crua",abobora menina brasileira crua,"Verduras, hortaliças e derivados",14.0,0.6,3.3,0.0,1.2,0.0,,9.0,0.2,TACO,,g,,0.0
+"Abóbora, moranga, crua",abobora moranga crua,"Verduras, hortaliças e derivados",12.0,1.0,2.7,0.1,1.7,0.0,,3.0,0.0,TACO,,g,,0.0
+"Abóbora, moranga, refogada",abobora moranga refogada,"Verduras, hortaliças e derivados",29.0,0.4,6.0,0.8,1.5,3.0,,19.0,0.1,TACO,,g,,0.003
+"Abóbora, pescoço, crua",abobora pescoco crua,"Verduras, hortaliças e derivados",24.0,0.7,6.1,0.1,2.3,1.0,,9.0,0.3,TACO,,g,,0.001
+"Abobrinha, italiana, cozida",abobrinha italiana cozida,"Verduras, hortaliças e derivados",15.0,1.1,3.0,0.2,1.6,1.0,,17.0,0.2,TACO,,g,,0.001
+"Abobrinha, italiana, crua",abobrinha italiana crua,"Verduras, hortaliças e derivados",19.0,1.1,4.3,0.1,1.4,0.0,,15.0,0.2,TACO,,g,,0.0
+"Abobrinha, italiana, refogada",abobrinha italiana refogada,"Verduras, hortaliças e derivados",24.0,1.1,4.2,0.8,1.4,2.0,,21.0,0.4,TACO,,g,,0.002
+"Abobrinha, paulista, crua",abobrinha paulista crua,"Verduras, hortaliças e derivados",31.0,0.6,7.9,0.1,2.6,1.0,,19.0,0.2,TACO,,g,,0.001
+"Acelga, crua",acelga crua,"Verduras, hortaliças e derivados",21.0,1.4,4.6,0.1,1.1,1.0,,43.0,0.3,TACO,,g,,0.001
+"Agrião, cru",agriao cru,"Verduras, hortaliças e derivados",17.0,2.7,2.3,0.2,2.1,7.0,,133.0,3.1,TACO,,g,,0.007
+"Aipo, cru",aipo cru,"Verduras, hortaliças e derivados",19.0,0.8,4.3,0.1,1.0,10.0,,65.0,0.7,TACO,,g,,0.01
+"Alface, americana, crua",alface americana crua,"Verduras, hortaliças e derivados",9.0,0.6,1.7,0.1,1.0,7.0,,14.0,0.3,TACO,,g,,0.007
+"Alface, crespa, crua",alface crespa crua,"Verduras, hortaliças e derivados",11.0,1.3,1.7,0.2,1.8,3.0,,38.0,0.4,TACO,,g,,0.003
+"Alface, lisa, crua",alface lisa crua,"Verduras, hortaliças e derivados",14.0,1.7,2.4,0.1,2.3,4.0,,28.0,0.6,TACO,,g,,0.004
+"Alface, roxa, crua",alface roxa crua,"Verduras, hortaliças e derivados",13.0,0.9,2.5,0.2,2.0,7.0,,34.0,2.5,TACO,,g,,0.007
+"Alfavaca, crua",alfavaca crua,"Verduras, hortaliças e derivados",29.0,2.7,5.2,0.5,4.1,5.0,,258.0,1.3,TACO,,g,,0.005
+"Alho, cru",alho cru,"Verduras, hortaliças e derivados",113.0,7.0,23.9,0.2,4.3,5.0,,14.0,0.8,TACO,,g,,0.005
+"Alho-poró, cru",alhoporo cru,"Verduras, hortaliças e derivados",32.0,1.4,6.9,0.1,2.5,2.0,,34.0,0.6,TACO,,g,,0.002
+"Almeirão, cru",almeirao cru,"Verduras, hortaliças e derivados",18.0,1.8,3.3,0.2,2.6,2.0,,19.0,0.7,TACO,,g,,0.002
+"Almeirão, refogado",almeirao refogado,"Verduras, hortaliças e derivados",65.0,1.7,5.7,4.8,3.4,15.0,,63.0,1.6,TACO,,g,,0.015
+"Batata, baroa, cozida",batata baroa cozida,"Verduras, hortaliças e derivados",80.0,0.9,18.9,0.2,1.8,2.0,,12.0,0.4,TACO,,g,,0.002
+"Batata, baroa, crua",batata baroa crua,"Verduras, hortaliças e derivados",101.0,1.0,24.0,0.2,2.1,0.0,,17.0,0.3,TACO,,g,,0.0
+"Batata, doce, cozida",batata doce cozida,"Verduras, hortaliças e derivados",77.0,0.6,18.4,0.1,2.2,3.0,,17.0,0.2,TACO,,g,,0.003
+"Batata, doce, crua",batata doce crua,"Verduras, hortaliças e derivados",118.0,1.3,28.2,0.1,2.6,9.0,,21.0,0.4,TACO,,g,,0.009
+"Batata, frita, tipo chips, industrializada",batata frita tipo chips industrializada,"Verduras, hortaliças e derivados",543.0,5.6,51.2,36.6,2.5,607.0,,12.0,0.7,TACO,,g,,0.607
+"Batata, inglesa, cozida",batata inglesa cozida,"Verduras, hortaliças e derivados",52.0,1.2,11.9,0.0,1.3,2.0,,4.0,0.2,TACO,,g,,0.002
+"Batata, inglesa, crua",batata inglesa crua,"Verduras, hortaliças e derivados",64.0,1.8,14.7,0.0,1.2,0.0,,4.0,0.4,TACO,,g,,0.0
+"Batata, inglesa, frita",batata inglesa frita,"Verduras, hortaliças e derivados",267.0,5.0,35.6,13.1,8.1,2.0,,6.0,0.4,TACO,,g,,0.002
+"Batata, inglesa, sauté",batata inglesa saute,"Verduras, hortaliças e derivados",68.0,1.3,14.1,0.9,1.4,8.0,,4.0,0.3,TACO,,g,,0.008
+"Berinjela, cozida",berinjela cozida,"Verduras, hortaliças e derivados",19.0,0.7,4.5,0.1,2.5,1.0,,11.0,0.2,TACO,,g,,0.001
+"Berinjela, crua",berinjela crua,"Verduras, hortaliças e derivados",20.0,1.2,4.4,0.1,2.9,0.0,,9.0,0.2,TACO,,g,,0.0
+"Beterraba, cozida",beterraba cozida,"Verduras, hortaliças e derivados",32.0,1.3,7.2,0.1,1.9,23.0,,15.0,0.2,TACO,,g,,0.023
+"Beterraba, crua",beterraba crua,"Verduras, hortaliças e derivados",49.0,1.9,11.1,0.1,3.4,10.0,,18.0,0.3,TACO,,g,,0.01
+"Biscoito, polvilho doce",biscoito polvilho doce,"Verduras, hortaliças e derivados",438.0,1.3,80.5,12.2,1.2,98.0,9.0,30.0,1.8,TACO,,g,,0.098
+"Brócolis, cozido",brocolis cozido,"Verduras, hortaliças e derivados",25.0,2.1,4.4,0.5,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+"Brócolis, cru",brocolis cru,"Verduras, hortaliças e derivados",25.0,3.6,4.0,0.3,2.9,3.0,,86.0,0.6,TACO,,g,,0.003
+"Cará, cozido",cara cozido,"Verduras, hortaliças e derivados",78.0,1.5,18.9,0.1,2.6,1.0,,5.0,0.3,TACO,,g,,0.001
+"Cará, cru",cara cru,"Verduras, hortaliças e derivados",96.0,2.3,23.0,0.1,7.3,0.0,,4.0,0.2,TACO,,g,,0.0
+"Caruru, cru",caruru cru,"Verduras, hortaliças e derivados",34.0,3.2,6.0,0.6,4.5,14.0,,455.0,4.5,TACO,,g,,0.014
+"Catalonha, crua",catalonha crua,"Verduras, hortaliças e derivados",24.0,1.9,4.8,0.3,2.0,9.0,,57.0,3.1,TACO,,g,,0.009
+"Catalonha, refogada",catalonha refogada,"Verduras, hortaliças e derivados",63.0,2.0,4.8,4.8,3.7,25.0,,63.0,1.2,TACO,,g,,0.025
+"Cebola, crua",cebola crua,"Verduras, hortaliças e derivados",39.0,1.7,8.9,0.1,2.2,1.0,,14.0,0.2,TACO,,g,,0.001
+"Cebolinha, crua",cebolinha crua,"Verduras, hortaliças e derivados",20.0,1.9,3.4,0.4,3.6,2.0,,80.0,0.6,TACO,,g,,0.002
+"Cenoura, cozida",cenoura cozida,"Verduras, hortaliças e derivados",30.0,0.8,6.7,0.2,2.6,8.0,,26.0,0.1,TACO,,g,,0.008
+"Cenoura, crua",cenoura crua,"Verduras, hortaliças e derivados",34.0,1.3,7.7,0.2,3.2,3.0,,23.0,0.2,TACO,,g,,0.003
+"Chicória, crua",chicoria crua,"Verduras, hortaliças e derivados",14.0,1.1,2.9,0.1,2.2,14.0,,45.0,0.5,TACO,,g,,0.014
+"Chuchu, cozido",chuchu cozido,"Verduras, hortaliças e derivados",19.0,0.4,4.8,0.0,1.0,2.0,,8.0,0.1,TACO,,g,,0.002
+"Chuchu, cru",chuchu cru,"Verduras, hortaliças e derivados",17.0,0.7,4.1,0.1,1.3,0.0,,12.0,0.2,TACO,,g,,0.0
+"Coentro, folhas desidratadas",coentro folhas desidratadas,"Verduras, hortaliças e derivados",309.0,20.9,48.0,10.4,37.3,18.0,,784.0,81.4,TACO,,g,,0.018
+"Couve, manteiga, crua",couve manteiga crua,"Verduras, hortaliças e derivados",27.0,2.9,4.3,0.5,3.1,6.0,,131.0,0.5,TACO,,g,,0.006
+"Couve, manteiga, refogada",couve manteiga refogada,"Verduras, hortaliças e derivados",90.0,1.7,8.7,6.6,5.7,11.0,,177.0,0.5,TACO,,g,,0.011
+"Couve-flor, crua",couveflor crua,"Verduras, hortaliças e derivados",23.0,1.9,4.5,0.2,2.4,3.0,,18.0,0.5,TACO,,g,,0.003
+"Couve-flor, cozida",couveflor cozida,"Verduras, hortaliças e derivados",19.0,1.2,3.9,0.3,2.1,2.0,,16.0,0.1,TACO,,g,,0.002
+"Espinafre, Nova Zelândia, cru",espinafre nova zelandia cru,"Verduras, hortaliças e derivados",16.0,2.0,2.6,0.2,2.1,17.0,,98.0,0.4,TACO,,g,,0.017
+"Espinafre, Nova Zelândia, refogado",espinafre nova zelandia refogado,"Verduras, hortaliças e derivados",67.0,2.7,4.2,5.4,2.5,47.0,,112.0,0.6,TACO,,g,,0.047
+"Farinha, de mandioca, crua",farinha de mandioca crua,"Verduras, hortaliças e derivados",361.0,1.6,87.9,0.3,6.4,1.0,,65.0,1.1,TACO,,g,,0.001
+"Farinha, de mandioca, torrada",farinha de mandioca torrada,"Verduras, hortaliças e derivados",365.0,1.2,89.2,0.3,6.5,10.0,,76.0,1.2,TACO,,g,,0.01
+"Farinha, de puba",farinha de puba,"Verduras, hortaliças e derivados",360.0,1.6,87.3,0.5,4.2,4.0,,41.0,1.4,TACO,,g,,0.004
+"Fécula, de mandioca",fecula de mandioca,"Verduras, hortaliças e derivados",331.0,0.5,81.1,0.3,0.6,2.0,,12.0,0.1,TACO,,g,,0.002
+"Feijão, broto, cru",feijao broto cru,"Verduras, hortaliças e derivados",39.0,4.2,7.8,0.1,2.0,2.0,,14.0,0.8,TACO,,g,,0.002
+"Inhame, cru",inhame cru,"Verduras, hortaliças e derivados",97.0,2.1,23.2,0.2,1.7,0.0,,12.0,0.4,TACO,,g,,0.0
+"Jiló, cru",jilo cru,"Verduras, hortaliças e derivados",27.0,1.4,6.2,0.2,4.8,0.0,,20.0,0.3,TACO,,g,,0.0
+"Jurubeba, crua",jurubeba crua,"Verduras, hortaliças e derivados",126.0,4.4,23.1,3.9,23.9,1.0,,151.0,0.9,TACO,,g,,0.001
+"Mandioca, cozida",mandioca cozida,"Verduras, hortaliças e derivados",125.0,0.6,30.1,0.3,1.6,1.0,,19.0,0.1,TACO,,g,,0.001
+"Mandioca, crua",mandioca crua,"Verduras, hortaliças e derivados",151.0,1.1,36.2,0.3,1.9,2.0,,15.0,0.3,TACO,,g,,0.002
+"Mandioca, farofa, temperada",mandioca farofa temperada,"Verduras, hortaliças e derivados",406.0,2.1,80.3,9.1,7.8,575.0,,66.0,1.4,TACO,,g,,0.575
+"Mandioca, frita",mandioca frita,"Verduras, hortaliças e derivados",300.0,1.4,50.3,11.2,1.9,9.0,,23.0,0.3,TACO,,g,,0.009
+"Manjericão, cru",manjericao cru,"Verduras, hortaliças e derivados",21.0,2.0,3.6,0.4,3.3,4.0,,211.0,1.0,TACO,,g,,0.004
+"Maxixe, cru",maxixe cru,"Verduras, hortaliças e derivados",14.0,1.4,2.7,0.1,2.2,11.0,,21.0,0.4,TACO,,g,,0.011
+"Mostarda, folha, crua",mostarda folha crua,"Verduras, hortaliças e derivados",18.0,2.1,3.2,0.2,1.9,3.0,,68.0,1.1,TACO,,g,,0.003
+"Nhoque, batata, cozido",nhoque batata cozido,"Verduras, hortaliças e derivados",181.0,5.9,36.8,1.9,1.8,7.0,15.0,11.0,1.6,TACO,,g,,0.007
+"Nabo, cru",nabo cru,"Verduras, hortaliças e derivados",18.0,1.2,4.1,0.1,2.6,2.0,,42.0,0.2,TACO,,g,,0.002
+"Palmito, juçara, em conserva",palmito jucara em conserva,"Verduras, hortaliças e derivados",23.0,1.8,4.3,0.4,3.2,514.0,,58.0,0.3,TACO,,g,,0.514
+"Palmito, pupunha, em conserva",palmito pupunha em conserva,"Verduras, hortaliças e derivados",29.0,2.5,5.5,0.5,2.6,563.0,,32.0,0.2,TACO,,g,,0.563
+"Pão, de queijo, assado",pao de queijo assado,"Verduras, hortaliças e derivados",363.0,5.1,34.2,24.6,0.6,773.0,68.0,102.0,0.3,TACO,,g,,0.773
+"Pão, de queijo, cru",pao de queijo cru,"Verduras, hortaliças e derivados",295.0,3.6,38.5,14.0,1.0,405.0,63.0,88.0,0.3,TACO,,g,,0.405
+"Pepino, cru",pepino cru,"Verduras, hortaliças e derivados",10.0,0.9,2.0,0.0,1.1,0.0,,10.0,0.1,TACO,,g,,0.0
+"Pimentão, amarelo, cru",pimentao amarelo cru,"Verduras, hortaliças e derivados",28.0,1.2,6.0,0.4,1.9,0.0,,10.0,0.4,TACO,,g,,0.0
+"Pimentão, verde, cru",pimentao verde cru,"Verduras, hortaliças e derivados",21.0,1.1,4.9,0.2,2.6,0.0,,9.0,0.4,TACO,,g,,0.0
+"Pimentão, vermelho, cru",pimentao vermelho cru,"Verduras, hortaliças e derivados",23.0,1.0,5.5,0.1,1.6,0.0,,6.0,0.3,TACO,,g,,0.0
+"Polvilho, doce",polvilho doce,"Verduras, hortaliças e derivados",351.0,0.4,86.8,0.0,0.2,2.0,,27.0,0.5,TACO,,g,,0.002
+"Quiabo, cru",quiabo cru,"Verduras, hortaliças e derivados",30.0,1.9,6.4,0.3,4.6,1.0,,112.0,0.4,TACO,,g,,0.001
+"Rabanete, cru",rabanete cru,"Verduras, hortaliças e derivados",14.0,1.4,2.7,0.1,2.2,11.0,,21.0,0.4,TACO,,g,,0.011
+"Repolho, branco, cru",repolho branco cru,"Verduras, hortaliças e derivados",17.0,0.9,3.9,0.1,1.9,4.0,,35.0,0.2,TACO,,g,,0.004
+"Repolho, roxo, cru",repolho roxo cru,"Verduras, hortaliças e derivados",31.0,1.9,7.2,0.1,2.0,2.0,,44.0,0.5,TACO,,g,,0.002
+"Repolho, roxo, refogado",repolho roxo refogado,"Verduras, hortaliças e derivados",42.0,1.8,7.6,1.2,1.8,3.0,,43.0,0.5,TACO,,g,,0.003
+"Rúcula, crua",rucula crua,"Verduras, hortaliças e derivados",13.0,1.8,2.2,0.1,1.7,9.0,,117.0,0.9,TACO,,g,,0.009
+"Salsa, crua",salsa crua,"Verduras, hortaliças e derivados",33.0,3.3,5.7,0.6,1.9,2.0,,179.0,3.2,TACO,,g,,0.002
+"Seleta de legumes, enlatada",seleta de legumes enlatada,"Verduras, hortaliças e derivados",57.0,3.4,12.7,0.4,3.1,398.0,,16.0,1.1,TACO,,g,,0.398
+"Serralha, crua",serralha crua,"Verduras, hortaliças e derivados",30.0,2.7,4.9,0.7,3.5,19.0,,126.0,1.3,TACO,,g,,0.019
+"Taioba, crua",taioba crua,"Verduras, hortaliças e derivados",34.0,2.9,5.4,0.9,4.5,1.0,,141.0,1.9,TACO,,g,,0.001
+"Tomate, com semente, cru",tomate com semente cru,"Verduras, hortaliças e derivados",15.0,1.1,3.1,0.2,1.2,1.0,,7.0,0.2,TACO,,g,,0.001
+"Tomate, extrato",tomate extrato,"Verduras, hortaliças e derivados",61.0,2.4,15.0,0.2,2.8,498.0,,29.0,2.1,TACO,,g,,0.498
+"Tomate, molho industrializado",tomate molho industrializado,"Verduras, hortaliças e derivados",38.0,1.4,7.7,0.9,3.1,418.0,,12.0,1.6,TACO,,g,,0.418
+"Tomate, purê",tomate pure,"Verduras, hortaliças e derivados",28.0,1.4,6.9,0.0,1.0,104.0,,13.0,1.3,TACO,,g,,0.104
+"Tomate, salada",tomate salada,"Verduras, hortaliças e derivados",21.0,0.8,5.1,0.0,2.3,5.0,,7.0,0.3,TACO,,g,,0.005
+"Vagem, crua",vagem crua,"Verduras, hortaliças e derivados",25.0,1.8,5.3,0.2,2.4,0.0,,41.0,0.4,TACO,,g,,0.0
+"Abacate, cru",abacate cru,Frutas e derivados,96.0,1.2,6.0,8.4,6.3,0.0,,8.0,0.2,TACO,,g,,0.0
+"Abacaxi, cru",abacaxi cru,Frutas e derivados,48.0,0.9,12.3,0.1,1.0,0.0,,22.0,0.3,TACO,,g,,0.0
+"Abacaxi, polpa, congelada",abacaxi polpa congelada,Frutas e derivados,31.0,0.5,7.8,0.1,0.3,1.0,,14.0,0.4,TACO,,g,,0.001
+"Abiu, cru",abiu cru,Frutas e derivados,62.0,0.8,14.9,0.7,1.7,0.0,,6.0,0.2,TACO,,g,,0.0
+"Açaí, polpa, com xarope de guaraná e glucose",acai polpa com xarope de guarana e glucose,Frutas e derivados,110.0,0.7,21.5,3.7,1.7,15.0,,22.0,0.3,TACO,,g,,0.015
+"Açaí, polpa, congelada",acai polpa congelada,Frutas e derivados,58.0,0.8,6.2,3.9,2.6,5.0,,35.0,0.4,TACO,,g,,0.005
+"Acerola, crua",acerola crua,Frutas e derivados,33.0,0.9,8.0,0.2,1.5,0.0,,13.0,0.2,TACO,,g,,0.0
+"Acerola, polpa, congelada",acerola polpa congelada,Frutas e derivados,22.0,0.6,5.5,0.0,0.7,1.0,,8.0,0.2,TACO,,g,,0.001
+"Ameixa, calda, enlatada",ameixa calda enlatada,Frutas e derivados,183.0,0.4,46.9,0.0,0.5,3.0,,13.0,2.2,TACO,,g,,0.003
+"Ameixa, crua",ameixa crua,Frutas e derivados,53.0,0.8,13.9,0.0,2.4,0.0,,6.0,0.1,TACO,,g,,0.0
+"Ameixa, em calda, enlatada, drenada",ameixa em calda enlatada drenada,Frutas e derivados,177.0,1.0,47.7,0.3,4.5,3.0,,39.0,2.7,TACO,,g,,0.003
+"Atemóia, crua",atemoia crua,Frutas e derivados,97.0,1.0,25.3,0.3,2.1,1.0,,23.0,0.2,TACO,,g,,0.001
+"Banana, da terra, crua",banana da terra crua,Frutas e derivados,128.0,1.4,33.7,0.2,1.5,0.0,,4.0,0.3,TACO,,g,,0.0
+"Banana, doce em barra",banana doce em barra,Frutas e derivados,280.0,2.2,75.7,0.1,3.8,10.0,,12.0,0.6,TACO,,g,,0.01
+"Banana, figo, crua",banana figo crua,Frutas e derivados,105.0,1.1,27.8,0.1,2.8,0.0,,6.0,0.2,TACO,,g,,0.0
+"Banana, maçã, crua",banana maca crua,Frutas e derivados,87.0,1.8,22.3,0.1,2.6,0.0,,3.0,0.2,TACO,,g,,0.0
+"Banana, nanica, crua",banana nanica crua,Frutas e derivados,92.0,1.4,23.8,0.1,1.9,0.0,,3.0,0.3,TACO,,g,,0.0
+"Banana, ouro, crua",banana ouro crua,Frutas e derivados,112.0,1.5,29.3,0.2,2.0,0.0,,3.0,0.3,TACO,,g,,0.0
+"Banana, pacova, crua",banana pacova crua,Frutas e derivados,78.0,1.2,20.3,0.1,2.0,1.0,,5.0,0.4,TACO,,g,,0.001
+"Banana, prata, crua",banana prata crua,Frutas e derivados,98.0,1.3,26.0,0.1,2.0,0.0,,8.0,0.4,TACO,,g,,0.0
+"Cacau, cru",cacau cru,Frutas e derivados,74.0,1.0,19.4,0.1,2.2,1.0,,12.0,0.3,TACO,,g,,0.001
+"Cajá-Manga, cru",cajamanga cru,Frutas e derivados,46.0,1.3,11.4,0.0,2.6,1.0,,13.0,0.2,TACO,,g,,0.001
+"Cajá, polpa, congelada",caja polpa congelada,Frutas e derivados,26.0,0.6,6.4,0.2,1.4,7.0,,9.0,0.3,TACO,,g,,0.007
+"Caju, cru",caju cru,Frutas e derivados,43.0,1.0,10.3,0.3,1.7,3.0,,1.0,0.2,TACO,,g,,0.003
+"Caju, polpa, congelada",caju polpa congelada,Frutas e derivados,37.0,0.5,9.4,0.2,0.8,4.0,,1.0,0.1,TACO,,g,,0.004
+"Caju, suco concentrado, envasado",caju suco concentrado envasado,Frutas e derivados,45.0,0.4,10.7,0.2,0.6,45.0,,1.0,0.1,TACO,,g,,0.045
+"Caqui, chocolate, cru",caqui chocolate cru,Frutas e derivados,71.0,0.4,19.3,0.1,6.5,2.0,,18.0,0.1,TACO,,g,,0.002
+"Carambola, crua",carambola crua,Frutas e derivados,46.0,0.9,11.5,0.2,2.0,4.0,,5.0,0.2,TACO,,g,,0.004
+"Ciriguela, crua",ciriguela crua,Frutas e derivados,76.0,1.4,18.9,0.4,3.9,2.0,,27.0,0.4,TACO,,g,,0.002
+"Cupuaçu, cru",cupuacu cru,Frutas e derivados,49.0,1.2,10.4,1.0,3.1,3.0,,13.0,0.5,TACO,,g,,0.003
+"Cupuaçu, polpa, congelada",cupuacu polpa congelada,Frutas e derivados,49.0,0.8,11.4,0.6,1.6,1.0,,5.0,0.3,TACO,,g,,0.001
+"Figo, cru",figo cru,Frutas e derivados,41.0,1.0,10.2,0.2,1.8,0.0,,27.0,0.2,TACO,,g,,0.0
+"Figo, enlatado, em calda",figo enlatado em calda,Frutas e derivados,184.0,0.6,50.3,0.2,2.0,7.0,,33.0,0.5,TACO,,g,,0.007
+"Fruta-pão, crua",frutapao crua,Frutas e derivados,67.0,1.1,17.2,0.2,5.5,1.0,,34.0,0.2,TACO,,g,,0.001
+"Goiaba, branca, com casca, crua",goiaba branca com casca crua,Frutas e derivados,52.0,0.9,12.4,0.5,6.3,0.0,,5.0,0.2,TACO,,g,,0.0
+"Goiaba, doce em pasta",goiaba doce em pasta,Frutas e derivados,269.0,0.6,74.1,0.0,3.7,4.0,,10.0,0.4,TACO,,g,,0.004
+"Goiaba, doce, cascão",goiaba doce cascao,Frutas e derivados,286.0,0.4,78.7,0.1,4.4,11.0,,15.0,0.4,TACO,,g,,0.011
+"Goiaba, vermelha, com casca, crua",goiaba vermelha com casca crua,Frutas e derivados,54.0,1.1,13.0,0.4,6.2,0.0,,4.0,0.2,TACO,,g,,0.0
+"Graviola, crua",graviola crua,Frutas e derivados,62.0,0.8,15.8,0.2,1.9,4.0,,40.0,0.2,TACO,,g,,0.004
+"Graviola, polpa, congelada",graviola polpa congelada,Frutas e derivados,38.0,0.6,9.8,0.1,1.2,3.0,,6.0,0.1,TACO,,g,,0.003
+"Jabuticaba, crua",jabuticaba crua,Frutas e derivados,58.0,0.6,15.3,0.1,2.3,0.0,,8.0,0.1,TACO,,g,,0.0
+"Jaca, crua",jaca crua,Frutas e derivados,88.0,1.4,22.5,0.3,2.4,2.0,,11.0,0.4,TACO,,g,,0.002
+"Jambo, cru",jambo cru,Frutas e derivados,27.0,0.9,6.5,0.1,5.1,22.0,,14.0,0.1,TACO,,g,,0.022
+"Jamelão, cru",jamelao cru,Frutas e derivados,41.0,0.5,10.6,0.1,1.8,1.0,,3.0,0.0,TACO,,g,,0.001
+"Kiwi, cru",kiwi cru,Frutas e derivados,51.0,1.3,11.5,0.6,2.7,0.0,,24.0,0.3,TACO,,g,,0.0
+"Laranja, baía, crua",laranja baia crua,Frutas e derivados,45.0,1.0,11.5,0.1,1.1,0.0,,35.0,0.1,TACO,,g,,0.0
+"Laranja, baía, suco",laranja baia suco,Frutas e derivados,37.0,0.7,8.7,0.0,0.0,0.0,,6.0,0.1,TACO,,g,,0.0
+"Laranja, da terra, crua",laranja da terra crua,Frutas e derivados,51.0,1.1,12.9,0.2,4.0,1.0,,51.0,0.1,TACO,,g,,0.001
+"Laranja, da terra, suco",laranja da terra suco,Frutas e derivados,41.0,0.7,9.6,0.1,1.0,0.0,,13.0,0.1,TACO,,g,,0.0
+"Laranja, lima, crua",laranja lima crua,Frutas e derivados,46.0,1.1,11.5,0.1,1.8,1.0,,31.0,0.1,TACO,,g,,0.001
+"Laranja, lima, suco",laranja lima suco,Frutas e derivados,39.0,0.7,9.2,0.1,0.4,0.0,,8.0,0.0,TACO,,g,,0.0
+"Laranja, pêra, crua",laranja pera crua,Frutas e derivados,37.0,1.0,8.9,0.1,0.8,0.0,,22.0,0.1,TACO,,g,,0.0
+"Laranja, pêra, suco",laranja pera suco,Frutas e derivados,33.0,0.7,7.6,0.1,0.0,0.0,,7.0,0.0,TACO,,g,,0.0
+"Laranja, valência, crua",laranja valencia crua,Frutas e derivados,46.0,0.8,11.7,0.2,1.7,1.0,,34.0,0.1,TACO,,g,,0.001
+"Laranja, valência, suco",laranja valencia suco,Frutas e derivados,36.0,0.5,8.6,0.1,0.4,0.0,,9.0,0.0,TACO,,g,,0.0
+"Limão, cravo, suco",limao cravo suco,Frutas e derivados,14.0,0.3,5.2,0.0,0.0,0.0,,10.0,0.1,TACO,,g,,0.0
+"Limão, galego, suco",limao galego suco,Frutas e derivados,22.0,0.6,7.3,0.1,0.0,0.0,,5.0,0.1,TACO,,g,,0.0
+"Limão, tahiti, cru",limao tahiti cru,Frutas e derivados,32.0,0.9,11.1,0.1,1.2,1.0,,51.0,0.2,TACO,,g,,0.001
+"Maçã, Argentina, com casca, crua",maca argentina com casca crua,Frutas e derivados,63.0,0.2,16.6,0.2,2.0,1.0,,3.0,0.1,TACO,,g,,0.001
+"Maçã, Fuji, com casca, crua",maca fuji com casca crua,Frutas e derivados,56.0,0.3,15.2,0.0,1.3,0.0,,2.0,0.1,TACO,,g,,0.0
+"Macaúba, crua",macauba crua,Frutas e derivados,404.0,2.1,13.9,40.7,13.4,1.0,,67.0,0.8,TACO,,g,,0.001
+"Mamão, doce em calda, drenado",mamao doce em calda drenado,Frutas e derivados,196.0,0.2,54.0,0.1,1.3,3.0,,20.0,0.1,TACO,,g,,0.003
+"Mamão, Formosa, cru",mamao formosa cru,Frutas e derivados,45.0,0.8,11.6,0.1,1.8,3.0,,25.0,0.2,TACO,,g,,0.003
+"Mamão, Papaia, cru",mamao papaia cru,Frutas e derivados,40.0,0.5,10.4,0.1,1.0,2.0,,22.0,0.2,TACO,,g,,0.002
+"Mamão verde, doce em calda, drenado",mamao verde doce em calda drenado,Frutas e derivados,209.0,0.3,57.6,0.1,1.2,5.0,,12.0,0.2,TACO,,g,,0.005
+"Manga, Haden, crua",manga haden crua,Frutas e derivados,64.0,0.4,16.7,0.3,1.6,1.0,,12.0,0.1,TACO,,g,,0.001
+"Manga, Palmer, crua",manga palmer crua,Frutas e derivados,72.0,0.4,19.4,0.2,1.6,2.0,,12.0,0.1,TACO,,g,,0.002
+"Manga, polpa, congelada",manga polpa congelada,Frutas e derivados,48.0,0.4,12.5,0.2,1.1,7.0,,7.0,0.1,TACO,,g,,0.007
+"Manga, Tommy Atkins, crua",manga tommy atkins crua,Frutas e derivados,51.0,0.9,12.8,0.2,2.1,0.0,,8.0,0.1,TACO,,g,,0.0
+"Maracujá, cru",maracuja cru,Frutas e derivados,68.0,2.0,12.3,2.1,1.1,2.0,,5.0,0.6,TACO,,g,,0.002
+"Maracujá, polpa, congelada",maracuja polpa congelada,Frutas e derivados,39.0,0.8,9.6,0.2,0.5,8.0,,5.0,0.3,TACO,,g,,0.008
+"Maracujá, suco concentrado, envasado",maracuja suco concentrado envasado,Frutas e derivados,42.0,0.8,9.6,0.2,0.4,22.0,,4.0,0.3,TACO,,g,,0.022
+"Melancia, crua",melancia crua,Frutas e derivados,33.0,0.9,8.1,0.0,0.1,0.0,,8.0,0.2,TACO,,g,,0.0
+"Melão, cru",melao cru,Frutas e derivados,29.0,0.7,7.5,0.0,0.3,11.0,,3.0,0.2,TACO,,g,,0.011
+"Mexerica, Murcote, crua",mexerica murcote crua,Frutas e derivados,58.0,0.9,14.9,0.1,3.1,1.0,,33.0,0.1,TACO,,g,,0.001
+"Mexerica, Rio, crua",mexerica rio crua,Frutas e derivados,37.0,0.7,9.3,0.1,2.7,2.0,,17.0,0.1,TACO,,g,,0.002
+"Morango, cru",morango cru,Frutas e derivados,30.0,0.9,6.8,0.3,1.7,0.0,,11.0,0.3,TACO,,g,,0.0
+"Nêspera, crua",nespera crua,Frutas e derivados,43.0,0.3,11.5,0.0,3.0,0.0,,20.0,0.1,TACO,,g,,0.0
+"Pequi, cru",pequi cru,Frutas e derivados,205.0,2.3,13.0,18.0,19.0,0.0,,32.0,0.3,TACO,,g,,0.0
+"Pêra, Park, crua",pera park crua,Frutas e derivados,61.0,0.2,16.1,0.2,3.0,1.0,,9.0,0.3,TACO,,g,,0.001
+"Pêra, Williams, crua",pera williams crua,Frutas e derivados,53.0,0.6,14.0,0.1,3.0,0.0,,8.0,0.1,TACO,,g,,0.0
+"Pêssego, Aurora, cru",pessego aurora cru,Frutas e derivados,36.0,0.8,9.3,0.0,1.4,0.0,,3.0,0.2,TACO,,g,,0.0
+"Pêssego, enlatado, em calda",pessego enlatado em calda,Frutas e derivados,63.0,0.7,16.9,0.0,1.0,3.0,,4.0,0.6,TACO,,g,,0.003
+"Pinha, crua",pinha crua,Frutas e derivados,88.0,1.5,22.4,0.3,3.4,1.0,,21.0,0.2,TACO,,g,,0.001
+"Pitanga, crua",pitanga crua,Frutas e derivados,41.0,0.9,10.2,0.2,3.2,2.0,,18.0,0.4,TACO,,g,,0.002
+"Pitanga, polpa, congelada",pitanga polpa congelada,Frutas e derivados,19.0,0.3,4.8,0.1,0.7,5.0,,8.0,0.4,TACO,,g,,0.005
+"Romã, crua",roma crua,Frutas e derivados,56.0,0.4,15.1,0.0,0.4,1.0,,5.0,0.3,TACO,,g,,0.001
+"Tamarindo, cru",tamarindo cru,Frutas e derivados,276.0,3.2,72.5,0.5,6.4,0.0,,37.0,0.6,TACO,,g,,0.0
+"Tangerina, Poncã, crua",tangerina ponca crua,Frutas e derivados,38.0,0.8,9.6,0.1,0.9,0.0,,13.0,0.1,TACO,,g,,0.0
+"Tangerina, Poncã, suco",tangerina ponca suco,Frutas e derivados,36.0,0.5,8.8,0.0,0.0,0.0,,4.0,0.0,TACO,,g,,0.0
+"Tucumã, cru",tucuma cru,Frutas e derivados,262.0,2.1,26.5,19.1,12.7,4.0,,46.0,0.6,TACO,,g,,0.004
+"Umbu, cru",umbu cru,Frutas e derivados,37.0,0.8,9.4,0.0,2.0,0.0,,12.0,0.1,TACO,,g,,0.0
+"Umbu, polpa, congelada",umbu polpa congelada,Frutas e derivados,34.0,0.5,8.8,0.1,1.3,6.0,,11.0,0.2,TACO,,g,,0.006
+"Uva, Itália, crua",uva italia crua,Frutas e derivados,53.0,0.7,13.6,0.2,0.9,0.0,,7.0,0.1,TACO,,g,,0.0
+"Uva, Rubi, crua",uva rubi crua,Frutas e derivados,49.0,0.6,12.7,0.2,0.9,8.0,,8.0,0.2,TACO,,g,,0.008
+"Uva, suco concentrado, envasado",uva suco concentrado envasado,Frutas e derivados,58.0,0.0,14.7,0.0,0.2,10.0,,9.0,0.1,TACO,,g,,0.01
+"Azeite, de dendê",azeite de dende,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Azeite, de oliva, extra virgem",azeite de oliva extra virgem,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Manteiga, com sal",manteiga com sal,Gorduras e óleos,726.0,0.4,0.1,82.4,,579.0,201.0,9.0,0.2,TACO,,g,,0.579
+"Manteiga, sem sal",manteiga sem sal,Gorduras e óleos,758.0,0.4,0.0,86.0,,4.0,214.0,4.0,0.0,TACO,,g,,0.004
+"Margarina, com óleo hidrogenado, com sal (65% de lipídeos)",margarina com oleo hidrogenado com sal 65 de lipideos,Gorduras e óleos,596.0,0.0,0.0,67.4,,894.0,,6.0,0.1,TACO,,g,,0.894
+"Margarina, com óleo hidrogenado, sem sal (80% de lipídeos)",margarina com oleo hidrogenado sem sal 80 de lipideos,Gorduras e óleos,723.0,0.0,0.0,81.7,,78.0,,3.0,0.1,TACO,,g,,0.078
+"Margarina, com óleo interesterificado, com sal (65%de lipídeos)",margarina com oleo interesterificado com sal 65de lipideos,Gorduras e óleos,594.0,0.0,0.0,67.2,,561.0,,5.0,0.0,TACO,,g,,0.561
+"Margarina, com óleo interesterificado, sem sal (65% de lipídeos)",margarina com oleo interesterificado sem sal 65 de lipideos,Gorduras e óleos,593.0,0.0,0.0,67.1,,33.0,,5.0,0.1,TACO,,g,,0.033
+"Óleo, de babaçu",oleo de babacu,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Óleo, de canola",oleo de canola,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Óleo, de girassol",oleo de girassol,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Óleo, de milho",oleo de milho,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Óleo, de pequi",oleo de pequi,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Óleo, de soja",oleo de soja,Gorduras e óleos,884.0,,,100.0,,,,,,TACO,,g,,
+"Abadejo, filé, congelado, assado",abadejo file congelado assado,Pescados e frutos do mar,112.0,23.5,0.0,1.2,,334.0,103.0,23.0,0.5,TACO,,g,,0.334
+"Abadejo, filé, congelado,cozido",abadejo file congelado cozido,Pescados e frutos do mar,91.0,19.3,0.0,0.9,,189.0,87.0,17.0,0.3,TACO,,g,,0.189
+"Abadejo, filé, congelado, cru",abadejo file congelado cru,Pescados e frutos do mar,59.0,13.1,0.0,0.4,,79.0,31.0,10.0,0.1,TACO,,g,,0.079
+"Abadejo, filé, congelado, grelhado",abadejo file congelado grelhado,Pescados e frutos do mar,130.0,27.6,0.0,1.3,,305.0,136.0,20.0,0.3,TACO,,g,,0.305
+"Atum, conserva em óleo",atum conserva em oleo,Pescados e frutos do mar,166.0,26.2,0.0,6.0,,362.0,53.0,7.0,1.2,TACO,,g,,0.362
+"Atum, fresco, cru",atum fresco cru,Pescados e frutos do mar,118.0,25.7,0.0,0.9,,30.0,48.0,7.0,1.3,TACO,,g,,0.03
+"Bacalhau, salgado, cru",bacalhau salgado cru,Pescados e frutos do mar,136.0,29.0,0.0,1.3,,13585.0,139.0,157.0,0.9,TACO,,g,,13.585
+"Bacalhau, salgado, refogado",bacalhau salgado refogado,Pescados e frutos do mar,140.0,24.0,1.2,3.6,,1256.0,112.0,59.0,0.2,TACO,,g,,1.256
+"Cação, posta, com farinha de trigo, frita",cacao posta com farinha de trigo frita,Pescados e frutos do mar,208.0,25.0,3.1,10.0,0.5,160.0,75.0,30.0,1.0,TACO,,g,,0.16
+"Cação, posta, cozida",cacao posta cozida,Pescados e frutos do mar,116.0,25.6,0.0,0.7,,115.0,83.0,10.0,0.3,TACO,,g,,0.115
+"Cação, posta, crua",cacao posta crua,Pescados e frutos do mar,83.0,17.9,0.0,0.8,,176.0,36.0,9.0,0.2,TACO,,g,,0.176
+"Camarão, Rio Grande, grande, cozido",camarao rio grande grande cozido,Pescados e frutos do mar,90.0,19.0,0.0,1.0,,367.0,241.0,90.0,1.3,TACO,,g,,0.367
+"Camarão, Rio Grande, grande, cru",camarao rio grande grande cru,Pescados e frutos do mar,47.0,10.0,0.0,0.5,,201.0,124.0,51.0,0.7,TACO,,g,,0.201
+"Camarão, Sete Barbas, sem cabeça, com casca, frito",camarao sete barbas sem cabeca com casca frito,Pescados e frutos do mar,231.0,18.4,2.9,15.6,,99.0,283.0,960.0,2.4,TACO,,g,,0.099
+"Caranguejo, cozido",caranguejo cozido,Pescados e frutos do mar,83.0,18.5,0.0,0.4,,360.0,85.0,357.0,2.9,TACO,,g,,0.36
+"Corimba, cru",corimba cru,Pescados e frutos do mar,128.0,17.4,0.0,6.0,,47.0,40.0,40.0,0.5,TACO,,g,,0.047
+"Corimbatá, assado",corimbata assado,Pescados e frutos do mar,261.0,19.9,0.0,19.6,,40.0,80.0,22.0,1.0,TACO,,g,,0.04
+"Corimbatá, cozido",corimbata cozido,Pescados e frutos do mar,239.0,20.1,0.0,16.9,,37.0,75.0,65.0,0.6,TACO,,g,,0.037
+"Corvina de água doce, crua",corvina de agua doce crua,Pescados e frutos do mar,101.0,18.9,0.0,2.2,,45.0,73.0,39.0,0.3,TACO,,g,,0.045
+"Corvina do mar, crua",corvina do mar crua,Pescados e frutos do mar,94.0,18.6,0.0,1.6,,68.0,67.0,,0.4,TACO,,g,,0.068
+"Corvina grande, assada",corvina grande assada,Pescados e frutos do mar,147.0,26.8,0.0,3.6,,85.0,117.0,60.0,0.5,TACO,,g,,0.085
+"Corvina grande, cozida",corvina grande cozida,Pescados e frutos do mar,100.0,23.4,0.0,2.6,,68.0,123.0,69.0,0.6,TACO,,g,,0.068
+"Dourada de água doce, fresca",dourada de agua doce fresca,Pescados e frutos do mar,131.0,18.8,0.0,5.6,,40.0,52.0,12.0,0.2,TACO,,g,,0.04
+"Lambari, congelado, cru",lambari congelado cru,Pescados e frutos do mar,131.0,16.8,0.0,6.5,,48.0,159.0,1181.0,0.9,TACO,,g,,0.048
+"Lambari, congelado, frito",lambari congelado frito,Pescados e frutos do mar,327.0,28.4,0.0,22.8,,65.0,246.0,1881.0,0.8,TACO,,g,,0.065
+"Lambari, fresco, cru",lambari fresco cru,Pescados e frutos do mar,152.0,15.7,0.0,9.4,,41.0,144.0,590.0,0.6,TACO,,g,,0.041
+"Manjuba, com farinha de trigo, frita",manjuba com farinha de trigo frita,Pescados e frutos do mar,344.0,23.5,10.2,22.6,0.4,37.0,282.0,763.0,3.0,TACO,,g,,0.037
+"Manjuba, frita",manjuba frita,Pescados e frutos do mar,349.0,30.1,0.0,24.5,,41.0,270.0,575.0,0.9,TACO,,g,,0.041
+"Merluza, filé, assado",merluza file assado,Pescados e frutos do mar,122.0,26.6,0.0,0.9,,120.0,91.0,36.0,0.4,TACO,,g,,0.12
+"Merluza, filé, cru",merluza file cru,Pescados e frutos do mar,89.0,16.6,0.0,2.0,,80.0,57.0,20.0,0.2,TACO,,g,,0.08
+"Merluza, filé, frito",merluza file frito,Pescados e frutos do mar,192.0,26.9,0.0,8.5,,90.0,109.0,36.0,0.4,TACO,,g,,0.09
+"Pescada, branca, crua",pescada branca crua,Pescados e frutos do mar,111.0,16.3,0.0,4.6,,76.0,51.0,16.0,0.2,TACO,,g,,0.076
+"Pescada, branca, frita",pescada branca frita,Pescados e frutos do mar,223.0,27.4,0.0,11.8,,107.0,165.0,378.0,0.5,TACO,,g,,0.107
+"Pescada, filé, com farinha de trigo, frito",pescada file com farinha de trigo frito,Pescados e frutos do mar,283.0,21.4,5.0,19.1,0.0,91.0,73.0,26.0,0.9,TACO,,g,,0.091
+"Pescada, filé, cru",pescada file cru,Pescados e frutos do mar,107.0,16.7,0.0,4.0,,77.0,65.0,14.0,0.2,TACO,,g,,0.077
+"Pescada, filé, frito",pescada file frito,Pescados e frutos do mar,154.0,28.6,0.0,3.6,,115.0,81.0,10.0,0.3,TACO,,g,,0.115
+"Pescada, filé, molho escabeche",pescada file molho escabeche,Pescados e frutos do mar,142.0,11.8,5.0,8.0,0.8,51.0,43.0,20.0,1.5,TACO,,g,,0.051
+"Pescadinha, crua",pescadinha crua,Pescados e frutos do mar,76.0,15.5,0.0,1.1,,120.0,84.0,332.0,0.5,TACO,,g,,0.12
+"Pintado, assado",pintado assado,Pescados e frutos do mar,192.0,36.5,0.0,4.0,,81.0,126.0,114.0,0.8,TACO,,g,,0.081
+"Pintado, cru",pintado cru,Pescados e frutos do mar,91.0,18.6,0.0,1.3,,43.0,50.0,12.0,0.2,TACO,,g,,0.043
+"Pintado, grelhado",pintado grelhado,Pescados e frutos do mar,152.0,30.8,0.0,2.3,,53.0,99.0,69.0,0.5,TACO,,g,,0.053
+"Porquinho, cru",porquinho cru,Pescados e frutos do mar,93.0,20.5,0.0,0.6,,67.0,49.0,26.0,0.4,TACO,,g,,0.067
+"Salmão, filé, com pele, fresco,  grelhado",salmao file com pele fresco grelhado,Pescados e frutos do mar,229.0,23.9,0.0,14.0,,85.0,85.0,29.0,0.5,TACO,,g,,0.085
+"Salmão, sem pele, fresco, cru",salmao sem pele fresco cru,Pescados e frutos do mar,170.0,19.3,0.0,9.7,,64.0,53.0,9.0,0.2,TACO,,g,,0.064
+"Salmão, sem pele, fresco, grelhado",salmao sem pele fresco grelhado,Pescados e frutos do mar,243.0,26.1,0.0,14.5,,96.0,73.0,15.0,0.4,TACO,,g,,0.096
+"Sardinha, assada",sardinha assada,Pescados e frutos do mar,164.0,32.2,0.0,3.0,,74.0,109.0,438.0,1.3,TACO,,g,,0.074
+"Sardinha, conserva em óleo",sardinha conserva em oleo,Pescados e frutos do mar,285.0,15.9,0.0,24.0,,666.0,73.0,550.0,3.5,TACO,,g,,0.666
+"Sardinha, frita",sardinha frita,Pescados e frutos do mar,257.0,33.4,0.0,12.7,,60.0,103.0,482.0,1.1,TACO,,g,,0.06
+"Sardinha, inteira, crua",sardinha inteira crua,Pescados e frutos do mar,114.0,21.1,0.0,2.7,,60.0,61.0,167.0,1.3,TACO,,g,,0.06
+"Tucunaré, filé, congelado, cru",tucunare file congelado cru,Pescados e frutos do mar,88.0,18.0,0.0,1.2,,57.0,47.0,19.0,0.3,TACO,,g,,0.057
+Apresuntado,apresuntado,Carnes e derivados,129.0,13.5,2.9,6.7,,943.0,38.0,23.0,0.9,TACO,,g,,0.943
+"Caldo de carne, tablete",caldo de carne tablete,Carnes e derivados,241.0,7.8,15.1,16.6,0.6,22180.0,0.0,129.0,0.0,TACO,,g,,22.18
+"Caldo de galinha, tablete",caldo de galinha tablete,Carnes e derivados,251.0,6.3,10.6,20.4,11.8,22300.0,2.0,16.0,0.7,TACO,,g,,22.3
+"Carne, bovina, acém, moído, cozido",carne bovina acem moido cozido,Carnes e derivados,212.0,26.7,0.0,10.9,,52.0,103.0,4.0,2.7,TACO,,g,,0.052
+"Carne, bovina, acém, moído, cru",carne bovina acem moido cru,Carnes e derivados,137.0,19.4,0.0,5.9,,49.0,58.0,3.0,1.8,TACO,,g,,0.049
+"Carne, bovina, acém, sem gordura, cozido",carne bovina acem sem gordura cozido,Carnes e derivados,215.0,27.3,0.0,10.9,,56.0,107.0,7.0,2.4,TACO,,g,,0.056
+"Carne, bovina, acém, sem gordura, cru",carne bovina acem sem gordura cru,Carnes e derivados,144.0,20.8,0.0,6.1,,50.0,53.0,5.0,1.5,TACO,,g,,0.05
+"Carne, bovina, almôndegas, cruas",carne bovina almondegas cruas,Carnes e derivados,189.0,12.3,9.8,11.2,,621.0,34.0,22.0,1.6,TACO,,g,,0.621
+"Carne, bovina, almôndegas, fritas",carne bovina almondegas fritas,Carnes e derivados,272.0,18.2,14.3,15.8,,1030.0,36.0,27.0,1.9,TACO,,g,,1.03
+"Carne, bovina, bucho, cozido",carne bovina bucho cozido,Carnes e derivados,133.0,21.6,0.0,4.5,,38.0,245.0,13.0,0.6,TACO,,g,,0.038
+"Carne, bovina, bucho, cru",carne bovina bucho cru,Carnes e derivados,137.0,20.5,0.0,5.5,,45.0,145.0,9.0,0.5,TACO,,g,,0.045
+"Carne, bovina, capa de contra-filé, com gordura, crua",carne bovina capa de contrafile com gordura crua,Carnes e derivados,217.0,19.2,0.0,15.0,,58.0,63.0,6.0,1.5,TACO,,g,,0.058
+"Carne, bovina, capa de contra-filé, com gordura, grelhada",carne bovina capa de contrafile com gordura grelhada,Carnes e derivados,312.0,30.7,0.0,20.0,,81.0,120.0,7.0,2.6,TACO,,g,,0.081
+"Carne, bovina, capa de contra-filé, sem gordura, crua",carne bovina capa de contrafile sem gordura crua,Carnes e derivados,131.0,21.5,0.0,4.3,,79.0,58.0,6.0,2.0,TACO,,g,,0.079
+"Carne, bovina, capa de contra-filé, sem gordura, grelhada",carne bovina capa de contrafile sem gordura grelhada,Carnes e derivados,239.0,35.1,0.0,10.0,,83.0,80.0,9.0,2.8,TACO,,g,,0.083
+"Carne, bovina, charque, cozido",carne bovina charque cozido,Carnes e derivados,263.0,36.4,0.0,11.9,,1443.0,113.0,15.0,3.5,TACO,,g,,1.443
+"Carne, bovina, charque, cru",carne bovina charque cru,Carnes e derivados,249.0,22.7,0.0,16.8,,5875.0,81.0,15.0,1.5,TACO,,g,,5.875
+"Carne, bovina, contra-filé, à milanesa",carne bovina contrafile a milanesa,Carnes e derivados,352.0,20.6,12.2,24.0,0.4,77.0,99.0,15.0,2.9,TACO,,g,,0.077
+"Carne, bovina, contra-filé de costela, cru",carne bovina contrafile de costela cru,Carnes e derivados,202.0,19.8,0.0,13.1,,39.0,52.0,3.0,1.6,TACO,,g,,0.039
+"Carne, bovina, contra-filé de costela, grelhado",carne bovina contrafile de costela grelhado,Carnes e derivados,275.0,29.9,0.0,16.3,,51.0,98.0,4.0,2.8,TACO,,g,,0.051
+"Carne, bovina, contra-filé, com gordura, cru",carne bovina contrafile com gordura cru,Carnes e derivados,206.0,21.2,0.0,12.8,,44.0,73.0,4.0,1.3,TACO,,g,,0.044
+"Carne, bovina, contra-filé, com gordura, grelhado",carne bovina contrafile com gordura grelhado,Carnes e derivados,278.0,32.4,0.0,15.5,,57.0,144.0,4.0,2.4,TACO,,g,,0.057
+"Carne, bovina, contra-filé, sem gordura, cru",carne bovina contrafile sem gordura cru,Carnes e derivados,157.0,24.0,0.0,6.0,,53.0,59.0,4.0,1.7,TACO,,g,,0.053
+"Carne, bovina, contra-filé, sem gordura, grelhado",carne bovina contrafile sem gordura grelhado,Carnes e derivados,194.0,35.9,0.0,4.5,,58.0,102.0,5.0,2.4,TACO,,g,,0.058
+"Carne, bovina, costela, assada",carne bovina costela assada,Carnes e derivados,373.0,28.8,0.0,27.7,,92.0,95.0,28.0,2.2,TACO,,g,,0.092
+"Carne, bovina, costela, crua",carne bovina costela crua,Carnes e derivados,358.0,16.7,0.0,31.8,,70.0,44.0,,1.2,TACO,,g,,0.07
+"Carne, bovina, coxão duro, sem gordura, cozido",carne bovina coxao duro sem gordura cozido,Carnes e derivados,217.0,31.9,0.0,8.9,,41.0,71.0,4.0,1.7,TACO,,g,,0.041
+"Carne, bovina, coxão duro, sem gordura, cru",carne bovina coxao duro sem gordura cru,Carnes e derivados,148.0,21.5,0.0,6.2,,49.0,60.0,3.0,1.9,TACO,,g,,0.049
+"Carne, bovina, coxão mole, sem gordura, cozido",carne bovina coxao mole sem gordura cozido,Carnes e derivados,219.0,32.4,0.0,8.9,,44.0,84.0,4.0,2.6,TACO,,g,,0.044
+"Carne, bovina, coxão mole, sem gordura, cru",carne bovina coxao mole sem gordura cru,Carnes e derivados,169.0,21.2,0.0,8.7,,61.0,84.0,3.0,1.9,TACO,,g,,0.061
+"Carne, bovina, cupim, assado",carne bovina cupim assado,Carnes e derivados,330.0,28.6,0.0,23.0,,72.0,91.0,8.0,2.7,TACO,,g,,0.072
+"Carne, bovina, cupim, cru",carne bovina cupim cru,Carnes e derivados,221.0,19.5,0.0,15.3,,47.0,51.0,4.0,1.1,TACO,,g,,0.047
+"Carne, bovina, fígado, cru",carne bovina figado cru,Carnes e derivados,141.0,20.7,1.1,5.4,,76.0,393.0,4.0,5.6,TACO,,g,,0.076
+"Carne, bovina, fígado, grelhado",carne bovina figado grelhado,Carnes e derivados,225.0,29.9,4.2,9.0,,82.0,601.0,6.0,5.8,TACO,,g,,0.082
+"Carne, bovina, filé mingnon, sem gordura, cru",carne bovina file mingnon sem gordura cru,Carnes e derivados,143.0,21.6,0.0,5.6,,49.0,55.0,3.0,1.9,TACO,,g,,0.049
+"Carne, bovina, filé mingnon, sem gordura, grelhado",carne bovina file mingnon sem gordura grelhado,Carnes e derivados,220.0,32.8,0.0,8.8,,58.0,103.0,4.0,2.9,TACO,,g,,0.058
+"Carne, bovina, flanco, sem gordura, cozido",carne bovina flanco sem gordura cozido,Carnes e derivados,196.0,29.4,0.0,7.8,,42.0,62.0,4.0,2.8,TACO,,g,,0.042
+"Carne, bovina, flanco, sem gordura, cru",carne bovina flanco sem gordura cru,Carnes e derivados,141.0,20.0,0.0,6.2,,54.0,50.0,3.0,1.6,TACO,,g,,0.054
+"Carne, bovina, fraldinha, com gordura, cozida",carne bovina fraldinha com gordura cozida,Carnes e derivados,338.0,24.2,0.0,26.0,,39.0,65.0,3.0,2.0,TACO,,g,,0.039
+"Carne, bovina, fraldinha, com gordura, crua",carne bovina fraldinha com gordura crua,Carnes e derivados,221.0,17.6,0.0,16.1,,51.0,54.0,3.0,1.5,TACO,,g,,0.051
+"Carne, bovina, lagarto, cozido",carne bovina lagarto cozido,Carnes e derivados,222.0,32.9,0.0,9.1,,48.0,56.0,4.0,1.9,TACO,,g,,0.048
+"Carne, bovina, lagarto, cru",carne bovina lagarto cru,Carnes e derivados,135.0,20.5,0.0,5.2,,54.0,56.0,3.0,1.3,TACO,,g,,0.054
+"Carne, bovina, língua, cozida",carne bovina lingua cozida,Carnes e derivados,315.0,21.4,0.0,24.8,,59.0,105.0,6.0,2.1,TACO,,g,,0.059
+"Carne, bovina, língua, crua",carne bovina lingua crua,Carnes e derivados,215.0,17.1,0.0,15.8,,73.0,118.0,5.0,1.7,TACO,,g,,0.073
+"Carne, bovina, maminha, crua",carne bovina maminha crua,Carnes e derivados,153.0,20.9,0.0,7.0,,37.0,51.0,3.0,1.1,TACO,,g,,0.037
+"Carne, bovina, maminha, grelhada",carne bovina maminha grelhada,Carnes e derivados,153.0,30.7,0.0,2.4,,58.0,88.0,4.0,2.4,TACO,,g,,0.058
+"Carne, bovina, miolo de alcatra, sem gordura, cru",carne bovina miolo de alcatra sem gordura cru,Carnes e derivados,163.0,21.6,0.0,7.8,,43.0,60.0,3.0,2.0,TACO,,g,,0.043
+"Carne, bovina, miolo de alcatra, sem gordura, grelhado",carne bovina miolo de alcatra sem gordura grelhado,Carnes e derivados,241.0,31.9,0.0,11.6,,52.0,92.0,5.0,3.2,TACO,,g,,0.052
+"Carne, bovina, músculo, sem gordura, cozido",carne bovina musculo sem gordura cozido,Carnes e derivados,194.0,31.2,0.0,6.7,,62.0,56.0,5.0,2.4,TACO,,g,,0.062
+"Carne, bovina, músculo, sem gordura, cru",carne bovina musculo sem gordura cru,Carnes e derivados,142.0,21.6,0.0,5.5,,66.0,51.0,4.0,1.9,TACO,,g,,0.066
+"Carne, bovina, paleta, com gordura, crua",carne bovina paleta com gordura crua,Carnes e derivados,159.0,21.4,0.0,7.5,,65.0,58.0,4.0,1.8,TACO,,g,,0.065
+"Carne, bovina, paleta, sem gordura, cozida",carne bovina paleta sem gordura cozida,Carnes e derivados,194.0,29.7,0.0,7.4,,58.0,56.0,6.0,2.2,TACO,,g,,0.058
+"Carne, bovina, paleta, sem gordura, crua",carne bovina paleta sem gordura crua,Carnes e derivados,141.0,21.0,0.0,5.7,,66.0,42.0,4.0,1.9,TACO,,g,,0.066
+"Carne, bovina, patinho, sem gordura, cru",carne bovina patinho sem gordura cru,Carnes e derivados,133.0,21.7,0.0,4.5,,49.0,56.0,3.0,1.8,TACO,,g,,0.049
+"Carne, bovina, patinho, sem gordura, grelhado",carne bovina patinho sem gordura grelhado,Carnes e derivados,219.0,35.9,0.0,7.3,,60.0,126.0,5.0,3.0,TACO,,g,,0.06
+"Carne, bovina, peito, sem gordura, cozido",carne bovina peito sem gordura cozido,Carnes e derivados,338.0,22.2,0.0,27.0,,56.0,100.0,4.0,1.6,TACO,,g,,0.056
+"Carne, bovina, peito, sem gordura, cru",carne bovina peito sem gordura cru,Carnes e derivados,259.0,17.6,0.0,20.4,,64.0,59.0,4.0,1.3,TACO,,g,,0.064
+"Carne, bovina, picanha, com gordura, crua",carne bovina picanha com gordura crua,Carnes e derivados,213.0,18.8,0.0,14.7,,38.0,60.0,2.0,1.7,TACO,,g,,0.038
+"Carne, bovina, picanha, com gordura, grelhada",carne bovina picanha com gordura grelhada,Carnes e derivados,289.0,26.4,0.0,19.5,,60.0,92.0,4.0,3.2,TACO,,g,,0.06
+"Carne, bovina, picanha, sem gordura, crua",carne bovina picanha sem gordura crua,Carnes e derivados,134.0,21.3,0.0,4.7,,61.0,75.0,3.0,2.1,TACO,,g,,0.061
+"Carne, bovina, picanha, sem gordura, grelhada",carne bovina picanha sem gordura grelhada,Carnes e derivados,238.0,31.9,0.0,11.3,,61.0,100.0,4.0,3.6,TACO,,g,,0.061
+"Carne, bovina, seca, cozida",carne bovina seca cozida,Carnes e derivados,313.0,26.9,0.0,21.9,,1943.0,100.0,13.0,1.9,TACO,,g,,1.943
+"Carne, bovina, seca, crua",carne bovina seca crua,Carnes e derivados,313.0,19.7,0.0,25.4,,4440.0,92.0,14.0,1.3,TACO,,g,,4.44
+"Coxinha de frango, frita",coxinha de frango frita,Carnes e derivados,283.0,9.6,34.5,11.8,5.0,532.0,15.0,18.0,1.3,TACO,,g,,0.532
+"Croquete, de carne, cru",croquete de carne cru,Carnes e derivados,246.0,12.0,13.9,15.6,,711.0,30.0,15.0,2.5,TACO,,g,,0.711
+"Croquete, de carne, frito",croquete de carne frito,Carnes e derivados,347.0,16.9,18.1,22.7,,916.0,38.0,18.0,2.3,TACO,,g,,0.916
+"Empada de frango, pré-cozida, assada",empada de frango precozida assada,Carnes e derivados,358.0,6.9,47.5,15.6,2.2,525.0,23.0,16.0,1.2,TACO,,g,,0.525
+"Empada, de frango, pré-cozida",empada de frango precozida,Carnes e derivados,377.0,7.3,35.5,22.9,2.2,771.0,23.0,14.0,0.7,TACO,,g,,0.771
+"Frango, asa, com pele, crua",frango asa com pele crua,Carnes e derivados,213.0,18.1,0.0,15.1,,96.0,113.0,11.0,0.6,TACO,,g,,0.096
+"Frango, caipira, inteiro, com pele, cozido",frango caipira inteiro com pele cozido,Carnes e derivados,243.0,23.9,0.0,15.6,,56.0,110.0,17.0,1.7,TACO,,g,,0.056
+"Frango, caipira, inteiro, sem pele, cozido",frango caipira inteiro sem pele cozido,Carnes e derivados,196.0,29.6,0.0,7.7,,53.0,106.0,66.0,2.1,TACO,,g,,0.053
+"Frango, coração, cru",frango coracao cru,Carnes e derivados,222.0,12.6,0.0,18.6,,95.0,159.0,6.0,4.1,TACO,,g,,0.095
+"Frango, coração, grelhado",frango coracao grelhado,Carnes e derivados,207.0,22.4,0.6,12.1,,128.0,280.0,8.0,6.5,TACO,,g,,0.128
+"Frango, coxa, com pele, assada",frango coxa com pele assada,Carnes e derivados,215.0,28.5,0.1,10.4,,95.0,145.0,8.0,1.2,TACO,,g,,0.095
+"Frango, coxa, com pele, crua",frango coxa com pele crua,Carnes e derivados,161.0,17.1,0.0,9.8,,95.0,97.0,8.0,0.7,TACO,,g,,0.095
+"Frango, coxa, sem pele, cozida",frango coxa sem pele cozida,Carnes e derivados,167.0,26.9,0.0,5.8,,64.0,133.0,12.0,0.8,TACO,,g,,0.064
+"Frango, coxa, sem pele, crua",frango coxa sem pele crua,Carnes e derivados,120.0,17.8,0.0,4.9,,98.0,91.0,8.0,0.8,TACO,,g,,0.098
+"Frango, fígado, cru",frango figado cru,Carnes e derivados,106.0,17.6,0.0,3.5,,82.0,341.0,6.0,9.5,TACO,,g,,0.082
+"Frango, filé, à milanesa",frango file a milanesa,Carnes e derivados,221.0,28.5,7.5,7.8,1.1,122.0,84.0,9.0,1.1,TACO,,g,,0.122
+"Frango, inteiro, com pele, cru",frango inteiro com pele cru,Carnes e derivados,226.0,16.4,0.0,17.3,,63.0,85.0,6.0,0.6,TACO,,g,,0.063
+"Frango, inteiro, sem pele, assado",frango inteiro sem pele assado,Carnes e derivados,187.0,28.0,0.0,7.5,,70.0,111.0,9.0,0.6,TACO,,g,,0.07
+"Frango, inteiro, sem pele, cozido",frango inteiro sem pele cozido,Carnes e derivados,170.0,25.0,0.0,7.1,,51.0,99.0,8.0,0.5,TACO,,g,,0.051
+"Frango, inteiro, sem pele, cru",frango inteiro sem pele cru,Carnes e derivados,129.0,20.6,0.0,4.6,,73.0,78.0,7.0,0.5,TACO,,g,,0.073
+"Frango, peito, com pele, assado",frango peito com pele assado,Carnes e derivados,212.0,33.4,0.0,7.6,,56.0,109.0,8.0,0.5,TACO,,g,,0.056
+"Frango, peito, com pele, cru",frango peito com pele cru,Carnes e derivados,149.0,20.8,0.0,6.7,,62.0,80.0,8.0,0.4,TACO,,g,,0.062
+"Frango, peito, sem pele, cozido",frango peito sem pele cozido,Carnes e derivados,163.0,31.5,0.0,3.2,,36.0,89.0,6.0,0.3,TACO,,g,,0.036
+"Frango, peito, sem pele, cru",frango peito sem pele cru,Carnes e derivados,119.0,21.5,0.0,3.0,,56.0,59.0,7.0,0.4,TACO,,g,,0.056
+"Frango, peito, sem pele, grelhado",frango peito sem pele grelhado,Carnes e derivados,159.0,32.0,0.0,2.5,,50.0,89.0,5.0,0.3,TACO,,g,,0.05
+"Frango, sobrecoxa, com pele, assada",frango sobrecoxa com pele assada,Carnes e derivados,260.0,28.7,0.0,15.2,,96.0,158.0,11.0,1.2,TACO,,g,,0.096
+"Frango, sobrecoxa, com pele, crua",frango sobrecoxa com pele crua,Carnes e derivados,255.0,15.5,0.0,20.9,,68.0,88.0,7.0,0.7,TACO,,g,,0.068
+"Frango, sobrecoxa, sem pele, assada",frango sobrecoxa sem pele assada,Carnes e derivados,233.0,29.2,0.0,12.0,,106.0,145.0,12.0,1.2,TACO,,g,,0.106
+"Frango, sobrecoxa, sem pele, crua",frango sobrecoxa sem pele crua,Carnes e derivados,162.0,17.6,0.0,9.6,,80.0,84.0,6.0,0.9,TACO,,g,,0.08
+"Hambúrguer, bovino, cru",hamburguer bovino cru,Carnes e derivados,215.0,13.2,4.2,16.2,,869.0,70.0,34.0,1.9,TACO,,g,,0.869
+"Hambúrguer, bovino, frito",hamburguer bovino frito,Carnes e derivados,258.0,20.0,6.3,17.0,,1252.0,49.0,62.0,3.0,TACO,,g,,1.252
+"Hambúrguer, bovino, grelhado",hamburguer bovino grelhado,Carnes e derivados,210.0,13.2,11.3,12.4,,1090.0,59.0,56.0,2.6,TACO,,g,,1.09
+"Lingüiça, frango, crua",linguica frango crua,Carnes e derivados,218.0,14.2,0.0,17.4,,1126.0,64.0,11.0,0.5,TACO,,g,,1.126
+"Lingüiça, frango, frita",linguica frango frita,Carnes e derivados,245.0,18.3,0.0,18.5,,1374.0,76.0,15.0,0.8,TACO,,g,,1.374
+"Lingüiça, frango, grelhada",linguica frango grelhada,Carnes e derivados,244.0,18.2,0.0,18.4,,1351.0,80.0,14.0,0.7,TACO,,g,,1.351
+"Lingüiça, porco, crua",linguica porco crua,Carnes e derivados,227.0,16.1,0.0,17.6,,1176.0,53.0,6.0,0.4,TACO,,g,,1.176
+"Lingüiça, porco, frita",linguica porco frita,Carnes e derivados,280.0,20.5,0.0,21.3,,1432.0,75.0,8.0,0.9,TACO,,g,,1.432
+"Lingüiça, porco, grelhada",linguica porco grelhada,Carnes e derivados,296.0,23.2,0.0,21.9,,1456.0,82.0,8.0,1.0,TACO,,g,,1.456
+Mortadela,mortadela,Carnes e derivados,269.0,12.0,5.8,21.6,,1212.0,83.0,67.0,1.5,TACO,,g,,1.212
+"Peru, congelado, assado",peru congelado assado,Carnes e derivados,163.0,26.2,0.0,5.7,,628.0,91.0,14.0,0.6,TACO,,g,,0.628
+"Peru, congelado, cru",peru congelado cru,Carnes e derivados,94.0,18.1,0.0,1.8,,711.0,68.0,10.0,0.9,TACO,,g,,0.711
+"Porco, bisteca, crua",porco bisteca crua,Carnes e derivados,164.0,21.5,0.0,8.0,,54.0,56.0,6.0,0.5,TACO,,g,,0.054
+"Porco, bisteca, frita",porco bisteca frita,Carnes e derivados,311.0,33.7,0.0,18.5,,63.0,126.0,69.0,0.8,TACO,,g,,0.063
+"Porco, bisteca, grelhada",porco bisteca grelhada,Carnes e derivados,280.0,28.9,0.0,17.4,,51.0,82.0,34.0,0.9,TACO,,g,,0.051
+"Porco, costela, assada",porco costela assada,Carnes e derivados,402.0,30.2,0.0,30.3,,63.0,113.0,17.0,1.0,TACO,,g,,0.063
+"Porco, costela, crua",porco costela crua,Carnes e derivados,256.0,18.0,0.0,19.8,,88.0,69.0,15.0,0.9,TACO,,g,,0.088
+"Porco, lombo, assado",porco lombo assado,Carnes e derivados,210.0,35.7,0.0,6.4,,39.0,103.0,20.0,0.5,TACO,,g,,0.039
+"Porco, lombo, cru",porco lombo cru,Carnes e derivados,176.0,22.6,0.0,8.8,,53.0,55.0,4.0,0.5,TACO,,g,,0.053
+"Porco, orelha, salgada, crua",porco orelha salgada crua,Carnes e derivados,258.0,18.5,0.0,19.9,,616.0,83.0,5.0,1.4,TACO,,g,,0.616
+"Porco, pernil, assado",porco pernil assado,Carnes e derivados,262.0,32.1,0.0,13.9,,62.0,110.0,18.0,1.3,TACO,,g,,0.062
+"Porco, pernil, cru",porco pernil cru,Carnes e derivados,186.0,20.1,0.0,11.1,,102.0,59.0,13.0,0.9,TACO,,g,,0.102
+"Porco, rabo, salgado, cru",porco rabo salgado cru,Carnes e derivados,377.0,15.6,0.0,34.5,,1158.0,89.0,22.0,0.6,TACO,,g,,1.158
+"Presunto, com capa de gordura",presunto com capa de gordura,Carnes e derivados,128.0,14.4,1.4,6.8,,1021.0,40.0,12.0,0.7,TACO,,g,,1.021
+"Presunto, sem capa de gordura",presunto sem capa de gordura,Carnes e derivados,94.0,14.3,2.1,2.7,,1039.0,36.0,23.0,0.8,TACO,,g,,1.039
+"Quibe, assado",quibe assado,Carnes e derivados,136.0,14.6,12.9,2.7,1.9,40.0,34.0,16.0,2.2,TACO,,g,,0.04
+"Quibe, cru",quibe cru,Carnes e derivados,109.0,12.4,10.8,1.7,1.6,39.0,27.0,12.0,1.7,TACO,,g,,0.039
+"Quibe, frito",quibe frito,Carnes e derivados,254.0,14.9,12.3,15.8,,836.0,38.0,22.0,2.0,TACO,,g,,0.836
+Salame,salame,Carnes e derivados,398.0,25.8,2.9,30.6,,1574.0,85.0,87.0,1.3,TACO,,g,,1.574
+"Toucinho, cru",toucinho cru,Carnes e derivados,593.0,11.5,0.0,60.3,,50.0,73.0,2.0,0.4,TACO,,g,,0.05
+"Toucinho, frito",toucinho frito,Carnes e derivados,697.0,27.3,0.0,64.3,,125.0,89.0,9.0,0.9,TACO,,g,,0.125
+"Bebida láctea, pêssego",bebida lactea pessego,Leite e derivados,55.0,2.1,7.6,1.9,0.3,46.0,5.0,89.0,0.0,TACO,,g,,0.046
+Creme de Leite,creme de leite,Leite e derivados,221.0,1.5,4.5,22.5,,52.0,66.0,83.0,0.3,TACO,,g,,0.052
+"Iogurte, natural",iogurte natural,Leite e derivados,51.0,4.1,1.9,3.0,,52.0,14.0,143.0,0.0,TACO,,g,,0.052
+"Iogurte, natural, desnatado",iogurte natural desnatado,Leite e derivados,41.0,3.8,5.8,0.3,,60.0,3.0,157.0,0.0,TACO,,g,,0.06
+"Iogurte, sabor abacaxi",iogurte sabor abacaxi,Leite e derivados,,,,,,,6.0,,,TACO,,g,,
+"Iogurte, sabor morango",iogurte sabor morango,Leite e derivados,70.0,2.7,9.7,2.3,0.2,38.0,7.0,101.0,0.0,TACO,,g,,0.038
+"Iogurte, sabor pêssego",iogurte sabor pessego,Leite e derivados,68.0,2.5,9.4,2.3,0.7,37.0,8.0,95.0,0.1,TACO,,g,,0.037
+"Leite, condensado",leite condensado,Leite e derivados,313.0,7.7,57.0,6.7,,94.0,28.0,246.0,0.1,TACO,,g,,0.094
+"Leite, de cabra",leite de cabra,Leite e derivados,66.0,3.1,5.2,3.8,,74.0,14.0,112.0,0.1,TACO,,g,,0.074
+"Leite, de vaca, achocolatado",leite de vaca achocolatado,Leite e derivados,83.0,2.1,14.2,2.2,0.6,72.0,6.0,70.0,0.5,TACO,,g,,0.072
+"Leite, de vaca, desnatado, pó",leite de vaca desnatado po,Leite e derivados,362.0,34.7,53.0,0.9,,432.0,25.0,1363.0,0.9,TACO,,g,,0.432
+"Leite, de vaca, desnatado, UHT",leite de vaca desnatado uht,Leite e derivados,,,,,,51.0,4.0,134.0,0.0,TACO,,g,,0.051
+"Leite, de vaca, integral",leite de vaca integral,Leite e derivados,,,,,,64.0,10.0,123.0,0.0,TACO,,g,,0.064
+"Leite, de vaca, integral, pó",leite de vaca integral po,Leite e derivados,497.0,25.4,39.2,26.9,,323.0,85.0,890.0,0.5,TACO,,g,,0.323
+"Leite, fermentado",leite fermentado,Leite e derivados,70.0,1.9,15.7,0.1,,33.0,2.0,72.0,0.0,TACO,,g,,0.033
+"Queijo, minas, frescal",queijo minas frescal,Leite e derivados,264.0,17.4,3.2,20.2,,31.0,62.0,579.0,0.9,TACO,,g,,0.031
+"Queijo, minas, meia cura",queijo minas meia cura,Leite e derivados,321.0,21.2,3.6,24.6,,501.0,76.0,696.0,0.2,TACO,,g,,0.501
+"Queijo, mozarela",queijo mozarela,Leite e derivados,330.0,22.6,3.0,25.2,,581.0,80.0,875.0,0.3,TACO,,g,,0.581
+"Queijo, parmesão",queijo parmesao,Leite e derivados,453.0,35.6,1.7,33.5,,1844.0,106.0,992.0,0.5,TACO,,g,,1.844
+"Queijo, pasteurizado",queijo pasteurizado,Leite e derivados,303.0,9.4,5.7,27.4,,780.0,82.0,323.0,0.3,TACO,,g,,0.78
+"Queijo, petit suisse, morango",queijo petit suisse morango,Leite e derivados,121.0,5.8,18.5,2.8,,412.0,12.0,731.0,0.1,TACO,,g,,0.412
+"Queijo, prato",queijo prato,Leite e derivados,360.0,22.7,1.9,29.1,,580.0,91.0,940.0,0.3,TACO,,g,,0.58
+"Queijo, requeijão, cremoso",queijo requeijao cremoso,Leite e derivados,257.0,9.6,2.4,23.4,,558.0,74.0,259.0,0.1,TACO,,g,,0.558
+"Queijo, ricota",queijo ricota,Leite e derivados,140.0,12.6,3.8,8.1,,283.0,49.0,253.0,0.1,TACO,,g,,0.283
+"Bebida isotônica, sabores variados",bebida isotonica sabores variados,Bebidas (alcoólicas e não alcoólicas),26.0,0.0,6.4,0.0,,44.0,,1.0,0.7,TACO,,g,,0.044
+"Café, infusão 10% (preparado)",cafe infusao 10,Bebidas (alcoólicas e não alcoólicas),2.0,0.3,0.0,0.0,,1.0,,3.0,0.0,TACO,,g,,0.001
+"Cana, aguardente 1",cana aguardente 1,Bebidas (alcoólicas e não alcoólicas),216.0,,,,,3.0,,0.0,0.0,TACO,,g,,0.003
+"Cana, caldo de",cana caldo de,Bebidas (alcoólicas e não alcoólicas),65.0,0.0,18.2,0.0,0.1,0.0,,9.0,0.8,TACO,,g,,0.0
+"Cerveja, pilsen 2",cerveja pilsen 2,Bebidas (alcoólicas e não alcoólicas),41.0,0.6,3.3,0.0,,4.0,,5.0,0.0,TACO,,g,,0.004
+"Chá, erva-doce, infusão 5%",cha ervadoce infusao 5,Bebidas (alcoólicas e não alcoólicas),1.0,0.0,0.4,0.0,,1.0,,2.0,0.0,TACO,,g,,0.001
+"Chá, mate, infusão 5%",cha mate infusao 5,Bebidas (alcoólicas e não alcoólicas),3.0,0.0,0.6,0.1,,0.0,,1.0,0.0,TACO,,g,,0.0
+"Chá, preto, infusão 5%",cha preto infusao 5,Bebidas (alcoólicas e não alcoólicas),2.0,0.0,0.6,0.0,,0.0,,0.0,0.0,TACO,,g,,0.0
+"Coco, água de",coco agua de,Bebidas (alcoólicas e não alcoólicas),22.0,0.0,5.3,0.0,0.1,2.0,,19.0,0.0,TACO,,g,,0.002
+"Refrigerante, tipo água tônica",refrigerante tipo agua tonica,Bebidas (alcoólicas e não alcoólicas),31.0,0.0,8.0,0.0,,8.0,,1.0,0.0,TACO,,g,,0.008
+"Refrigerante, tipo cola",refrigerante tipo cola,Bebidas (alcoólicas e não alcoólicas),34.0,0.0,8.7,0.0,,7.0,,1.0,0.0,TACO,,g,,0.007
+"Refrigerante, tipo guaraná",refrigerante tipo guarana,Bebidas (alcoólicas e não alcoólicas),39.0,0.0,10.0,0.0,,9.0,,1.0,0.0,TACO,,g,,0.009
+"Refrigerante, tipo laranja",refrigerante tipo laranja,Bebidas (alcoólicas e não alcoólicas),46.0,0.0,11.8,0.0,,9.0,,2.0,0.0,TACO,,g,,0.009
+"Refrigerante, tipo limão",refrigerante tipo limao,Bebidas (alcoólicas e não alcoólicas),40.0,0.0,10.3,0.0,,9.0,,2.0,0.0,TACO,,g,,0.009
+"Omelete, de queijo",omelete de queijo,Ovos e derivados,268.0,15.6,0.4,22.0,,216.0,384.0,166.0,1.4,TACO,,g,,0.216
+"Ovo, de codorna, inteiro, cru",ovo de codorna inteiro cru,Ovos e derivados,177.0,13.7,0.8,12.7,,129.0,568.0,79.0,3.3,TACO,,g,,0.129
+"Ovo, de galinha, clara, cozida/10minutos",ovo de galinha clara cozida10minutos,Ovos e derivados,59.0,13.4,0.0,0.1,,181.0,,6.0,0.1,TACO,,g,,0.181
+"Ovo, de galinha, gema, cozida/10minutos",ovo de galinha gema cozida10minutos,Ovos e derivados,353.0,15.9,1.6,30.8,,45.0,1272.0,114.0,2.9,TACO,,g,,0.045
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo de galinha inteiro cozido10minutos,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,50,g,,0.146
+"Ovo, de galinha, inteiro, cru",ovo de galinha inteiro cru,Ovos e derivados,143.0,13.0,1.6,8.9,,168.0,356.0,42.0,1.6,TACO,50,g,,0.168
+"Ovo, de galinha, inteiro, frito",ovo de galinha inteiro frito,Ovos e derivados,240.0,15.6,1.2,18.6,,166.0,516.0,73.0,2.1,TACO,50,g,,0.166
+"Achocolatado, pó",achocolatado po,Produtos açucarados,401.0,4.2,91.2,2.2,3.9,65.0,0.0,44.0,5.4,TACO,,g,,0.065
+"Açúcar, cristal",acucar cristal,Produtos açucarados,387.0,0.3,99.6,0.0,,0.0,,8.0,0.2,TACO,,g,,0.0
+"Açúcar, mascavo",acucar mascavo,Produtos açucarados,369.0,0.8,94.5,0.1,,25.0,,127.0,8.3,TACO,,g,,0.025
+"Açúcar, refinado",acucar refinado,Produtos açucarados,387.0,0.3,99.5,0.0,,12.0,,4.0,0.1,TACO,,g,,0.012
+"Chocolate, ao leite",chocolate ao leite,Produtos açucarados,540.0,7.2,59.6,30.3,2.2,77.0,17.0,191.0,1.6,TACO,,g,,0.077
+"Chocolate, ao leite, com castanha do Pará",chocolate ao leite com castanha do para,Produtos açucarados,559.0,7.4,55.4,34.2,2.5,64.0,16.0,171.0,1.5,TACO,,g,,0.064
+"Chocolate, ao leite, dietético",chocolate ao leite dietetico,Produtos açucarados,557.0,6.9,56.3,33.8,2.8,85.0,13.0,188.0,3.3,TACO,,g,,0.085
+"Chocolate, meio amargo",chocolate meio amargo,Produtos açucarados,475.0,4.9,62.4,29.9,4.9,9.0,2.0,45.0,3.6,TACO,,g,,0.009
+Cocada branca,cocada branca,Produtos açucarados,449.0,1.1,81.4,13.6,3.6,29.0,,7.0,1.2,TACO,,g,,0.029
+"Doce, de abóbora, cremoso",doce de abobora cremoso,Produtos açucarados,199.0,0.9,54.6,0.2,2.3,0.0,,13.0,0.9,TACO,,g,,0.0
+"Doce, de leite, cremoso",doce de leite cremoso,Produtos açucarados,306.0,5.5,59.5,6.0,,120.0,20.0,195.0,0.1,TACO,,g,,0.12
+"Geléia, mocotó, natural",geleia mocoto natural,Produtos açucarados,106.0,2.1,24.2,0.1,,43.0,0.0,4.0,0.1,TACO,,g,,0.043
+Glicose de milho,glicose de milho,Produtos açucarados,292.0,0.0,79.4,0.0,,59.0,,6.0,0.1,TACO,,g,,0.059
+Maria mole,maria mole,Produtos açucarados,301.0,3.8,73.6,0.2,0.7,15.0,,13.0,0.4,TACO,,g,,0.015
+"Maria mole, coco queimado",maria mole coco queimado,Produtos açucarados,307.0,3.9,75.1,0.1,0.6,14.0,,19.0,0.5,TACO,,g,,0.014
+Marmelada,marmelada,Produtos açucarados,257.0,0.4,70.8,0.1,4.1,11.0,,11.0,0.7,TACO,,g,,0.011
+"Mel, de abelha",mel de abelha,Produtos açucarados,309.0,0.0,84.0,0.0,,6.0,,10.0,0.3,TACO,,g,,0.006
+Melado,melado,Produtos açucarados,297.0,0.0,76.6,0.0,,4.0,,102.0,5.4,TACO,,g,,0.004
+Quindim,quindim,Produtos açucarados,411.0,4.7,46.3,24.4,3.2,27.0,271.0,37.0,1.4,TACO,,g,,0.027
+Rapadura,rapadura,Produtos açucarados,352.0,1.0,90.8,0.1,,22.0,,30.0,4.4,TACO,,g,,0.022
+"Café, pó, torrado",cafe po torrado,Miscelâneas,419.0,14.7,65.8,11.9,51.2,1.0,,107.0,8.1,TACO,,g,,0.001
+"Capuccino, pó",capuccino po,Miscelâneas,417.0,11.3,73.6,8.6,2.4,382.0,29.0,467.0,2.3,TACO,,g,,0.382
+"Fermento em pó, químico",fermento em po quimico,Miscelâneas,90.0,0.5,43.9,0.1,,10052.0,,,,TACO,,g,,10.052
+"Fermento, biológico, levedura, tablete",fermento biologico levedura tablete,Miscelâneas,90.0,17.0,7.7,1.5,4.2,40.0,,18.0,2.6,TACO,,g,,0.04
+"Gelatina, sabores variados, pó",gelatina sabores variados po,Miscelâneas,380.0,8.9,89.2,0.0,,235.0,,27.0,0.3,TACO,,g,,0.235
+"Sal, dietético",sal dietetico,Miscelâneas,,,,,,23432.0,,,,TACO,,g,,23.432
+"Sal, grosso",sal grosso,Miscelâneas,,,,,,39943.0,,,,TACO,,g,,39.943
+Shoyu,shoyu,Miscelâneas,61.0,3.3,11.6,0.3,,5024.0,,15.0,0.5,TACO,,g,,5.024
+Tempero a base de sal,tempero a base de sal,Miscelâneas,21.0,2.7,2.1,0.3,0.6,32560.0,,,,TACO,,g,,32.56
+"Azeitona, preta, conserva",azeitona preta conserva,Outros alimentos industrializados,194.0,1.2,5.5,20.3,4.6,1567.0,,59.0,5.5,TACO,,g,,1.567
+"Azeitona, verde, conserva",azeitona verde conserva,Outros alimentos industrializados,137.0,0.9,4.1,14.2,3.8,1347.0,,46.0,0.2,TACO,,g,,1.347
+"Chantilly, spray, com gordura vegetal",chantilly spray com gordura vegetal,Outros alimentos industrializados,315.0,0.5,16.9,27.3,,110.0,0.0,2.0,0.0,TACO,,g,,0.11
+"Leite, de coco",leite de coco,Outros alimentos industrializados,166.0,1.0,2.2,18.4,0.7,44.0,,6.0,0.5,TACO,,g,,0.044
+"Maionese, tradicional com ovos",maionese tradicional com ovos,Outros alimentos industrializados,302.0,0.6,7.9,30.5,,787.0,42.0,3.0,0.1,TACO,,g,,0.787
+Acarajé,acaraje,Alimentos preparados,289.0,8.3,19.1,19.9,9.4,305.0,25.0,124.0,1.9,TACO,,g,,0.305
+Arroz carreteiro,arroz carreteiro,Alimentos preparados,154.0,10.8,11.6,7.1,1.5,1622.0,36.0,13.0,1.0,TACO,,g,,1.622
+"Baião de dois, arroz e feijão-de-corda",baiao de dois arroz e feijaodecorda,Alimentos preparados,136.0,6.2,20.4,3.2,5.1,93.0,4.0,33.0,0.6,TACO,,g,,0.093
+Barreado,barreado,Alimentos preparados,165.0,18.3,0.2,9.5,0.1,48.0,60.0,15.0,2.4,TACO,,g,,0.048
+"Bife à cavalo, com contra filé",bife a cavalo com contra file,Alimentos preparados,291.0,23.7,0.0,21.1,,83.0,257.0,26.0,2.1,TACO,,g,,0.083
+Bolinho de arroz,bolinho de arroz,Alimentos preparados,274.0,8.0,41.7,8.3,2.7,59.0,70.0,24.0,2.1,TACO,,g,,0.059
+Camarão à baiana,camarao a baiana,Alimentos preparados,101.0,7.9,3.2,6.0,0.4,85.0,117.0,43.0,1.4,TACO,,g,,0.085
+"Charuto, de repolho",charuto de repolho,Alimentos preparados,78.0,6.8,10.1,1.1,1.5,12.0,21.0,23.0,0.9,TACO,,g,,0.012
+"Cuscuz, de milho, cozido com sal",cuscuz de milho cozido com sal,Alimentos preparados,113.0,2.2,25.3,0.7,2.1,248.0,,2.0,0.2,TACO,,g,,0.248
+"Cuscuz, paulista",cuscuz paulista,Alimentos preparados,142.0,2.6,22.5,4.6,2.4,236.0,15.0,14.0,0.3,TACO,,g,,0.236
+"Cuxá, molho",cuxa molho,Alimentos preparados,80.0,5.6,5.7,3.6,3.0,1344.0,58.0,105.0,0.9,TACO,,g,,1.344
+Dobradinha,dobradinha,Alimentos preparados,125.0,19.8,0.0,4.4,,29.0,144.0,11.0,1.0,TACO,,g,,0.029
+Estrogonofe de carne,estrogonofe de carne,Alimentos preparados,173.0,15.0,3.0,10.8,,123.0,66.0,28.0,2.7,TACO,,g,,0.123
+Estrogonofe de frango,estrogonofe de frango,Alimentos preparados,157.0,17.6,2.6,8.0,,99.0,80.0,26.0,1.5,TACO,,g,,0.099
+Feijão tropeiro mineiro,feijao tropeiro mineiro,Alimentos preparados,152.0,10.2,19.6,6.8,3.6,365.0,68.0,41.0,2.2,TACO,,g,,0.365
+Feijoada,feijoada,Alimentos preparados,117.0,8.7,11.6,6.5,5.1,278.0,22.0,32.0,1.3,TACO,,g,,0.278
+"Frango, com açafrão",frango com acafrao,Alimentos preparados,113.0,9.7,4.1,6.2,0.2,29.0,50.0,13.0,0.8,TACO,,g,,0.029
+"Macarrão, molho bolognesa",macarrao molho bolognesa,Alimentos preparados,120.0,4.9,22.5,0.9,0.8,9.0,7.0,11.0,1.4,TACO,,g,,0.009
+Maniçoba,manicoba,Alimentos preparados,134.0,10.0,3.4,8.7,2.2,407.0,43.0,66.0,3.2,TACO,,g,,0.407
+Quibebe,quibebe,Alimentos preparados,86.0,8.6,6.6,2.7,1.7,247.0,,8.0,0.8,TACO,,g,,0.247
+"Salada, de legumes, com maionese",salada de legumes com maionese,Alimentos preparados,96.0,1.1,8.9,7.0,2.2,228.0,7.0,12.0,0.2,TACO,,g,,0.228
+"Salada, de legumes, cozida no vapor",salada de legumes cozida no vapor,Alimentos preparados,35.0,2.0,7.1,0.3,2.5,3.0,,33.0,0.4,TACO,,g,,0.003
+"Salpicão, de frango",salpicao de frango,Alimentos preparados,148.0,13.9,4.6,7.8,0.4,248.0,53.0,9.0,0.3,TACO,,g,,0.248
+Sarapatel,sarapatel,Alimentos preparados,123.0,18.5,1.1,4.4,,216.0,315.0,12.0,7.2,TACO,,g,,0.216
+Tabule,tabule,Alimentos preparados,57.0,2.0,10.6,1.2,2.1,1.0,,19.0,0.6,TACO,,g,,0.001
+Tacacá,tacaca,Alimentos preparados,47.0,7.0,3.4,0.4,0.2,1349.0,71.0,45.0,0.9,TACO,,g,,1.349
+"Tapioca, com manteiga",tapioca com manteiga,Alimentos preparados,348.0,0.1,63.6,10.9,0.0,158.0,31.0,30.0,0.2,TACO,,g,,0.158
+"Tucupi, com pimenta-de-cheiro",tucupi com pimentadecheiro,Alimentos preparados,27.0,2.1,4.7,0.3,0.2,5.0,,28.0,1.1,TACO,,g,,0.005
+Vaca atolada,vaca atolada,Alimentos preparados,145.0,5.1,10.1,9.3,2.3,26.0,19.0,63.0,0.7,TACO,,g,,0.026
+Vatapá,vatapa,Alimentos preparados,255.0,6.0,9.7,23.2,1.7,880.0,44.0,47.0,1.4,TACO,,g,,0.88
+Virado à paulista,virado a paulista,Alimentos preparados,307.0,10.2,14.1,25.6,2.2,346.0,66.0,41.0,1.1,TACO,,g,,0.346
+Yakisoba,yakisoba,Alimentos preparados,113.0,7.5,18.3,2.6,1.1,794.0,,14.0,0.6,TACO,,g,,0.794
+"Amendoim, grão, cru",amendoim grao cru,Leguminosas e derivados,544.0,27.2,20.3,43.9,8.0,0.0,,0.0,2.5,TACO,,g,,0.0
+"Amendoim, torrado, salgado",amendoim torrado salgado,Leguminosas e derivados,606.0,22.5,18.7,54.0,7.8,376.0,,39.0,1.3,TACO,,g,,0.376
+"Ervilha, em vagem",ervilha em vagem,Leguminosas e derivados,88.0,7.5,14.2,0.5,9.7,0.0,,24.0,1.4,TACO,,g,,0.0
+"Ervilha, enlatada, drenada",ervilha enlatada drenada,Leguminosas e derivados,74.0,4.6,13.4,0.4,5.1,372.0,,22.0,1.4,TACO,,g,,0.372
+"Feijão, carioca, cozido",feijao carioca cozido,Leguminosas e derivados,76.0,4.8,13.6,0.5,8.5,2.0,,27.0,1.3,TACO,,g,,0.002
+"Feijão, carioca, cru",feijao carioca cru,Leguminosas e derivados,329.0,20.0,61.2,1.3,18.4,0.0,,123.0,8.0,TACO,,g,,0.0
+"Feijão, fradinho, cozido",feijao fradinho cozido,Leguminosas e derivados,78.0,5.1,13.5,0.6,7.5,1.0,,17.0,1.1,TACO,,g,,0.001
+"Feijão, fradinho, cru",feijao fradinho cru,Leguminosas e derivados,339.0,20.2,61.2,2.4,23.6,10.0,,78.0,5.1,TACO,,g,,0.01
+"Feijão, jalo, cozido",feijao jalo cozido,Leguminosas e derivados,93.0,6.1,16.5,0.5,13.9,1.0,,29.0,1.9,TACO,,g,,0.001
+"Feijão, jalo, cru",feijao jalo cru,Leguminosas e derivados,328.0,20.1,61.5,0.9,30.3,25.0,,98.0,7.0,TACO,,g,,0.025
+"Feijão, preto, cozido",feijao preto cozido,Leguminosas e derivados,77.0,4.5,14.0,0.5,8.4,2.0,,29.0,1.5,TACO,,g,,0.002
+"Feijão, preto, cru",feijao preto cru,Leguminosas e derivados,324.0,21.3,58.8,1.2,21.8,0.0,,111.0,6.5,TACO,,g,,0.0
+"Feijão, rajado, cozido",feijao rajado cozido,Leguminosas e derivados,85.0,5.5,15.3,0.4,9.3,1.0,,29.0,1.4,TACO,,g,,0.001
+"Feijão, rajado, cru",feijao rajado cru,Leguminosas e derivados,326.0,17.3,62.9,1.2,24.0,14.0,,111.0,18.6,TACO,,g,,0.014
+"Feijão, rosinha, cozido",feijao rosinha cozido,Leguminosas e derivados,68.0,4.5,11.8,0.5,4.8,2.0,,19.0,1.2,TACO,,g,,0.002
+"Feijão, rosinha, cru",feijao rosinha cru,Leguminosas e derivados,337.0,20.9,62.2,1.3,20.6,24.0,,68.0,5.3,TACO,,g,,0.024
+"Feijão, roxo, cozido",feijao roxo cozido,Leguminosas e derivados,77.0,5.7,12.9,0.5,11.5,1.0,,23.0,1.4,TACO,,g,,0.001
+"Feijão, roxo, cru",feijao roxo cru,Leguminosas e derivados,331.0,22.2,60.0,1.2,33.8,10.0,,120.0,6.9,TACO,,g,,0.01
+"Grão-de-bico, cru",graodebico cru,Leguminosas e derivados,355.0,21.2,57.9,5.4,12.4,5.0,,114.0,5.4,TACO,,g,,0.005
+"Guandu, cru",guandu cru,Leguminosas e derivados,344.0,19.0,64.0,2.1,21.3,2.0,,129.0,1.9,TACO,,g,,0.002
+"Lentilha, cozida",lentilha cozida,Leguminosas e derivados,93.0,6.3,16.3,0.5,7.9,1.0,,16.0,1.5,TACO,,g,,0.001
+"Lentilha, crua",lentilha crua,Leguminosas e derivados,339.0,23.2,62.0,0.8,16.9,0.0,,54.0,7.0,TACO,,g,,0.0
+"Paçoca, amendoim",pacoca amendoim,Leguminosas e derivados,487.0,16.0,52.4,26.1,7.3,167.0,,22.0,1.1,TACO,,g,,0.167
+"Pé-de-moleque, amendoim",pedemoleque amendoim,Leguminosas e derivados,503.0,13.2,54.7,28.0,3.4,16.0,,27.0,1.3,TACO,,g,,0.016
+"Soja, farinha",soja farinha,Leguminosas e derivados,404.0,36.0,38.4,14.6,20.2,6.0,,206.0,13.1,TACO,,g,,0.006
+"Soja, extrato solúvel, natural, fluido",soja extrato soluvel natural fluido,Leguminosas e derivados,39.0,2.4,4.3,1.6,0.4,57.0,,17.0,0.4,TACO,,g,,0.057
+"Soja, extrato solúvel, pó",soja extrato soluvel po,Leguminosas e derivados,459.0,35.7,28.5,26.2,7.3,83.0,,359.0,7.0,TACO,,g,,0.083
+"Soja, queijo (tofu)",soja queijo tofu,Leguminosas e derivados,64.0,6.6,2.1,4.0,0.8,1.0,,81.0,1.4,TACO,,g,,0.001
+"Tremoço, cru",tremoco cru,Leguminosas e derivados,381.0,33.6,43.8,10.3,32.3,3.0,,177.0,2.8,TACO,,g,,0.003
+"Tremoço, em conserva",tremoco em conserva,Leguminosas e derivados,121.0,11.1,12.4,3.8,14.4,1809.0,,16.0,0.3,TACO,,g,,1.809
+"Amêndoa, torrada, salgada",amendoa torrada salgada,Nozes e sementes,581.0,18.6,29.5,47.3,11.6,279.0,,237.0,3.1,TACO,,g,,0.279
+"Castanha-de-caju, torrada, salgada",castanhadecaju torrada salgada,Nozes e sementes,570.0,18.5,29.1,46.3,3.7,125.0,,33.0,5.2,TACO,,g,,0.125
+"Castanha-do-Brasil, crua",castanhadobrasil crua,Nozes e sementes,643.0,14.5,15.1,63.5,7.9,1.0,,146.0,2.3,TACO,,g,,0.001
+"Coco, cru",coco cru,Nozes e sementes,406.0,3.7,10.4,42.0,5.4,15.0,,6.0,1.8,TACO,,g,,0.015
+"Coco,  verde, cru",coco verde cru,Nozes e sementes,,,,,,,,,,TACO,,g,,
+"Farinha, de mesocarpo de babaçu, crua",farinha de mesocarpo de babacu crua,Nozes e sementes,329.0,1.4,79.2,0.2,17.9,12.0,,61.0,18.3,TACO,,g,,0.012
+"Gergelim, semente",gergelim semente,Nozes e sementes,584.0,21.2,21.6,50.4,11.9,3.0,,825.0,5.4,TACO,,g,,0.003
+"Linhaça, semente",linhaca semente,Nozes e sementes,495.0,14.1,43.3,32.3,33.5,9.0,,211.0,4.7,TACO,,g,,0.009
+"Pinhão, cozido",pinhao cozido,Nozes e sementes,174.0,3.0,43.9,0.7,15.6,1.0,,16.0,0.8,TACO,,g,,0.001
+"Pupunha, cozida",pupunha cozida,Nozes e sementes,219.0,2.5,29.6,12.8,4.3,1.0,,28.0,0.5,TACO,,g,,0.001
+"Noz, crua",noz crua,Nozes e sementes,620.0,14.0,18.4,59.4,7.2,5.0,,105.0,2.0,TACO,,g,,0.005
+"Arroz, tipo 1, cozido",arroz branco cozido,Cereais e derivados,128.0,2.5,28.1,0.2,1.6,1.0,,4.0,0.1,TACO,,g,,0.001
+"Arroz, tipo 1, cozido",arroz cozido,Cereais e derivados,128.0,2.5,28.1,0.2,1.6,1.0,,4.0,0.1,TACO,,g,,0.001
+"Arroz, tipo 1, cozido",arroz polido cozido,Cereais e derivados,128.0,2.5,28.1,0.2,1.6,1.0,,4.0,0.1,TACO,,g,,0.001
+"Arroz, tipo 1, cozido",arroz agulha cozido,Cereais e derivados,128.0,2.5,28.1,0.2,1.6,1.0,,4.0,0.1,TACO,,g,,0.001
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo cozido,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,50,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovos cozidos,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,50,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo de galinha cozido,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo de galinha inteiro cozido,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovos mexidos,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,50,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo mexido,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo de galinha mexido,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo estrelado,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, cozido/10minutos",ovo de galinha estrelado,Ovos e derivados,146.0,13.3,0.6,9.5,,146.0,397.0,49.0,1.5,TACO,,g,,0.146
+"Ovo, de galinha, inteiro, frito",ovo frito,Ovos e derivados,240.0,15.6,1.2,18.6,,166.0,516.0,73.0,2.1,TACO,,g,,0.166
+"Ovo, de galinha, inteiro, frito",ovos fritos,Ovos e derivados,240.0,15.6,1.2,18.6,,166.0,516.0,73.0,2.1,TACO,,g,,0.166
+"Ovo, de galinha, inteiro, frito",ovo de galinha frito,Ovos e derivados,240.0,15.6,1.2,18.6,,166.0,516.0,73.0,2.1,TACO,,g,,0.166
+"Ovo, de galinha, inteiro, frito",omelete,Ovos e derivados,154.0,10.5,1.5,11.8,,320.0,516.0,73.0,2.1,TACO,80,g,,0.32
+"Ovo, de galinha, inteiro, frito",omelete simples,Ovos e derivados,154.0,10.5,1.5,11.8,,320.0,516.0,73.0,2.1,TACO,,g,,0.32
+"Ovo, de galinha, inteiro, frito",omelete de ovo,Ovos e derivados,154.0,10.5,1.5,11.8,,320.0,516.0,73.0,2.1,TACO,,g,,0.32
+"Aspargo, cozido",aspargo cozido,"Verduras, hortaliças e derivados",20.0,2.2,3.7,0.2,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+"Aspargo, cru",aspargo,"Verduras, hortaliças e derivados",20.0,2.2,3.7,0.2,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+"Aspargo, grelhado",aspargo grelhado,"Verduras, hortaliças e derivados",25.0,2.5,3.7,0.5,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+"Aspargo, assado",aspargo assado,"Verduras, hortaliças e derivados",25.0,2.5,3.7,0.5,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+Refrigerante diet (zero açúcar),refrigerante diet,"Verduras, hortaliças e derivados",2.0,0.0,0.5,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante zero,refrigerante zero,"Verduras, hortaliças e derivados",2.0,0.0,0.5,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante light,refrigerante light,"Verduras, hortaliças e derivados",4.0,0.0,1.0,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante cola diet,refrigerante diet cola,"Verduras, hortaliças e derivados",2.0,0.0,0.3,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante cola zero,refrigerante zero cola,"Verduras, hortaliças e derivados",2.0,0.0,0.3,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante cola zero (Coca-Cola),coca zero,"Verduras, hortaliças e derivados",2.0,0.0,0.3,0.0,3.4,12.0,,51.0,0.5,TACO,,g,,0.012
+Refrigerante cola zero (Pepsi),pepsi zero,"Verduras, hortaliças e derivados",2.0,0.0,0.3,0.0,3.4,12.0,,51.0,0.5,TACO,,g,,0.012
+Refrigerante cola diet,coca diet,"Verduras, hortaliças e derivados",2.0,0.0,0.3,0.0,3.4,10.0,,51.0,0.5,TACO,,g,,0.01
+Refrigerante (padrão),refrigerante,"Verduras, hortaliças e derivados",40.0,0.0,10.0,0.0,3.4,8.0,,51.0,0.5,TACO,,g,,0.008
+Refrigerante cola,coca cola,"Verduras, hortaliças e derivados",40.0,0.0,10.6,0.0,3.4,8.0,,51.0,0.5,TACO,,g,,0.008
+Refrigerante cola (Pepsi),pepsi,"Verduras, hortaliças e derivados",39.0,0.0,10.4,0.0,3.4,8.0,,51.0,0.5,TACO,,g,,0.008
+Refrigerante guaraná,guarana,"Verduras, hortaliças e derivados",38.0,0.0,9.7,0.0,3.4,8.0,,51.0,0.5,TACO,,g,,0.008
+Suco de laranja natural,suco de laranja natural,"Verduras, hortaliças e derivados",42.0,0.7,9.8,0.1,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+Água de coco,agua de coco,"Verduras, hortaliças e derivados",19.0,0.7,3.7,0.2,3.4,105.0,,51.0,0.5,TACO,,g,,0.105
+Aspargo em conserva,aspargo em conserva,"Verduras, hortaliças e derivados",17.0,1.8,3.1,0.2,3.4,190.0,,51.0,0.5,TACO,,g,,0.19
+"Palmito, cozido",palmito cozido,"Verduras, hortaliças e derivados",28.0,2.0,4.0,0.4,3.4,490.0,,51.0,0.5,TACO,,g,,0.49
+Palmito,palmito,"Verduras, hortaliças e derivados",28.0,2.0,4.0,0.4,3.4,490.0,,51.0,0.5,TACO,,g,,0.49
+"Rúcula, crua",rucula,"Verduras, hortaliças e derivados",25.0,2.6,3.7,0.7,3.4,27.0,,51.0,0.5,TACO,,g,,0.027
+"Alface, crua",alface crua,"Verduras, hortaliças e derivados",13.0,1.2,2.2,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+Alface,alface,"Verduras, hortaliças e derivados",13.0,1.2,2.2,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+Alface americana,alface americana,"Verduras, hortaliças e derivados",14.0,1.0,2.5,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+"Tomate, cru",tomate cru,"Verduras, hortaliças e derivados",18.0,0.9,3.9,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+Tomate,tomate,"Verduras, hortaliças e derivados",18.0,0.9,3.9,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+Tomate cereja,tomate cereja,"Verduras, hortaliças e derivados",18.0,0.9,3.9,0.2,3.4,5.0,,51.0,0.5,TACO,,g,,0.005
+Pepino,pepino,"Verduras, hortaliças e derivados",13.0,0.7,2.7,0.1,3.4,2.0,,51.0,0.5,TACO,,g,,0.002
+"Café, infusão (preparado)",cafe preto,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, expresso",cafe expresso,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, infusão (coado)",cafe coado,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Queijo, cottage",queijo cottage,"Verduras, hortaliças e derivados",98.0,11.1,3.4,4.3,3.4,364.0,,51.0,0.5,TACO,,g,,0.364
+"Queijo, cottage",cottage,"Verduras, hortaliças e derivados",98.0,11.1,3.4,4.3,3.4,364.0,,51.0,0.5,TACO,,g,,0.364
+Tapioca (goma hidratada),tapioca,"Verduras, hortaliças e derivados",347.0,0.6,86.3,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+Tapioca (goma),goma de tapioca,"Verduras, hortaliças e derivados",347.0,0.6,86.3,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Couve, refogada",couve refogada,"Verduras, hortaliças e derivados",90.0,4.0,10.0,4.0,3.4,25.0,,51.0,0.5,TACO,,g,,0.025
+"Couve, crua",couve,"Verduras, hortaliças e derivados",27.0,3.0,5.0,0.5,3.4,15.0,,51.0,0.5,TACO,,g,,0.015
+"Salmão, grelhado",salmao grelhado,"Verduras, hortaliças e derivados",208.0,20.0,0.0,13.5,3.4,45.0,,51.0,0.5,TACO,,g,,0.045
+"Salmão, assado",salmao assado,"Verduras, hortaliças e derivados",208.0,20.0,0.0,13.5,3.4,45.0,,51.0,0.5,TACO,,g,,0.045
+"Salmão, cozido",salmao cozido,"Verduras, hortaliças e derivados",185.0,22.0,0.0,10.5,3.4,40.0,,51.0,0.5,TACO,,g,,0.04
+Salmão,salmao,"Verduras, hortaliças e derivados",208.0,20.0,0.0,13.5,3.4,45.0,,51.0,0.5,TACO,,g,,0.045
+Filé de salmão,file de salmao,"Verduras, hortaliças e derivados",208.0,20.0,0.0,13.5,3.4,45.0,,51.0,0.5,TACO,,g,,0.045
+Atum em água,atum em agua,"Verduras, hortaliças e derivados",119.0,25.5,0.0,1.7,3.4,300.0,,51.0,0.5,TACO,,g,,0.3
+Atum natural,atum natural,"Verduras, hortaliças e derivados",119.0,25.5,0.0,1.7,3.4,300.0,,51.0,0.5,TACO,,g,,0.3
+"Atum, cozido",atum cozido,"Verduras, hortaliças e derivados",119.0,25.5,0.0,1.7,3.4,300.0,,51.0,0.5,TACO,,g,,0.3
+"Atum, grelhado",atum grelhado,"Verduras, hortaliças e derivados",128.0,26.0,0.0,2.0,3.4,350.0,,51.0,0.5,TACO,,g,,0.35
+Atum em óleo,atum em oleo,"Verduras, hortaliças e derivados",198.0,24.0,0.0,11.0,3.4,330.0,,51.0,0.5,TACO,,g,,0.33
+"Bife, grelhado",bife grelhado,"Verduras, hortaliças e derivados",219.0,26.0,0.0,12.5,3.4,76.0,,51.0,0.5,TACO,,g,,0.076
+Bife acebolado,bife acebolado,"Verduras, hortaliças e derivados",200.0,24.0,3.0,10.0,3.4,90.0,,51.0,0.5,TACO,,g,,0.09
+"Bife, assado",bife assado,"Verduras, hortaliças e derivados",219.0,26.0,0.0,12.5,3.4,76.0,,51.0,0.5,TACO,,g,,0.076
+"Contrafilé, grelhado",contrafile grelhado,"Verduras, hortaliças e derivados",219.0,26.0,0.0,12.5,3.4,76.0,,51.0,0.5,TACO,,g,,0.076
+"Alcatra, grelhada",alcatra grelhada,"Verduras, hortaliças e derivados",210.0,27.0,0.0,11.0,3.4,70.0,,51.0,0.5,TACO,,g,,0.07
+"Picanha, grelhada",picanha grelhada,"Verduras, hortaliças e derivados",260.0,23.0,0.0,18.0,3.4,65.0,,51.0,0.5,TACO,,g,,0.065
+"Carne moída, refogada",carne moida refogada,"Verduras, hortaliças e derivados",219.0,26.0,0.0,12.5,3.4,85.0,,51.0,0.5,TACO,,g,,0.085
+Carne moída,carne moida,"Verduras, hortaliças e derivados",219.0,26.0,0.0,12.5,3.4,85.0,,51.0,0.5,TACO,,g,,0.085
+"Café, infusão (preparado)",cafe infusao,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, infusão sem açúcar",cafe infusao sem acucar,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, infusão sem açúcar (coado)",cafe coado sem acucar,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, infusão (filtrado)",cafe filtrado,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, infusão sem açúcar (filtrado)",cafe filtrado sem acucar,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, solúvel (instantâneo)",cafe solavel,"Verduras, hortaliças e derivados",4.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Café, instantâneo",cafe instantaneo,"Verduras, hortaliças e derivados",4.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+Café preto sem açúcar,cafe preto sem acucar,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+Café com adoçante,cafe com adocante,"Verduras, hortaliças e derivados",2.0,0.3,0.0,0.0,3.4,1.0,,51.0,0.5,TACO,,g,,0.001
+"Pão, trigo, francês",pao frances,Cereais e derivados,300.0,8.0,58.6,3.1,2.3,648.0,,16.0,1.0,TACO,50,g,,0.648
