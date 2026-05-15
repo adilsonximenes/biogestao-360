@@ -1018,22 +1018,25 @@ def carregar_alimentos_risco():
         },
         "grupo2b": {
             "alimentos": [
-                # Adoçantes artificiais classificados como 2B pela IARC
+                # ── IARC Vol. 116 (2023) ─────────────────────────────────────
+                # Aspartame: adoçante artificial → Grupo 2B confirmado em 2023
                 "aspartame",
-                # Alimentos relacionados à Acrilamida (Grupo 2A) - colocamos aqui como alerta de possível risco
+                # ── NOTA IMPORTANTE ──────────────────────────────────────────
+                # CAFÉ foi reclassificado de Grupo 2B para GRUPO 3 em 2016
+                # (IARC Vol. 116) — não é mais considerado cancerígeno.
+                # "café" ← REMOVIDO (classificação de 1991 estava desatualizada)
+                #
+                # Acrilamida (batata frita, chips) — Grupo 2A na realidade,
+                # alertamos aqui para esses alimentos específicos
                 "batata frita",
                 "chips",
-                "biscoito",
-                "torrada",
-                "café",
-                "achocolatado em pó",
-                # Mantemos alguns itens de alto consumo para alerta, mas a mensagem agora é mais precisa
             ],
             "mensagem": (
                 "⚠️ GRUPO 2B OMS/IARC: POSSIVELMENTE CANCERÍGENO! "
-                "A classificação se aplica a substâncias como aspartame (adoçante) e acrilamida (presente em alimentos torrados/fritos). "
-                "Ingestão diária aceitável de aspartame: 40mg/kg de peso corporal. "
-                "Para outros riscos (como acrilamida), prefira métodos de preparo mais suaves e evite queimar os alimentos."
+                "O aspartame (adoçante artificial presente em produtos diet/zero) "
+                "foi classificado no Grupo 2B pela IARC em 2023. "
+                "Ingestão diária aceitável: 40mg/kg de peso corporal (JECFA). "
+                "Nota: o café foi reclassificado para Grupo 3 (não cancerígeno) em 2016."
             ),
         },
     }
@@ -1043,58 +1046,62 @@ ALIMENTOS_RISCO = carregar_alimentos_risco()
 
 
 def verificar_risco_oms(nome_alimento):
-    """Versão CORRIGIDA com normalização de texto"""
+    """
+    Verifica risco OMS/IARC de um alimento.
+
+    Baseado em: IARC Monographs Volumes 114 (2015) e 116 (2016/2023)
+
+    Atualizações importantes:
+    - Café: era Grupo 2B (1991), reclassificado para Grupo 3 em 2016.
+      Não dispara mais alerta — nenhuma variação de café.
+    - Aspartame: adicionado ao Grupo 2B em 2023.
+    - Biscoito/torrada/achocolatado: removidos — não têm classificação IARC direta.
+    """
     if not nome_alimento:
         return None
 
-    # Normaliza o nome do alimento (remove acentos, converte para minúsculas)
     nome_norm = normalizar_texto(nome_alimento)
-
     if not nome_norm:
         return None
 
-    # Verifica grupo 1 — busca por PALAVRAS INTEIRAS (evita "gin" em "original")
+    # Café em QUALQUER variação → Grupo 3 (não cancerígeno desde 2016) → sem alerta
+    if "cafe" in nome_norm.split() or nome_norm.startswith("cafe ") or nome_norm == "cafe":
+        return None
+
     palavras_nome = set(nome_norm.split())
+
+    # ── Grupo 1 — Cancerígeno confirmado ─────────────────────────────────────
     for item in ALIMENTOS_RISCO["grupo1"]["alimentos"]:
         item_norm = normalizar_texto(item)
         palavras_item = set(item_norm.split())
         if palavras_item.issubset(palavras_nome):
             return ALIMENTOS_RISCO["grupo1"]["mensagem"]
 
-    # Verifica grupo 2a — busca por PALAVRAS INTEIRAS
+    # ── Grupo 2A — Provavelmente cancerígeno ─────────────────────────────────
     for item in ALIMENTOS_RISCO["grupo2a"]["alimentos"]:
         item_norm = normalizar_texto(item)
         palavras_item = set(item_norm.split())
         if palavras_item.issubset(palavras_nome):
             return ALIMENTOS_RISCO["grupo2a"]["mensagem"]
 
-    # Verifica grupo 2b
-    # Para "café": só alerta se for café puro/torrado, não bebidas compostas
-    _EXCECOES_CAFE = {
-        "cafe com leite", "cafe preto", "cafe infusao",
-        "cafe coado", "cafe filtrado", "cafe americano",
-        "cafe descafeinado", "cafe longo",
-    }
+    # ── Grupo 2B — Possivelmente cancerígeno ─────────────────────────────────
     for item in ALIMENTOS_RISCO["grupo2b"]["alimentos"]:
         item_norm = normalizar_texto(item)
-        if item_norm == "cafe":
-            # Café com leite e variações NUNCA são grupo 2b
-            if nome_norm.startswith("cafe com leite"):
-                continue
-            if nome_norm.startswith("cafe com"):
-                continue
-            if nome_norm in _EXCECOES_CAFE:
-                continue
-            palavras_nome_g2b = set(nome_norm.split())
-            if "cafe" in palavras_nome_g2b and not any(
-                p in nome_norm for p in ["com leite", "com acucar", "infusao",
-                                          "coado", "filtrado", "original",
-                                          "cremoso", "gelado", "frio"]
-            ):
+
+        if item_norm == "aspartame":
+            # Alerta só para produtos que claramente contêm aspartame
+            indicadores = [
+                "diet", "zero", "light", "sem acucar",
+                "adocante", "aspartame", "sucralose",
+            ]
+            if any(ind in nome_norm for ind in indicadores):
                 return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
-        else:
-            if item_norm in nome_norm:
-                return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
+            continue
+
+        # Demais itens: busca por palavras inteiras
+        palavras_item = set(item_norm.split())
+        if palavras_item.issubset(palavras_nome):
+            return ALIMENTOS_RISCO["grupo2b"]["mensagem"]
 
     return None
 
@@ -1876,7 +1883,7 @@ with st.sidebar:
         st.session_state.planejamento_tipo = planejamento_tipo
 
     st.markdown("---")
-    st.markdown("### 📊 Fonte Nutricional — Seção 26")
+    st.markdown("### 📊 Fonte Nutricional — Plano Alimentar")
     fonte_tabela = st.radio(
         "Tabela de referência:",
         ["🥦 BioGestão 360", "🌿 TACO (UNICAMP)", "📊 IBGE (POF)"],
@@ -5913,7 +5920,13 @@ st.markdown(
         <span style="display:inline-block; background:#ef4444; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🔥 Kcal</span> <span style="color:#1e293b;">= calorias do alimento</span><br>
         <span style="display:inline-block; background:#3b82f6; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥩 Proteínas</span> <span style="color:#1e293b;">= constroem e reparam músculos — combustível do treino de força</span><br>
         <span style="display:inline-block; background:#f59e0b; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍞 Carboidratos</span> <span style="color:#1e293b;">= principal fonte de energia para o treino</span><br>
-        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span>
+        <span style="display:inline-block; background:#10b981; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🥑 Gorduras</span> <span style="color:#1e293b;">= essenciais para hormônios e absorção de vitaminas</span><br>
+        <span style="display:inline-block; background:#ec4899; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🍬 Açúcar</span> <span style="color:#1e293b;">= açúcares totais — atenção a produtos com adoçantes artificiais (diet/zero)</span><br>
+        <span style="display:inline-block; background:#f97316; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧈 Sat</span> <span style="color:#1e293b;">= gordura saturada — limitar a menos de 10% das calorias diárias (OMS)</span><br>
+        <span style="display:inline-block; background:#dc2626; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">⚠️ Trans</span> <span style="color:#1e293b;">= gordura trans — evitar ao máximo, sem nível seguro de consumo (OMS)</span><br>
+        <span style="display:inline-block; background:#16a34a; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🌾 Fibra</span> <span style="color:#1e293b;">= meta: 25–38g/dia — satiedade, controle glicêmico e saúde intestinal</span><br>
+        <span style="display:inline-block; background:#0ea5e9; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">🧂 Sódio</span> <span style="color:#1e293b;">= limite OMS: 2.000mg/dia — atenção a embutidos e produtos processados</span><br>
+        <span style="display:inline-block; background:#6366f1; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:12px; margin:4px;">Fonte</span> <span style="color:#1e293b;">= TACO (in natura) · IBGE (com preparo) · BioGestão (industrializado) · estimativa</span>
     </div>
     <div class='obs'>
         💡 <strong>Não sabe o peso?</strong> Consulte a embalagem do produto ou use a tabela acima como referência.<br><br>
@@ -6169,8 +6182,14 @@ if st.session_state.planejamento_tipo == "Diário":
                     if st.button("🗑️", key=f"del_{refeicao}_{idx}"):
                         remover_item_diario(refeicao, idx)
                 if item.get("Risco"):
+                    _risco_txt = item["Risco"]
+                    _cls = (
+                        "alerta-oms-grupo1"  if "GRUPO 1" in _risco_txt else
+                        "alerta-oms-grupo2a" if "GRUPO 2A" in _risco_txt else
+                        "alerta-oms-grupo2b"
+                    )
                     st.markdown(
-                        f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                        f"<div class='{_cls}'>{_risco_txt}</div>",
                         unsafe_allow_html=True,
                     )
                 if item.get("AlertaRestricao"):
@@ -6254,8 +6273,14 @@ else:
                     if st.button("🗑️", key=f"del_semanal_{refeicao}_{idx}"):
                         remover_item_semanal(st.session_state.dia_atual, refeicao, idx)
                 if item.get("Risco"):
+                    _risco_txt = item["Risco"]
+                    _cls = (
+                        "alerta-oms-grupo1"  if "GRUPO 1" in _risco_txt else
+                        "alerta-oms-grupo2a" if "GRUPO 2A" in _risco_txt else
+                        "alerta-oms-grupo2b"
+                    )
                     st.markdown(
-                        f"<div class='alerta-oms-grupo1'>{item['Risco']}</div>",
+                        f"<div class='{_cls}'>{_risco_txt}</div>",
                         unsafe_allow_html=True,
                     )
                 if item.get("AlertaRestricao"):
