@@ -1,5 +1,6 @@
 # auth.py
 import streamlit as st
+import random
 from database import (
     verificar_credenciais,
     cadastrar_usuario,
@@ -15,6 +16,16 @@ from database import (
 )
 from datetime import datetime
 import uuid
+
+
+def gerar_desafio_matematico():
+    """Gera dois números aleatórios (1..10) e armazena a resposta correta na sessão."""
+    a = random.randint(1, 10)
+    b = random.randint(1, 10)
+    st.session_state["desafio_a"] = a
+    st.session_state["desafio_b"] = b
+    st.session_state["resposta_correta"] = a + b
+    return f"{a} + {b}"
 
 
 def tela_login():
@@ -95,14 +106,36 @@ def tela_login():
             st.rerun()
         return True
 
-    # Formulário de login
+    # ─────────────────────────────────────────────────────────────
+    # FORMULÁRIO DE LOGIN (COM DESAFIO MATEMÁTICO)
+    # ─────────────────────────────────────────────────────────────
+    # Inicializa o desafio se ainda não existir
+    if "resposta_correta" not in st.session_state:
+        gerar_desafio_matematico()
+
     with st.sidebar.form("login_form"):
         username = st.text_input("👤 Usuário")
         senha = st.text_input("🔒 Senha", type="password")
+
+        # Desafio matemático
+        st.markdown("**🤖 Verificação anti-bot**")
+        desafio_texto = f"Quanto é {st.session_state['desafio_a']} + {st.session_state['desafio_b']}?"
+        resposta_usuario = st.text_input(desafio_texto, key="resposta_math_login")
+
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            # Limpar espaços invisíveis — problema comum no celular
+            # Validação do desafio
+            try:
+                if int(resposta_usuario) != st.session_state["resposta_correta"]:
+                    st.sidebar.error("❌ Resposta do desafio incorreta. Tente novamente.")
+                    gerar_desafio_matematico()  # renova o desafio
+                    return False
+            except ValueError:
+                st.sidebar.error("❌ Digite apenas números no desafio.")
+                return False
+
+            # Limpar espaços invisíveis
             username = username.strip().lower()
             senha = senha.strip()
 
@@ -138,14 +171,25 @@ def tela_login():
                 st.rerun()
             else:
                 st.sidebar.error("Usuário ou senha inválidos")
+                # Renova o desafio após falha
+                gerar_desafio_matematico()
                 return False
 
-    # ── Cadastro de novo usuário (2 dias grátis) ──
-    # Só exibe se o admin não tiver bloqueado novos cadastros
+    # ─────────────────────────────────────────────────────────────
+    # CADASTRO DE NOVO USUÁRIO (COM DESAFIO MATEMÁTICO)
+    # ─────────────────────────────────────────────────────────────
     cadastro_aberto = get_configuracao("cadastro_aberto", "1") == "1"
 
     if cadastro_aberto:
         with st.sidebar.expander("🆕 Cadastre-se (2 dias grátis)", expanded=False):
+            # Inicializa desafio específico para cadastro
+            if "resposta_correta_cad" not in st.session_state:
+                a = random.randint(1, 10)
+                b = random.randint(1, 10)
+                st.session_state["desafio_a_cad"] = a
+                st.session_state["desafio_b_cad"] = b
+                st.session_state["resposta_correta_cad"] = a + b
+
             with st.form("cadastro_form"):
                 novo_user = st.text_input("Usuário")
                 novo_email = st.text_input("E-mail")
@@ -156,7 +200,27 @@ def tela_login():
                     "o **Importador Automático de Cardápio** e a **Avaliação Física**!"
                 )
 
+                # Desafio matemático
+                st.markdown("**🤖 Verificação anti-bot**")
+                desafio_texto_cad = f"Quanto é {st.session_state['desafio_a_cad']} + {st.session_state['desafio_b_cad']}?"
+                resposta_cad = st.text_input(desafio_texto_cad, key="resposta_math_cad")
+
                 if st.form_submit_button("Cadastrar", use_container_width=True):
+                    # Valida desafio
+                    try:
+                        if int(resposta_cad) != st.session_state["resposta_correta_cad"]:
+                            st.sidebar.error("❌ Resposta do desafio incorreta.")
+                            # Renova o desafio
+                            a2 = random.randint(1, 10)
+                            b2 = random.randint(1, 10)
+                            st.session_state["desafio_a_cad"] = a2
+                            st.session_state["desafio_b_cad"] = b2
+                            st.session_state["resposta_correta_cad"] = a2 + b2
+                            return
+                    except ValueError:
+                        st.sidebar.error("❌ Digite apenas números.")
+                        return
+
                     novo_user = novo_user.strip().lower()
                     novo_email = novo_email.strip().lower()
                     nova_senha = nova_senha.strip()
