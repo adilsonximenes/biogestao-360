@@ -13,6 +13,8 @@ from database import (
     remover_sessao,
     remover_todas_sessoes_usuario,
     get_configuracao,
+    renovar_sessao,
+    verificar_sessao_valida,
 )
 from datetime import datetime
 import uuid
@@ -32,6 +34,31 @@ def tela_login():
     """Tela de login na barra lateral"""
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔐 Acesso ao Sistema")
+
+    # ── RECONEXÃO AUTOMÁTICA ──────────────────────────────────────────────────
+    # Se o servidor Streamlit reiniciou (session_state perdido) mas o cookie
+    # ainda tem o session_token, reconecta automaticamente sem pedir login de novo.
+    if not st.session_state.get("logado", False):
+        token_salvo = st.session_state.get("session_token")
+        if token_salvo:
+            usuario_id = verificar_sessao_valida(token_salvo)
+            if usuario_id:
+                usuario = buscar_usuario_por_id(usuario_id)
+                if usuario:
+                    st.session_state["logado"]               = True
+                    st.session_state["usuario_id"]           = usuario["id"]
+                    st.session_state["usuario_nome"]         = usuario["username"]
+                    st.session_state["usuario_role"]         = usuario["role"]
+                    st.session_state["tem_acesso_ia"]        = usuario_tem_acesso_ia(usuario["id"])
+                    st.session_state["tem_acesso_avaliacao"] = usuario_tem_acesso_avaliacao(usuario["id"])
+                    renovar_sessao(token_salvo)
+
+    # ── RENOVAÇÃO DE SESSÃO A CADA INTERAÇÃO ─────────────────────────────────
+    # Mantém o ultimo_acesso atualizado para não expirar por inatividade
+    if st.session_state.get("logado", False):
+        token_atual = st.session_state.get("session_token")
+        if token_atual:
+            renovar_sessao(token_atual)
 
     # Se já estiver logado, mostrar informações
     if st.session_state.get("logado", False):
@@ -151,9 +178,12 @@ def tela_login():
 
                 sessoes_ativas = contar_sessoes_ativas(usuario["id"])
 
-                if sessoes_ativas >= usuario["max_sessoes"]:
+                # Limite generoso: só limpa se tiver muitas sessões abertas
+                # (ex: usuário logou em vários dispositivos e esqueceu)
+                # max_sessoes default = 1 no banco, mas na prática deixamos 3
+                limite_real = max(usuario["max_sessoes"], 3)
+                if sessoes_ativas >= limite_real:
                     remover_todas_sessoes_usuario(usuario["id"])
-                    sessoes_ativas = 0
 
                 session_token = str(uuid.uuid4())
                 registrar_sessao(usuario["id"], session_token)

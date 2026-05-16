@@ -270,12 +270,13 @@ def usuario_tem_acesso_avaliacao(usuario_id):
 
 
 def contar_sessoes_ativas(usuario_id):
-    """Conta sessões ativas do usuário"""
+    """Conta sessões ativas do usuário — expira após 7 dias sem acesso"""
     conn = get_connection()
     if not conn:
         return 0
     cursor = conn.cursor()
-    limite = datetime.now() - timedelta(hours=24)
+    # Aumentado de 24h para 7 dias — evita deslogin por inatividade curta
+    limite = datetime.now() - timedelta(days=7)
     cursor.execute("DELETE FROM sessoes_ativas WHERE ultimo_acesso < %s", (limite,))
     cursor.execute(
         "SELECT COUNT(*) FROM sessoes_ativas WHERE usuario_id = %s", (usuario_id,)
@@ -285,6 +286,52 @@ def contar_sessoes_ativas(usuario_id):
     cursor.close()
     conn.close()
     return count
+
+
+def renovar_sessao(session_token):
+    """
+    Atualiza o ultimo_acesso da sessão para agora.
+    Deve ser chamada a cada interação do usuário para manter a sessão viva.
+    """
+    conn = get_connection()
+    if not conn:
+        return
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE sessoes_ativas SET ultimo_acesso = %s WHERE session_token = %s",
+            (datetime.now(), session_token),
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception:
+        pass  # Não quebrar o app se falhar a renovação
+
+
+def verificar_sessao_valida(session_token):
+    """
+    Verifica se o session_token ainda existe no banco.
+    Retorna o usuario_id se válido, None se expirado/inválido.
+    Usada para reconectar após reinício do servidor Streamlit.
+    """
+    conn = get_connection()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor()
+        limite = datetime.now() - timedelta(days=7)
+        cursor.execute(
+            """SELECT usuario_id FROM sessoes_ativas
+               WHERE session_token = %s AND ultimo_acesso > %s""",
+            (session_token, limite),
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return row[0] if row else None
+    except Exception:
+        return None
 
 
 def registrar_sessao(usuario_id, session_token):

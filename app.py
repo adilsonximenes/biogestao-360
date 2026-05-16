@@ -51,9 +51,11 @@ if "mostrar_portal" not in st.session_state:
 if st.session_state.mostrar_portal:
     if st.button("← Voltar ao app", key="btn_fechar_portal"):
         st.session_state.mostrar_portal = False
-        st.rerun()
-    tela_portal()
-    st.stop()
+        # Não usar st.rerun() aqui — causa perda de contexto de sessão
+        # O Streamlit recarrega automaticamente ao mudar session_state
+    else:
+        tela_portal()
+        st.stop()
 
 # ============================================
 # 1. CONFIGURAÇÃO DE PÁGINA
